@@ -1,6 +1,6 @@
 import { ENV } from "./env";
 import { getDb } from "../db";
-import { pushTokens } from "../../drizzle/schema";
+import { pushTokens, users } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 
 // ─── Expo Push Notifications ──────────────────────────────────────────────────
@@ -137,4 +137,45 @@ export async function notifyEventReminders(eventId: number, eventTitle: string, 
 
   // In production: query event_reminders joined with push_tokens
   console.log(`[Push] Would notify users with reminders for event ${eventId}: ${eventTitle} at ${eventDate}`);
+}
+
+/**
+ * Send a push notification to the app owner (identified by OWNER_OPEN_ID).
+ * Returns true if the notification was dispatched, false otherwise.
+ */
+export async function notifyOwner(input: { title: string; content: string }): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Push] DB unavailable, cannot notify owner");
+    return false;
+  }
+
+  const ownerOpenId = ENV.ownerOpenId;
+  if (!ownerOpenId) {
+    console.warn("[Push] OWNER_OPEN_ID not configured");
+    return false;
+  }
+
+  const [owner] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.openId, ownerOpenId))
+    .limit(1);
+
+  if (!owner) {
+    console.warn(`[Push] Owner user not found for openId ${ownerOpenId}`);
+    return false;
+  }
+
+  try {
+    await sendPushToUser(owner.id, {
+      title: input.title,
+      body: input.content,
+      sound: "default",
+    });
+    return true;
+  } catch (err) {
+    console.error("[Push] Failed to notify owner:", err);
+    return false;
+  }
 }
