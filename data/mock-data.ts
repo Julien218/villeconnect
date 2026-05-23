@@ -296,3 +296,148 @@ export const CAROUSEL_ITEMS = [
     color: "#F59E0B",
   },
 ];
+
+
+// ─── Events / Activités ───────────────────────────────────────────────────────
+
+export type EventCategory =
+  | "Tous"
+  | "Culture"
+  | "Sport"
+  | "Marché"
+  | "Jeunesse"
+  | "Environnement"
+  | "Communal";
+
+export interface CommunalEvent {
+  id: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  date: string;
+  time: string;
+  location: string;
+  address: string;
+  image: string;
+  isFree: boolean;
+  price?: string;
+  organizer: string;
+  tags: string[];
+}
+
+export const COMMUNAL_EVENTS: CommunalEvent[] = [
+  {
+    id: "e1",
+    title: "Marché hebdomadaire du samedi",
+    description: "Retrouvez chaque samedi matin les producteurs locaux, maraîchers, fromagers et artisans de la région.",
+    category: "Marché",
+    date: "2026-05-30",
+    time: "8h00 – 13h00",
+    location: "Place du Marché",
+    address: "Place du Marché, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600",
+    isFree: true,
+    organizer: "Commune de Ville",
+    tags: ["Local", "Alimentation", "Hebdomadaire"],
+  },
+  {
+    id: "e2",
+    title: "Concert en plein air — Jazz & Blues",
+    description: "Soirée musicale exceptionnelle dans le parc communal. Trois groupes locaux se succèdent sur scène.",
+    category: "Culture",
+    date: "2026-06-07",
+    time: "19h00 – 23h00",
+    location: "Parc Communal",
+    address: "Rue du Parc 12, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600",
+    isFree: true,
+    organizer: "Maison de la Culture",
+    tags: ["Musique", "Famille", "Soirée"],
+  },
+  {
+    id: "e3",
+    title: "Tournoi de football intercommunal",
+    description: "Le club local ouvre son tournoi annuel aux équipes des communes voisines.",
+    category: "Sport",
+    date: "2026-06-14",
+    time: "9h00 – 18h00",
+    location: "Stade Municipal",
+    address: "Rue du Stade 5, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600",
+    isFree: true,
+    organizer: "FC VilleConnect",
+    tags: ["Sport", "Jeunesse", "Compétition"],
+  },
+  {
+    id: "e4",
+    title: "Atelier jardinage urbain",
+    description: "Apprenez les bases du compostage, de la permaculture et du potager balcon. Places limitées.",
+    category: "Environnement",
+    date: "2026-06-21",
+    time: "10h00 – 12h30",
+    location: "Maison de la Nature",
+    address: "Avenue Verte 3, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600",
+    isFree: false,
+    price: "5€ / personne",
+    organizer: "Éco-quartier Ville",
+    tags: ["Écologie", "Atelier", "Inscription"],
+  },
+  {
+    id: "e5",
+    title: "Fête de quartier — Rue des Acacias",
+    description: "La rue des Acacias ferme à la circulation pour une après-midi de fête entre voisins.",
+    category: "Communal",
+    date: "2026-07-05",
+    time: "15h00 – 21h00",
+    location: "Rue des Acacias",
+    address: "Rue des Acacias, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=600",
+    isFree: true,
+    organizer: "Comité de quartier",
+    tags: ["Voisinage", "Famille", "Convivialité"],
+  },
+  {
+    id: "e6",
+    title: "Exposition photo — Notre Ville",
+    description: "Les habitants ont photographié leur quotidien pendant 3 mois. 120 clichés exposés à la galerie.",
+    category: "Culture",
+    date: "2026-07-11",
+    time: "18h00 – 20h00",
+    location: "Galerie Communale",
+    address: "Rue de l Art 7, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=600",
+    isFree: true,
+    organizer: "Service Culturel",
+    tags: ["Art", "Photo", "Vernissage"],
+  },
+  {
+    id: "e7",
+    title: "Stage vacances Multi-sports jeunes",
+    description: "Stage d été pour les 8 à 14 ans : tennis, natation, basket, escalade.",
+    category: "Jeunesse",
+    date: "2026-07-07",
+    time: "9h00 – 16h00",
+    location: "Centre Sportif",
+    address: "Boulevard du Sport 20, 1000 Ville",
+    image: "https://images.unsplash.com/photo-1547347298-4074fc3086f0?w=600",
+    isFree: false,
+    price: "45 euros par semaine",
+    organizer: "Service Jeunesse",
+    tags: ["Enfants", "Vacances", "Sport"],
+  },
+  {
+    id: "e8",
+    title: "Journée portes ouvertes Recyclerie",
+    description: "Découvrez la recyclerie communale. Ateliers réparation gratuits.",
+    category: "Environnement",
+    date: "2026-07-18",
+    time: "10h00 – 17h00",
+    location: "Recyclerie de Ville",
+    address: "Zone Artisanale, Rue du Tri 2",
+    image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600",
+    isFree: true,
+    organizer: "Commune de Ville",
+    tags: ["Écologie", "Solidarité", "DIY"],
+  },
+];
