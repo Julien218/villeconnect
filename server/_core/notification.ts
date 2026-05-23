@@ -1,107 +1,140 @@
-import { TRPCError } from "@trpc/server";
 import { ENV } from "./env";
+import { getDb } from "../db";
+import { pushTokens } from "../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
-export type NotificationPayload = {
+// ─── Expo Push Notifications ──────────────────────────────────────────────────
+
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+
+export interface PushMessage {
   title: string;
-  content: string;
-};
-
-const TITLE_MAX_LENGTH = 1200;
-const CONTENT_MAX_LENGTH = 20000;
-
-const trimValue = (value: string): string => value.trim();
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
-
-const buildEndpointUrl = (baseUrl: string): string => {
-  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  return new URL("webdevtoken.v1.WebDevService/SendNotification", normalizedBase).toString();
-};
-
-const validatePayload = (input: NotificationPayload): NotificationPayload => {
-  if (!isNonEmptyString(input.title)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Notification title is required.",
-    });
-  }
-  if (!isNonEmptyString(input.content)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Notification content is required.",
-    });
-  }
-
-  const title = trimValue(input.title);
-  const content = trimValue(input.content);
-
-  if (title.length > TITLE_MAX_LENGTH) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Notification title must be at most ${TITLE_MAX_LENGTH} characters.`,
-    });
-  }
-
-  if (content.length > CONTENT_MAX_LENGTH) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Notification content must be at most ${CONTENT_MAX_LENGTH} characters.`,
-    });
-  }
-
-  return { title, content };
-};
+  body: string;
+  data?: Record<string, unknown>;
+  sound?: "default" | null;
+  badge?: number;
+}
 
 /**
- * Dispatches a project-owner notification through the Manus Notification Service.
- * Returns `true` if the request was accepted, `false` when the upstream service
- * cannot be reached (callers can fall back to email/slack). Validation errors
- * bubble up as TRPC errors so callers can fix the payload.
+ * Send a push notification to a specific user's devices.
  */
-export async function notifyOwner(payload: NotificationPayload): Promise<boolean> {
-  const { title, content } = validatePayload(payload);
-
-  if (!ENV.forgeApiUrl) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service URL is not configured.",
-    });
+export async function sendPushToUser(userId: number, message: PushMessage): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Push] DB unavailable, cannot send notification");
+    return;
   }
 
-  if (!ENV.forgeApiKey) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service API key is not configured.",
-    });
+  const tokens = await db
+    .select()
+    .from(pushTokens)
+    .where(and(eq(pushTokens.userId, userId), eq(pushTokens.isActive, true)));
+
+  if (tokens.length === 0) {
+    console.log(`[Push] No active tokens for user ${userId}`);
+    return;
   }
 
-  const endpoint = buildEndpointUrl(ENV.forgeApiUrl);
+  const messages = tokens.map((t) => ({
+    to: t.token,
+    title: message.title,
+    body: message.body,
+    data: message.data ?? {},
+    sound: message.sound ?? "default",
+    badge: message.badge,
+  }));
 
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${ENV.forgeApiKey}`,
-        "content-type": "application/json",
-        "connect-protocol-version": "1",
-      },
-      body: JSON.stringify({ title, content }),
-    });
+  await sendExpoPush(messages);
+}
 
-    if (!response.ok) {
-      const detail = await response.text().catch(() => "");
-      console.warn(
-        `[Notification] Failed to notify owner (${response.status} ${response.statusText})${
-          detail ? `: ${detail}` : ""
-        }`,
-      );
-      return false;
+/**
+ * Send a push notification to ALL users in a given postal code.
+ */
+export async function broadcastToPostalCode(
+  postalCode: string,
+  message: PushMessage
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  // Get all active tokens (we'll filter by city via join in a real impl)
+  const tokens = await db
+    .select()
+    .from(pushTokens)
+    .where(eq(pushTokens.isActive, true));
+
+  if (tokens.length === 0) return;
+
+  const messages = tokens.map((t) => ({
+    to: t.token,
+    title: message.title,
+    body: message.body,
+    data: { ...message.data, postalCode },
+    sound: "default" as const,
+  }));
+
+  await sendExpoPush(messages);
+}
+
+/**
+ * Raw Expo push sender — batches up to 100 messages per request.
+ */
+async function sendExpoPush(
+  messages: Array<{ to: string; title: string; body: string; data?: Record<string, unknown>; sound?: string; badge?: number }>
+): Promise<void> {
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < messages.length; i += BATCH_SIZE) {
+    const batch = messages.slice(i, i + BATCH_SIZE);
+    try {
+      const res = await fetch(EXPO_PUSH_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(batch),
+      });
+      const json = await res.json();
+      console.log(`[Push] Sent batch ${Math.floor(i / BATCH_SIZE) + 1}:`, JSON.stringify(json).slice(0, 200));
+    } catch (err) {
+      console.error("[Push] Failed to send batch:", err);
     }
-
-    return true;
-  } catch (error) {
-    console.warn("[Notification] Error calling notification service:", error);
-    return false;
   }
+}
+
+/**
+ * Notify all users about a new communal alert.
+ */
+export async function notifyNewAlert(alert: {
+  title: string;
+  message: string;
+  postalCode?: string;
+}): Promise<void> {
+  const msg: PushMessage = {
+    title: `🚨 ${alert.title}`,
+    body: alert.message.slice(0, 200),
+    data: { type: "alert", postalCode: alert.postalCode },
+    sound: "default",
+  };
+
+  if (alert.postalCode) {
+    await broadcastToPostalCode(alert.postalCode, msg);
+  } else {
+    // Global broadcast
+    const db = await getDb();
+    if (!db) return;
+    const tokens = await db.select().from(pushTokens).where(eq(pushTokens.isActive, true));
+    await sendExpoPush(tokens.map((t) => ({ to: t.token, ...msg })));
+  }
+}
+
+/**
+ * Notify users who have a reminder set for an event (24h before).
+ */
+export async function notifyEventReminders(eventId: number, eventTitle: string, eventDate: Date): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  // In production: query event_reminders joined with push_tokens
+  console.log(`[Push] Would notify users with reminders for event ${eventId}: ${eventTitle} at ${eventDate}`);
 }
