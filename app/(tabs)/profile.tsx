@@ -4,301 +4,195 @@
  */
 import { useState } from "react";
 import {
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Switch,
-  Alert,
+  Text, View, ScrollView, TouchableOpacity,
+  StyleSheet, Switch, Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
-
-interface SettingItem {
-  id: string;
-  title: string;
-  icon: string;
-  type: "toggle" | "link" | "action";
-  value?: boolean;
-}
+import { useAuth, BELGIAN_CITIES } from "@/contexts/auth-context";
+import { trpc } from "@/lib/trpc";
 
 export default function ProfileScreen() {
   const colors = useColors();
-  useScreenshotProtection(true); // 🔒 Protection capture écran
-  const [notifications, setNotifications] = useState(true);
-  const [promotions, setPromotions] = useState(true);
-  const [alerts, setAlerts] = useState(true);
+  const router = useRouter();
+  const { user, postalCode, city, logout, updateLocation } = useAuth();
 
-  const profileSections = [
-    {
-      title: "Notifications",
-      items: [
-        {
-          id: "notif_general",
-          title: "Notifications générales",
-          icon: "bell.fill",
-          type: "toggle" as const,
-          value: notifications,
-          onToggle: setNotifications,
-        },
-        {
-          id: "notif_promo",
-          title: "Promotions commerces",
-          icon: "tag.fill",
-          type: "toggle" as const,
-          value: promotions,
-          onToggle: setPromotions,
-        },
-        {
-          id: "notif_alerts",
-          title: "Alertes communales",
-          icon: "megaphone.fill",
-          type: "toggle" as const,
-          value: alerts,
-          onToggle: setAlerts,
-        },
-      ],
-    },
-    {
-      title: "Mes activités",
-      items: [
-        {
-          id: "my_requests",
-          title: "Mes demandes DCI",
-          icon: "message.fill",
-          type: "link" as const,
-        },
-        {
-          id: "my_favorites",
-          title: "Mes favoris",
-          icon: "heart.fill",
-          type: "link" as const,
-        },
-        {
-          id: "my_appointments",
-          title: "Mes rendez-vous",
-          icon: "calendar",
-          type: "link" as const,
-        },
-      ],
-    },
-    {
-      title: "Application",
-      items: [
-        {
-          id: "about",
-          title: "À propos de VilleConnect",
-          icon: "info.circle.fill",
-          type: "link" as const,
-        },
-        {
-          id: "privacy",
-          title: "Politique de confidentialité",
-          icon: "doc.text.fill",
-          type: "link" as const,
-        },
-        {
-          id: "terms",
-          title: "Conditions d'utilisation",
-          icon: "doc.text.fill",
-          type: "link" as const,
-        },
-        {
-          id: "contact",
-          title: "Nous contacter",
-          icon: "paperplane.fill",
-          type: "link" as const,
-        },
-      ],
-    },
-  ];
+  const [notifEvents,   setNotifEvents]   = useState(true);
+  const [notifAlerts,   setNotifAlerts]   = useState(true);
+  const [notifShops,    setNotifShops]    = useState(false);
+  const [darkMode,      setDarkMode]      = useState(false);
 
-  const handleItemPress = (item: any) => {
-    if (item.type === "link") {
-      Alert.alert(item.title, "Cette fonctionnalité sera disponible prochainement.");
-    }
+  const handleLogout = () => {
+    Alert.alert(
+      "Changer de commune",
+      "Voulez-vous choisir une autre commune ? Vos préférences locales seront réinitialisées.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Changer de commune",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            router.replace("/login");
+          },
+        },
+      ]
+    );
   };
+
+  const s = styles(colors);
+
+  const SettingRow = ({ icon, label, value, onValueChange, iconColor, type = "toggle", onPress }: any) => (
+    <TouchableOpacity
+      style={[s.settingRow, { borderBottomColor: colors.border }]}
+      onPress={type === "link" || type === "action" ? onPress : undefined}
+      activeOpacity={type === "toggle" ? 1 : 0.7}
+    >
+      <View style={[s.settingIcon, { backgroundColor: (iconColor ?? colors.primary) + "18" }]}>
+        <IconSymbol name={icon} size={18} color={iconColor ?? colors.primary} />
+      </View>
+      <Text style={[s.settingLabel, { color: colors.foreground }]}>{label}</Text>
+      {type === "toggle" && (
+        <Switch
+          value={value}
+          onValueChange={onValueChange}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor="#fff"
+        />
+      )}
+      {(type === "link" || type === "action") && (
+        <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <ScreenContainer>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.foreground }]}>Profil</Text>
+        <View style={s.header}>
+          <Text style={[s.title, { color: colors.foreground }]}>Profil</Text>
         </View>
 
-        {/* User Card (Optional) */}
-        <View style={[styles.userCard, { backgroundColor: colors.surface }]}>
-          <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-            <IconSymbol name="person.fill" size={32} color={colors.primary} />
-          </View>
-          <View style={styles.userInfo}>
-            <Text style={[styles.userName, { color: colors.foreground }]}>Citoyen</Text>
-            <Text style={[styles.userSubtitle, { color: colors.muted }]}>
-              Profil optionnel non configuré
+        {/* User card */}
+        <View style={[s.userCard, { backgroundColor: colors.surface }]}>
+          <View style={[s.avatar, { backgroundColor: colors.primary }]}>
+            <Text style={s.avatarText}>
+              {user?.name ? user.name[0].toUpperCase() : "V"}
             </Text>
           </View>
-          <TouchableOpacity
-            style={[styles.editButton, { backgroundColor: colors.primary }]}
-            onPress={() => Alert.alert("Profil", "La création de profil sera disponible prochainement.")}
-          >
-            <Text style={styles.editButtonText}>Configurer</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Settings Sections */}
-        {profileSections.map((section) => (
-          <View key={section.title} style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {section.title}
+          <View style={{ flex: 1 }}>
+            <Text style={[s.userName, { color: colors.foreground }]}>
+              {user?.name ?? "Citoyen VilleConnect"}
             </Text>
-            <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
-              {section.items.map((item, index) => (
-                <View key={item.id}>
-                  <TouchableOpacity
-                    style={styles.settingItem}
-                    onPress={() => handleItemPress(item)}
-                    disabled={item.type === "toggle"}
-                    activeOpacity={item.type === "toggle" ? 1 : 0.7}
-                  >
-                    <View style={[styles.settingIcon, { backgroundColor: colors.primary + "15" }]}>
-                      <IconSymbol name={item.icon as any} size={18} color={colors.primary} />
-                    </View>
-                    <Text style={[styles.settingTitle, { color: colors.foreground }]}>
-                      {item.title}
-                    </Text>
-                    {item.type === "toggle" && (
-                      <Switch
-                        value={item.value}
-                        onValueChange={item.onToggle}
-                        trackColor={{ false: colors.border, true: colors.primary + "80" }}
-                        thumbColor={item.value ? colors.primary : colors.muted}
-                      />
-                    )}
-                    {item.type === "link" && (
-                      <IconSymbol name="chevron.right" size={16} color={colors.muted} />
-                    )}
-                  </TouchableOpacity>
-                  {index < section.items.length - 1 && (
-                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                  )}
-                </View>
-              ))}
+            {user?.email && (
+              <Text style={[s.userEmail, { color: colors.muted }]}>{user.email}</Text>
+            )}
+            <View style={[s.communeBadge, { backgroundColor: colors.communal + "15" }]}>
+              <IconSymbol name="location.fill" size={12} color={colors.communal} />
+              <Text style={[s.communeText, { color: colors.communal }]}>
+                {city ?? "Commune non définie"} {postalCode ? `(${postalCode})` : ""}
+              </Text>
             </View>
           </View>
-        ))}
-
-        {/* App Version */}
-        <View style={styles.versionContainer}>
-          <Text style={[styles.versionText, { color: colors.muted }]}>
-            VilleConnect v1.0.0
-          </Text>
-          <Text style={[styles.versionSubtext, { color: colors.muted }]}>
-            La Ville Web Intelligente
-          </Text>
+          <View style={[s.roleBadge, { backgroundColor: colors.primary + "15" }]}>
+            <Text style={[s.roleText, { color: colors.primary }]}>
+              {user?.role === "admin" ? "Admin" : user?.role === "pro" ? "Pro" : "Citoyen"}
+            </Text>
+          </View>
         </View>
+
+        {/* Stats rapides */}
+        <View style={[s.statsRow, { backgroundColor: colors.surface }]}>
+          {[
+            { label: "Demandes", value: "—", icon: "message.fill", color: colors.primary },
+            { label: "Rappels", value: "—", icon: "bell.fill", color: colors.communal },
+            { label: "Favoris", value: "—", icon: "heart.fill", color: colors.error },
+          ].map((st) => (
+            <View key={st.label} style={s.statItem}>
+              <IconSymbol name={st.icon as any} size={20} color={st.color} />
+              <Text style={[s.statValue, { color: colors.foreground }]}>{st.value}</Text>
+              <Text style={[s.statLabel, { color: colors.muted }]}>{st.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Notifications */}
+        <View style={[s.section, { backgroundColor: colors.surface }]}>
+          <Text style={[s.sectionTitle, { color: colors.foreground }]}>🔔 Notifications</Text>
+          <SettingRow icon="calendar.badge.plus" label="Événements & activités" value={notifEvents} onValueChange={setNotifEvents} iconColor={colors.communal} />
+          <SettingRow icon="exclamationmark.triangle.fill" label="Alertes communales" value={notifAlerts} onValueChange={setNotifAlerts} iconColor={colors.error} />
+          <SettingRow icon="storefront.fill" label="Promotions commerces" value={notifShops} onValueChange={setNotifShops} iconColor={colors.secondary} />
+        </View>
+
+        {/* Préférences */}
+        <View style={[s.section, { backgroundColor: colors.surface }]}>
+          <Text style={[s.sectionTitle, { color: colors.foreground }]}>⚙️ Préférences</Text>
+          <SettingRow
+            icon="location.fill"
+            label={`Ma commune : ${city ?? "Non définie"}`}
+            type="action"
+            iconColor={colors.primary}
+            onPress={handleLogout}
+          />
+          <SettingRow
+            icon="moon.fill"
+            label="Mode sombre"
+            value={darkMode}
+            onValueChange={setDarkMode}
+            iconColor="#7C3AED"
+          />
+          <SettingRow icon="globe" label="Langue" type="link" iconColor={colors.muted} onPress={() => {}} />
+        </View>
+
+        {/* Compte */}
+        <View style={[s.section, { backgroundColor: colors.surface }]}>
+          <Text style={[s.sectionTitle, { color: colors.foreground }]}>👤 Compte</Text>
+          <SettingRow icon="lock.fill" label="Confidentialité" type="link" iconColor={colors.muted} onPress={() => {}} />
+          <SettingRow icon="doc.text.fill" label="Conditions d'utilisation" type="link" iconColor={colors.muted} onPress={() => {}} />
+          <SettingRow icon="info.circle.fill" label="À propos de VilleConnect" type="link" iconColor={colors.muted} onPress={() => {}} />
+        </View>
+
+        {/* Version */}
+        <Text style={[s.version, { color: colors.muted }]}>VilleConnect v1.0.0 • © 2026 Julien Pagin</Text>
+
+        {/* Changer de commune */}
+        <TouchableOpacity style={[s.logoutBtn, { borderColor: colors.error + "40" }]} onPress={handleLogout}>
+          <IconSymbol name="location.fill" size={16} color={colors.error} />
+          <Text style={[s.logoutText, { color: colors.error }]}>Changer de commune</Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </ScreenContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  userCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 16,
-    padding: 16,
-    borderRadius: 16,
-    gap: 14,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  userSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  editButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: "#FFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  section: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  sectionCard: {
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    gap: 12,
-  },
-  settingIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  settingTitle: {
-    flex: 1,
-    fontSize: 15,
-  },
-  divider: {
-    height: 1,
-    marginLeft: 62,
-  },
-  versionContainer: {
-    alignItems: "center",
-    marginTop: 32,
-    paddingBottom: 16,
-  },
-  versionText: {
-    fontSize: 13,
-  },
-  versionSubtext: {
-    fontSize: 12,
-    marginTop: 4,
-  },
+const styles = (c: any) => StyleSheet.create({
+  header:       { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  title:        { fontSize: 28, fontWeight: "800" },
+  userCard:     { flexDirection: "row", alignItems: "flex-start", gap: 14, marginHorizontal: 16, marginBottom: 14, padding: 16, borderRadius: 16 },
+  avatar:       { width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  avatarText:   { color: "#fff", fontSize: 26, fontWeight: "800" },
+  userName:     { fontSize: 18, fontWeight: "700", marginBottom: 2 },
+  userEmail:    { fontSize: 13, marginBottom: 6 },
+  communeBadge: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  communeText:  { fontSize: 12, fontWeight: "600" },
+  roleBadge:    { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, alignSelf: "flex-start" },
+  roleText:     { fontSize: 11, fontWeight: "700" },
+  statsRow:     { flexDirection: "row", marginHorizontal: 16, marginBottom: 14, padding: 16, borderRadius: 16 },
+  statItem:     { flex: 1, alignItems: "center", gap: 4 },
+  statValue:    { fontSize: 22, fontWeight: "800" },
+  statLabel:    { fontSize: 11 },
+  section:      { marginHorizontal: 16, marginBottom: 14, borderRadius: 16, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", marginBottom: 8 },
+  settingRow:   { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, gap: 12 },
+  settingIcon:  { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  settingLabel: { flex: 1, fontSize: 14, fontWeight: "500" },
+  version:      { textAlign: "center", fontSize: 11, marginTop: 4, marginBottom: 16 },
+  logoutBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", marginHorizontal: 16, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, gap: 8 },
+  logoutText:   { fontSize: 15, fontWeight: "600" },
 });
