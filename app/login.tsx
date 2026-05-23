@@ -119,8 +119,8 @@ export default function LoginScreen() {
           <View style={s.logoCircle}>
             <Text style={s.logoText}>V</Text>
           </View>
-          <Text style={s.logoTitle}>VilleConnect</Text>
-          <Text style={s.logoSub}>Votre commune dans votre poche</Text>
+          <Text style={s.logoTitle}>🏘️</Text>
+          <Text style={s.logoSub}>Votre commune, réinventée</Text>
         </View>
 
         <Animated.View style={[s.card, { opacity: fadeAnim }]}>
@@ -130,8 +130,7 @@ export default function LoginScreen() {
             <View style={s.stepWrap}>
               <Text style={s.stepTitle}>Bienvenue 👋</Text>
               <Text style={s.stepDesc}>
-                VilleConnect vous connecte à votre commune : événements, commerces, alertes,
-                démarches citoyennes — tout en un seul endroit.
+                Une plateforme pensée pour vous connecter à votre commune : événements, commerces, alertes, démarches citoyennes — tout en un seul endroit.
               </Text>
               <View style={s.featureList}>
                 {[
@@ -248,7 +247,7 @@ export default function LoginScreen() {
             <View style={[s.stepWrap, { alignItems: "center" }]}>
               <Text style={{ fontSize: 60 }}>🎉</Text>
               <Text style={[s.stepTitle, { textAlign: "center" }]}>
-                Bienvenue à {selectedCity} !
+                Bienvenue à {selectedCity} ! 🎉
               </Text>
               <Text style={[s.stepDesc, { textAlign: "center" }]}>
                 Votre commune est configurée. Chargement en cours...
@@ -261,7 +260,7 @@ export default function LoginScreen() {
 
         {/* Footer */}
         <Text style={[s.footer, { color: colors.muted }]}>
-          © 2026 VilleConnect — Julien Pagin. Tous droits réservés.
+          © 2026 Julien Pagin. Tous droits réservés.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
