@@ -73,6 +73,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="fuel"
+        options={{
+          title: "Carburant",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="fuelpump.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="pro"
+        options={{
+          title: "Pro",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="chart.bar.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profil",
