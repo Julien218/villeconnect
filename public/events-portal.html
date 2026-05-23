@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VilleConnect — Portail Organisateurs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:    #2563EB;
+      --primary-dk: #1D4ED8;
+      --secondary:  #059669;
+      --accent:     #F59E0B;
+      --communal:   #7C3AED;
+      --bg:         #F8FAFC;
+      --surface:    #FFFFFF;
+      --fg:         #1E293B;
+      --muted:      #64748B;
+      --border:     #E2E8F0;
+      --error:      #EF4444;
+      --success:    #22C55E;
+      --radius:     14px;
+      --shadow:     0 2px 16px rgba(0,0,0,.07);
+      --shadow-lg:  0 8px 40px rgba(0,0,0,.12);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+    }
+
+    /* ── Helpers ───────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .sr-only { position: absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+    /* ── NAVBAR ────────────────────────────────────────────────────────────── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .navbar-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 20px; color: var(--primary);
+      text-decoration: none;
+    }
+    .navbar-brand .dot { color: var(--communal); }
+    .navbar-logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--communal));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 15px;
+    }
+    .navbar-links { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      color: var(--muted); cursor: pointer; text-decoration: none;
+      transition: all .15s;
+    }
+    .nav-link:hover { background: var(--bg); color: var(--fg); }
+    .nav-link.active { color: var(--primary); background: #EFF6FF; }
+    .btn-nav {
+      padding: 9px 18px; border-radius: 10px;
+      background: var(--primary); color: #fff;
+      font-weight: 600; font-size: 14px; border: none; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-nav:hover { background: var(--primary-dk); }
+
+    /* ── HERO ──────────────────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #1E293B 0%, #2563EB 50%, #7C3AED 100%);
+      color: #fff; padding: 72px 24px 56px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+      color: #fff; padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; letter-spacing: .5px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 52px); font-weight: 800;
+      line-height: 1.15; margin-bottom: 16px;
+    }
+    .hero h1 span { color: #FCD34D; }
+    .hero p {
+      font-size: 17px; opacity: .85; max-width: 580px;
+      margin: 0 auto 36px; line-height: 1.6;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-hero-primary {
+      padding: 14px 28px; border-radius: 12px;
+      background: #fff; color: var(--primary);
+      font-weight: 700; font-size: 15px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+    .btn-hero-secondary {
+      padding: 14px 28px; border-radius: 12px;
+      background: transparent; color: #fff;
+      font-weight: 600; font-size: 15px;
+      border: 2px solid rgba(255,255,255,.4); cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,.1); }
+
+    /* ── STATS BAR ─────────────────────────────────────────────────────────── */
+    .stats-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+    }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 26px; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+
+    /* ── MAIN LAYOUT ───────────────────────────────────────────────────────── */
+    .main-container {
+      max-width: 1280px; margin: 0 auto;
+      padding: 40px 24px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .main-container { grid-template-columns: 1fr; }
+    }
+
+    /* ── SIDEBAR ───────────────────────────────────────────────────────────── */
+    .sidebar { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 80px; }
+
+    /* ── CARDS ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .card-header h2 { font-size: 16px; font-weight: 700; }
+    .card-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .card-body { padding: 20px; }
+
+    /* ── SEARCH BOX ────────────────────────────────────────────────────────── */
+    .search-wrapper {
+      position: relative;
+    }
+    .search-input {
+      width: 100%; padding: 12px 44px 12px 16px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; font-family: inherit; background: var(--bg);
+      color: var(--fg); outline: none; transition: border-color .15s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .search-icon {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none;
+    }
+
+    /* ── FILTER CHIPS ──────────────────────────────────────────────────────── */
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 5px 12px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .chip:hover { border-color: var(--communal); color: var(--communal); }
+    .chip.active {
+      background: var(--communal); border-color: var(--communal);
+      color: #fff;
+    }
+
+    /* ── QUICK EVENT CARDS (sidebar) ───────────────────────────────────────── */
+    .quick-event {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .1s;
+    }
+    .quick-event:last-child { border-bottom: none; padding-bottom: 0; }
+    .quick-event:hover .quick-event-title { color: var(--primary); }
+    .quick-date {
+      min-width: 42px; height: 46px; border-radius: 10px;
+      background: #EEF2FF; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .quick-date-day { font-size: 16px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .quick-date-mon { font-size: 9px; font-weight: 700; color: var(--primary); text-transform: uppercase; }
+    .quick-event-title { font-size: 13px; font-weight: 600; color: var(--fg); line-height: 1.3; }
+    .quick-event-loc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .quick-event-badge {
+      display: inline-block; padding: 2px 7px; border-radius: 5px;
+      font-size: 10px; font-weight: 600; margin-top: 4px;
+    }
+
+    /* ── MAIN CONTENT ──────────────────────────────────────────────────────── */
+    .content { display: flex; flex-direction: column; gap: 28px; }
+
+    /* ── TABS ──────────────────────────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 5px; box-shadow: var(--shadow);
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 16px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      border: none; background: transparent; color: var(--muted);
+      transition: all .15s; display: flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+    .tab-btn:hover:not(.active) { background: var(--bg); color: var(--fg); }
+
+    /* ── EVENTS GRID ───────────────────────────────────────────────────────── */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .event-card {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      overflow: hidden; transition: transform .2s, box-shadow .2s;
+      cursor: pointer;
+    }
+    .event-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .event-card-img {
+      width: 100%; height: 160px; object-fit: cover;
+      background: linear-gradient(135deg, #EEF2FF, #F5F3FF);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+    }
+    .event-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .event-card-body { padding: 16px; }
+    .event-card-badges {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .badge {
+      padding: 3px 9px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-cat { background: #F5F3FF; color: var(--communal); }
+    .badge-free { background: #DCFCE7; color: var(--secondary); }
+    .badge-paid { background: #FEF3C7; color: #92400E; }
+    .badge-new { background: #EFF6FF; color: var(--primary); }
+    .event-card-title {
+      font-size: 16px; font-weight: 700; color: var(--fg);
+      margin-bottom: 6px; line-height: 1.3;
+    }
+    .event-card-desc {
+      font-size: 13px; color: var(--muted); line-height: 1.5;
+      margin-bottom: 12px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .event-card-meta { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .meta-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .meta-icon { font-size: 13px; }
+    .event-card-footer {
+      display: flex; gap: 8px; align-items: center;
+      border-top: 1px solid var(--border); padding-top: 12px;
+    }
+    .btn-sm {
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border: none; transition: all .15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dk); }
+    .btn-outline {
+      background: transparent; color: var(--muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-icon { margin-left: auto; background: var(--bg); color: var(--muted); border: none; }
+    .btn-icon:hover { color: var(--primary); }
+
+    /* ── FORM ──────────────────────────────────────────────────────────────── */
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+    .events-section { display: block; }
+    .events-section.hidden-section { display: none; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label {
+      font-size: 13px; font-weight: 600; color: var(--fg);
+    }
+    .form-label .req { color: var(--error); }
+    .form-input, .form-select, .form-textarea {
+      padding: 11px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      font-size: 14px; font-family: inherit; color: var(--fg);
+      outline: none; transition: border-color .15s, box-shadow .15s;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+    .form-textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+    .form-select { cursor: pointer; }
+
+    .form-tip {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+
+    /* Image upload area */
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 28px; text-align: center; cursor: pointer;
+      transition: all .15s; background: var(--bg);
+    }
+    .upload-area:hover { border-color: var(--primary); background: #EFF6FF; }
+    .upload-icon { font-size: 32px; margin-bottom: 8px; }
+    .upload-text { font-size: 13px; color: var(--muted); }
+    .upload-text strong { color: var(--primary); }
+
+    /* Checkbox toggle */
+    .toggle-group { display: flex; align-items: center; gap: 10px; }
+    .toggle {
+      position: relative; width: 44px; height: 24px; cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border);
+      border-radius: 24px; transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; top: 3px; left: 3px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+      transition: transform .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--secondary); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .toggle-label { font-size: 14px; color: var(--fg); font-weight: 500; }
+
+    /* Price group */
+    .price-wrapper { position: relative; }
+    .price-wrapper .currency {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-weight: 600; font-size: 14px;
+    }
+    .price-wrapper .form-input { padding-left: 28px; }
+
+    /* Step indicator */
+    .steps {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: 28px;
+    }
+    .step {
+      display: flex; align-items: center; flex: 1;
+    }
+    .step:last-child { flex: 0; }
+    .step-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      border: 2px solid var(--border); background: var(--bg); color: var(--muted);
+      flex-shrink: 0; transition: all .2s;
+    }
+    .step-circle.done { background: var(--secondary); border-color: var(--secondary); color: #fff; }
+    .step-circle.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 4px; }
+    .step-line.done { background: var(--secondary); }
+    .step-label {
+      font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 4px;
+      text-align: center;
+    }
+    .step-label.active { color: var(--primary); }
+    .step-wrapper { display: flex; flex-direction: column; align-items: center; }
+
+    /* Form actions */
+    .form-actions {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .btn-lg {
+      padding: 12px 28px; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      border: none; transition: all .15s;
+    }
+    .btn-lg.btn-primary { background: var(--primary); color: #fff; }
+    .btn-lg.btn-primary:hover { background: var(--primary-dk); }
+    .btn-lg.btn-outline {
+      background: transparent; color: var(--muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-lg.btn-outline:hover { color: var(--fg); border-color: var(--fg); }
+
+    /* ── SUCCESS MODAL ─────────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.visible { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border-radius: 20px;
+      padding: 40px; max-width: 440px; width: 100%;
+      text-align: center; box-shadow: var(--shadow-lg);
+      transform: scale(.95); transition: transform .2s;
+    }
+    .modal-overlay.visible .modal { transform: scale(1); }
+    .modal-icon { font-size: 56px; margin-bottom: 16px; }
+    .modal h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .modal p { font-size: 15px; color: var(--muted); line-height: 1.5; margin-bottom: 24px; }
+    .modal-ref {
+      background: var(--bg); border-radius: 8px; padding: 10px 16px;
+      font-size: 13px; color: var(--muted); margin-bottom: 24px;
+    }
+    .modal-ref strong { color: var(--primary); font-family: monospace; font-size: 15px; }
+
+    /* ── EMPTY STATE ───────────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .empty-state .icon { font-size: 52px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 18px; font-weight: 600; color: var(--fg); margin-bottom: 6px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── NOTIFICATION BANNER ───────────────────────────────────────────────── */
+    .notif-banner {
+      background: linear-gradient(135deg, #EFF6FF, #F5F3FF);
+      border: 1px solid #C7D2FE; border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .notif-icon { font-size: 22px; flex-shrink: 0; }
+    .notif-title { font-size: 14px; font-weight: 700; color: var(--fg); }
+    .notif-desc { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+    /* ── FOOTER ────────────────────────────────────────────────────────────── */
+    footer {
+      background: #1E293B; color: #94A3B8;
+      padding: 32px 24px; text-align: center;
+      margin-top: 60px;
+    }
+    footer .footer-brand { color: #fff; font-weight: 700; font-size: 18px; margin-bottom: 8px; }
+    footer p { font-size: 13px; }
+    footer a { color: #60A5FA; text-decoration: none; }
+    footer .footer-links { display: flex; gap: 20px; justify-content: center; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ─────────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <a href="#" class="navbar-brand">
+    <div class="navbar-logo">V</div>
+    Ville<span class="dot">Connect</span>
+  </a>
+  <div class="navbar-links">
+    <a href="#evenements" class="nav-link active" onclick="showTab('browse')">Événements</a>
+    <a href="#soumettre" class="nav-link" onclick="showTab('form')">Soumettre</a>
+    <button class="btn-nav" onclick="showTab('form')">+ Inscrire mon événement</button>
+  </div>
+</nav>
+
+<!-- ── HERO ───────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-badge">📅 Portail Organisateurs — VilleConnect</div>
+  <h1>Faites rayonner<br/><span>vos événements</span> dans la commune</h1>
+  <p>Inscrivez votre festivité, votre marché ou votre activité culturelle et touchez tous les citoyens de votre commune via l'application VilleConnect.</p>
+  <div class="hero-actions">
+    <button class="btn-hero-primary" onclick="showTab('form')">📝 Inscrire mon événement</button>
+    <button class="btn-hero-secondary" onclick="showTab('browse')">🔍 Voir les événements</button>
+  </div>
+</section>
+
+<!-- ── STATS BAR ──────────────────────────────────────────────────────────── -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-value">8</div>
+    <div class="stat-label">Événements publiés</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">6</div>
+    <div class="stat-label">Catégories disponibles</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">3</div>
+    <div class="stat-label">Événements gratuits</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">2 026</div>
+    <div class="stat-label">Citoyens connectés</div>
+  </div>
+</div>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
+<div id="evenements" class="main-container">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Search -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon" style="background:#EFF6FF">🔍</div>
+        <div><h2>Rechercher</h2><p>Trouvez un événement</p></div>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" placeholder="Nom, lieu, tag..." id="searchInput" oninput="filterEvents()" />
+          <span class="search-icon">🔎</span>
+        </div>
+        <div>
+          <div class="form-label" style="margin-bottom:8px">Catégorie</div>
+          <div class="filter-chips" id="filterChips">
+            <span class="chip active" data-cat="tous" onclick="selectCat(this)">Tous</span>
+            <span class="chip" data-cat="Culture" onclick="selectCat(this)">🎭 Culture</span>
+            <span class="chip" data-cat="Sport" onclick="selectCat(this)">⚽ Sport</span>
+            <span class="chip" data-cat="Marché" onclick="selectCat(this)">🛒 Marché</span>
+            <span class="chip" data-cat="Jeunesse" onclick="selectCat(this)">👶 Jeunesse</span>
+            <span class="chip" data-cat="Environnement" onclick="selectCat(this)">🌿 Envir.</span>
+            <span class="chip" data-cat="Communal" onclick="selectCat(this)">🏛️ Communal</span>
+          </div>
+        </div>
+        <div>
+          <div class="form-label" style="margin-bottom:8px">Accès</div>
+          <div class="filter-chips" id="freeChips">
+            <span class="chip active" data-free="tous" onclick="selectFree(this)">Tous</span>
+            <span class="chip" data-free="gratuit" onclick="selectFree(this)">✅ Gratuits</span>
+            <span class="chip" data-free="payant" onclick="selectFree(this)">💶 Payants</span>
+          </div>
+        </div>
+        <button class="btn-sm btn-outline" style="width:100%" onclick="resetFilters()">↺ Réinitialiser les filtres</button>
+      </div>
+    </div>
+
+    <!-- Prochains événements rapides -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon" style="background:#F5F3FF">📅</div>
+        <div><h2>À venir</h2><p>Les plus proches</p></div>
+      </div>
+      <div class="card-body" id="sidebarEvents">
+        <!-- rempli par JS -->
+      </div>
+    </div>
+
+    <!-- Banner info -->
+    <div class="notif-banner">
+      <div class="notif-icon">💡</div>
+      <div>
+        <div class="notif-title">Votre événement sur l'app</div>
+        <div class="notif-desc">Une fois approuvé, votre événement apparaît automatiquement sur l'application mobile VilleConnect et est notifié aux citoyens de la commune.</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────────────────────── -->
+  <div class="content">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-browse" onclick="showTab('browse')">🗓️ Événements publiés</button>
+      <button class="tab-btn" id="tab-form" onclick="showTab('form')">✍️ Inscrire un événement</button>
+    </div>
+
+    <!-- ── BROWSE SECTION ────────────────────────────────────────────────── -->
+    <div id="section-browse" class="events-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;color:var(--muted)" id="resultsCount">8 événements trouvés</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:13px;color:var(--muted)">Trier par :</span>
+          <select class="form-select" style="width:auto;padding:6px 10px;font-size:13px" onchange="sortEvents(this.value)">
+            <option value="date">Date</option>
+            <option value="name">Nom</option>
+            <option value="free">Gratuits d'abord</option>
+          </select>
+        </div>
+      </div>
+      <div class="events-grid" id="eventsGrid">
+        <!-- rempli par JS -->
+      </div>
+      <div class="empty-state hidden" id="emptyState">
+        <div class="icon">🔍</div>
+        <h3>Aucun événement trouvé</h3>
+        <p>Essayez une autre catégorie ou modifiez votre recherche.</p>
+      </div>
+    </div>
+
+    <!-- ── FORM SECTION ──────────────────────────────────────────────────── -->
+    <div id="section-form" class="form-section">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon" style="background:#FEF3C7">📝</div>
+          <div>
+            <h2>Inscrire votre événement</h2>
+            <p>Formulaire d'inscription — remplissez tous les champs obligatoires</p>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <!-- Steps -->
+          <div class="steps" style="margin-bottom:28px">
+            <div class="step-wrapper">
+              <div class="step-circle active" id="step1-circle">1</div>
+              <div class="step-label active" id="step1-label">Infos générales</div>
+            </div>
+            <div class="step-line" id="line1"></div>
+            <div class="step-wrapper">
+              <div class="step-circle" id="step2-circle">2</div>
+              <div class="step-label" id="step2-label">Détails & lieu</div>
+            </div>
+            <div class="step-line" id="line2"></div>
+            <div class="step-wrapper">
+              <div class="step-circle" id="step3-circle">3</div>
+              <div class="step-label" id="step3-label">Organisateur</div>
+            </div>
+          </div>
+
+          <!-- STEP 1 -->
+          <div id="formStep1">
+            <div class="form-grid">
+              <div class="form-group full">
+                <label class="form-label">Titre de l'événement <span class="req">*</span></label>
+                <input type="text" class="form-input" id="evTitle" placeholder="Ex : Marché de Noël, Concert Jazz, Tournoi de football..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Catégorie <span class="req">*</span></label>
+                <select class="form-select" id="evCategory">
+                  <option value="">— Sélectionner —</option>
+                  <option>Culture</option>
+                  <option>Sport</option>
+                  <option>Marché</option>
+                  <option>Jeunesse</option>
+                  <option>Environnement</option>
+                  <option>Communal</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Public cible</label>
+                <select class="form-select" id="evAudience">
+                  <option>Tout public</option>
+                  <option>Familles</option>
+                  <option>Enfants (< 12 ans)</option>
+                  <option>Adolescents</option>
+                  <option>Adultes</option>
+                  <option>Seniors</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Description courte <span class="req">*</span></label>
+                <textarea class="form-textarea" id="evDescription" placeholder="Décrivez votre événement en quelques phrases. Cette description sera visible sur l'app VilleConnect..." style="min-height:80px"></textarea>
+                <span class="form-tip">Minimum 30 caractères. Soyez précis et accrocheur !</span>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Tags (mots-clés)</label>
+                <input type="text" class="form-input" id="evTags" placeholder="Ex : famille, plein-air, gratuit, inscription — séparés par des virgules" />
+                <span class="form-tip">Aide les citoyens à trouver votre événement via la recherche</span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-lg btn-primary" onclick="goStep(2)">Suivant →</button>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div id="formStep2" class="hidden">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Date de début <span class="req">*</span></label>
+                <input type="date" class="form-input" id="evDateStart" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date de fin (si multi-jours)</label>
+                <input type="date" class="form-input" id="evDateEnd" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Heure de début <span class="req">*</span></label>
+                <input type="time" class="form-input" id="evTimeStart" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Heure de fin</label>
+                <input type="time" class="form-input" id="evTimeEnd" />
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Nom du lieu <span class="req">*</span></label>
+                <input type="text" class="form-input" id="evLocation" placeholder="Ex : Parc Communal, Salle des fêtes, Stade Municipal..." />
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Adresse complète <span class="req">*</span></label>
+                <input type="text" class="form-input" id="evAddress" placeholder="Rue, numéro, code postal, commune" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Code postal <span class="req">*</span></label>
+                <input type="text" class="form-input" id="evPostal" placeholder="Ex : 1000, 4000, 8000..." maxlength="4" />
+                <span class="form-tip">Code postal belge (4 chiffres)</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Capacité max.</label>
+                <input type="number" class="form-input" id="evCapacity" placeholder="Laisser vide si illimité" min="1" />
+              </div>
+              <div class="form-group full">
+                <div class="toggle-group">
+                  <label class="toggle">
+                    <input type="checkbox" id="evFree" checked onchange="togglePrice()" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="toggle-label">Entrée gratuite</span>
+                </div>
+              </div>
+              <div class="form-group" id="priceGroup" style="display:none">
+                <label class="form-label">Prix d'entrée <span class="req">*</span></label>
+                <div class="price-wrapper">
+                  <span class="currency">€</span>
+                  <input type="number" class="form-input" id="evPrice" placeholder="0.00" min="0" step="0.50" />
+                </div>
+              </div>
+              <div class="form-group" id="priceInfoGroup" style="display:none">
+                <label class="form-label">Détail tarifaire</label>
+                <input type="text" class="form-input" id="evPriceInfo" placeholder="Ex : 5€ adulte / 2€ enfant, Gratuit -12 ans..." />
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Inscription requise ?</label>
+                <select class="form-select" id="evRegistration">
+                  <option value="non">Non — Accès libre</option>
+                  <option value="recommande">Recommandée</option>
+                  <option value="obligatoire">Obligatoire</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Image de l'événement</label>
+                <div class="upload-area" onclick="document.getElementById('evImage').click()">
+                  <div class="upload-icon">🖼️</div>
+                  <div class="upload-text"><strong>Cliquez pour choisir une image</strong><br/>JPG, PNG ou WebP — max 5 MB recommandé</div>
+                </div>
+                <input type="file" id="evImage" accept="image/*" class="hidden" onchange="previewImage(this)" />
+                <div id="imagePreview" class="hidden" style="margin-top:10px">
+                  <img id="previewImg" style="max-height:140px;border-radius:8px;border:1px solid var(--border)" />
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-lg btn-outline" onclick="goStep(1)">← Retour</button>
+              <button class="btn-lg btn-primary" onclick="goStep(3)">Suivant →</button>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div id="formStep3" class="hidden">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Nom de l'organisateur <span class="req">*</span></label>
+                <input type="text" class="form-input" id="evOrganizer" placeholder="Association, commune, entreprise, particulier..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Téléphone de contact <span class="req">*</span></label>
+                <input type="tel" class="form-input" id="evPhone" placeholder="+32 4XX XX XX XX" />
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Email de contact <span class="req">*</span></label>
+                <input type="email" class="form-input" id="evEmail" placeholder="contact@votreasbl.be" />
+                <span class="form-tip">Une confirmation sera envoyée à cette adresse</span>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Site web ou page Facebook (optionnel)</label>
+                <input type="url" class="form-input" id="evWebsite" placeholder="https://..." />
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Informations complémentaires</label>
+                <textarea class="form-textarea" id="evExtra" placeholder="Accessibilité PMR, parking, transports en commun, consignes particulières..." style="min-height:80px"></textarea>
+              </div>
+              <div class="form-group full">
+                <div style="background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--border)">
+                  <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+                    <input type="checkbox" id="evConsent" style="margin-top:2px;width:16px;height:16px;flex-shrink:0" />
+                    <span style="font-size:13px;color:var(--muted);line-height:1.5">
+                      Je certifie que les informations fournies sont exactes et j'accepte que cet événement soit publié sur la plateforme VilleConnect et l'application mobile. Je comprends que la commune se réserve le droit de refuser ou modérer tout contenu.
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-lg btn-outline" onclick="goStep(2)">← Retour</button>
+              <button class="btn-lg btn-primary" onclick="submitForm()" style="background:var(--secondary)">✅ Soumettre l'événement</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-brand">🏙️ VilleConnect</div>
+  <div class="footer-links">
+    <a href="#">Politique de confidentialité</a>
+    <a href="#">Conditions d'utilisation</a>
+    <a href="#">Contact commune</a>
+    <a href="#">Télécharger l'app</a>
+  </div>
+  <p>© 2026 Julien Pagin — VilleConnect. Tous droits réservés. Plateforme citoyenne belge.</p>
+</footer>
+
+<!-- ── SUCCESS MODAL ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h2>Événement soumis !</h2>
+    <p>Votre événement a été transmis à la commune pour validation. Vous recevrez une confirmation par email sous 24–48h.</p>
+    <div class="modal-ref">
+      Numéro de référence : <strong id="refNumber"></strong>
+    </div>
+    <button class="btn-lg btn-primary" style="width:100%" onclick="closeModal()">Voir tous les événements</button>
+  </div>
+</div>
+
+<!-- ── JAVASCRIPT ─────────────────────────────────────────────────────────── -->
+<script>
+  // ── Data ──────────────────────────────────────────────────────────────────
+  const EVENTS_DATA = [
+    {
+      id: "e1", title: "Marché hebdomadaire du samedi",
+      description: "Retrouvez chaque samedi matin les producteurs locaux, maraîchers, fromagers et artisans de la région. Fruits, légumes de saison, produits du terroir belge.",
+      category: "Marché", date: "2026-05-30", time: "8h00 – 13h00",
+      location: "Place du Marché", address: "Place du Marché, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600",
+      isFree: true, organizer: "Commune de Ville",
+      tags: ["Local", "Alimentation", "Hebdomadaire"], emoji: "🛒"
+    },
+    {
+      id: "e2", title: "Concert en plein air — Jazz & Blues",
+      description: "Soirée musicale exceptionnelle dans le parc communal. Trois groupes locaux se succèdent sur scène. Amenez vos pique-niques, l'entrée est libre.",
+      category: "Culture", date: "2026-06-07", time: "19h00 – 23h00",
+      location: "Parc Communal", address: "Rue du Parc 12, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600",
+      isFree: true, organizer: "Maison de la Culture",
+      tags: ["Musique", "Famille", "Soirée"], emoji: "🎷"
+    },
+    {
+      id: "e3", title: "Tournoi de football intercommunal",
+      description: "Le club local ouvre son tournoi annuel aux équipes des communes voisines. Matches toute la journée, buvette et animations pour les enfants.",
+      category: "Sport", date: "2026-06-14", time: "9h00 – 18h00",
+      location: "Stade Municipal", address: "Rue du Stade 5, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600",
+      isFree: true, organizer: "FC VilleConnect",
+      tags: ["Sport", "Jeunesse", "Compétition"], emoji: "⚽"
+    },
+    {
+      id: "e4", title: "Atelier jardinage urbain",
+      description: "Apprenez les bases du compostage, de la permaculture et du potager balcon. Matériel fourni. Places limitées à 20 personnes — inscription obligatoire.",
+      category: "Environnement", date: "2026-06-21", time: "10h00 – 12h30",
+      location: "Maison de la Nature", address: "Avenue Verte 3, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600",
+      isFree: false, price: "5€ / personne", organizer: "Éco-quartier Ville",
+      tags: ["Écologie", "Atelier", "Inscription"], emoji: "🌱"
+    },
+    {
+      id: "e5", title: "Fête de quartier — Rue des Acacias",
+      description: "La rue des Acacias ferme à la circulation pour une après-midi de fête entre voisins. Jeux pour enfants, musique, barbecue collectif.",
+      category: "Communal", date: "2026-07-05", time: "15h00 – 21h00",
+      location: "Rue des Acacias", address: "Rue des Acacias, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=600",
+      isFree: true, organizer: "Comité de quartier",
+      tags: ["Voisinage", "Famille", "Convivialité"], emoji: "🎊"
+    },
+    {
+      id: "e6", title: "Exposition photo — 'Notre Ville'",
+      description: "Les habitants ont photographié leur quotidien pendant 3 mois. 120 clichés exposés à la galerie communale. Vernissage le vendredi 11 juillet à 18h.",
+      category: "Culture", date: "2026-07-11", time: "18h00 – 20h00",
+      location: "Galerie Communale", address: "Rue de l'Art 7, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=600",
+      isFree: true, organizer: "Service Culturel",
+      tags: ["Art", "Photo", "Vernissage"], emoji: "📸"
+    },
+    {
+      id: "e7", title: "Stage vacances — Multi-sports jeunes",
+      description: "Stage d'été pour les 8–14 ans : tennis, natation, basket, escalade. Encadrement par des moniteurs diplômés.",
+      category: "Jeunesse", date: "2026-07-07", time: "9h00 – 16h00",
+      location: "Centre Sportif", address: "Boulevard du Sport 20, 1000 Ville",
+      image: "https://images.unsplash.com/photo-1547347298-4074fc3086f0?w=600",
+      isFree: false, price: "45€ / semaine", organizer: "Service Jeunesse",
+      tags: ["Enfants", "Vacances", "Sport"], emoji: "🏊"
+    },
+    {
+      id: "e8", title: "Journée portes ouvertes — Recyclerie",
+      description: "Découvrez la recyclerie communale : dépôt de vêtements, meubles, électronique. Ateliers réparation gratuits.",
+      category: "Environnement", date: "2026-07-18", time: "10h00 – 17h00",
+      location: "Recyclerie de Ville", address: "Zone Artisanale, Rue du Tri 2",
+      image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600",
+      isFree: true, organizer: "Commune de Ville",
+      tags: ["Écologie", "Solidarité", "DIY"], emoji: "♻️"
+    },
+  ];
+
+  let activeEvents = [...EVENTS_DATA];
+  let activeCat = "tous";
+  let activeFree = "tous";
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  function showTab(tab) {
+    document.getElementById('section-browse').classList.toggle('hidden-section', tab !== 'browse');
+    document.getElementById('section-form').classList.toggle('active', tab === 'form');
+    document.getElementById('tab-browse').classList.toggle('active', tab === 'browse');
+    document.getElementById('tab-form').classList.toggle('active', tab === 'form');
+    if (tab === 'form') {
+      document.getElementById('soumettre')?.scrollIntoView?.();
+      document.querySelector('.main-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // ── Filters ───────────────────────────────────────────────────────────────
+  function selectCat(el) {
+    document.querySelectorAll('#filterChips .chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeCat = el.dataset.cat;
+    filterEvents();
+  }
+  function selectFree(el) {
+    document.querySelectorAll('#freeChips .chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeFree = el.dataset.free;
+    filterEvents();
+  }
+  function resetFilters() {
+    document.querySelector('#filterChips .chip').click();
+    document.querySelector('#freeChips .chip').click();
+    document.getElementById('searchInput').value = '';
+    filterEvents();
+  }
+
+  function filterEvents() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    activeEvents = EVENTS_DATA.filter(e => {
+      const matchCat = activeCat === 'tous' || e.category === activeCat;
+      const matchFree = activeFree === 'tous'
+        || (activeFree === 'gratuit' && e.isFree)
+        || (activeFree === 'payant' && !e.isFree);
+      const matchQ = !q || e.title.toLowerCase().includes(q)
+        || e.location.toLowerCase().includes(q)
+        || e.tags.some(t => t.toLowerCase().includes(q))
+        || e.organizer.toLowerCase().includes(q);
+      return matchCat && matchFree && matchQ;
+    });
+    renderEvents();
+  }
+
+  function sortEvents(by) {
+    if (by === 'date') activeEvents.sort((a,b) => a.date.localeCompare(b.date));
+    if (by === 'name') activeEvents.sort((a,b) => a.title.localeCompare(b.title));
+    if (by === 'free') activeEvents.sort((a,b) => (b.isFree ? 1 : 0) - (a.isFree ? 1 : 0));
+    renderEvents();
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderEvents() {
+    const grid = document.getElementById('eventsGrid');
+    const empty = document.getElementById('emptyState');
+    const count = document.getElementById('resultsCount');
+
+    count.textContent = activeEvents.length + ' événement' + (activeEvents.length > 1 ? 's' : '') + ' trouvé' + (activeEvents.length > 1 ? 's' : '');
+
+    if (activeEvents.length === 0) {
+      grid.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    grid.innerHTML = activeEvents.map(ev => {
+      const d = new Date(ev.date);
+      const day = d.getDate();
+      const mon = d.toLocaleDateString('fr-BE', { month: 'short' }).toUpperCase();
+      const fullDate = d.toLocaleDateString('fr-BE', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+      return `
+        <div class="event-card" onclick="handleEventClick('${ev.id}')">
+          <div class="event-card-img">
+            <img src="${ev.image}" alt="${ev.title}" onerror="this.parentElement.innerHTML='${ev.emoji}'" />
+          </div>
+          <div class="event-card-body">
+            <div class="event-card-badges">
+              <span class="badge badge-cat">${ev.category}</span>
+              ${ev.isFree ? '<span class="badge badge-free">✅ Gratuit</span>' : `<span class="badge badge-paid">💶 ${ev.price || 'Payant'}</span>`}
+            </div>
+            <div class="event-card-title">${ev.title}</div>
+            <div class="event-card-desc">${ev.description}</div>
+            <div class="event-card-meta">
+              <div class="meta-row"><span class="meta-icon">📅</span>${fullDate}</div>
+              <div class="meta-row"><span class="meta-icon">⏰</span>${ev.time}</div>
+              <div class="meta-row"><span class="meta-icon">📍</span>${ev.location}</div>
+              <div class="meta-row"><span class="meta-icon">👤</span>${ev.organizer}</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+              ${ev.tags.map(t => `<span style="font-size:11px;color:var(--muted);background:var(--bg);padding:2px 7px;border-radius:5px;border:1px solid var(--border)">#${t}</span>`).join('')}
+            </div>
+            <div class="event-card-footer">
+              <button class="btn-sm btn-primary" onclick="event.stopPropagation();reprendreEvent('${ev.id}')">📋 Reprendre</button>
+              <button class="btn-sm btn-outline" onclick="event.stopPropagation()">🔔 Me rappeler</button>
+              <button class="btn-sm btn-icon btn-outline" onclick="event.stopPropagation()" title="Partager">↗️</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Sidebar quick events ──────────────────────────────────────────────────
+  function renderSidebar() {
+    const el = document.getElementById('sidebarEvents');
+    el.innerHTML = EVENTS_DATA.slice(0, 5).map(ev => {
+      const d = new Date(ev.date);
+      const day = d.getDate();
+      const mon = d.toLocaleDateString('fr-BE', { month: 'short' }).toUpperCase();
+      return `
+        <div class="quick-event" onclick="showTab('browse')">
+          <div class="quick-date">
+            <div class="quick-date-day">${day}</div>
+            <div class="quick-date-mon">${mon}</div>
+          </div>
+          <div>
+            <div class="quick-event-title">${ev.title}</div>
+            <div class="quick-event-loc">📍 ${ev.location}</div>
+            <span class="quick-event-badge" style="background:${ev.isFree ? '#DCFCE7' : '#FEF3C7'};color:${ev.isFree ? '#059669' : '#92400E'}">
+              ${ev.isFree ? 'Gratuit' : ev.price || 'Payant'}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Handle event click (detail) ───────────────────────────────────────────
+  function handleEventClick(id) {
+    const ev = EVENTS_DATA.find(e => e.id === id);
+    if (!ev) return;
+    const d = new Date(ev.date);
+    alert(`📅 ${ev.title}\n\n📅 ${d.toLocaleDateString('fr-BE', {weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n⏰ ${ev.time}\n📍 ${ev.location}\n👤 ${ev.organizer}\n\n${ev.description}\n\n${ev.isFree ? '✅ Entrée gratuite' : '💶 ' + (ev.price || 'Payant')}`);
+  }
+
+  // ── Reprendre un événement → pré-remplir le formulaire ───────────────────
+  function reprendreEvent(id) {
+    const ev = EVENTS_DATA.find(e => e.id === id);
+    if (!ev) return;
+    showTab('form');
+    goStep(1);
+
+    setTimeout(() => {
+      document.getElementById('evTitle').value = ev.title + ' (copie)';
+      document.getElementById('evCategory').value = ev.category;
+      document.getElementById('evDescription').value = ev.description;
+      document.getElementById('evTags').value = ev.tags.join(', ');
+      goStep(2);
+      setTimeout(() => {
+        document.getElementById('evLocation').value = ev.location;
+        document.getElementById('evAddress').value = ev.address;
+        document.getElementById('evTimeStart').value = ev.time.split('–')[0].trim().replace('h', ':').padStart(5,'0');
+        document.getElementById('evFree').checked = ev.isFree;
+        togglePrice();
+        goStep(1);
+
+        // Notification
+        const msg = document.createElement('div');
+        msg.innerHTML = `<div style="position:fixed;top:80px;right:20px;z-index:300;background:#1E293B;color:#fff;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);animation:slideIn .3s ease">📋 Événement « ${ev.title} » repris dans le formulaire !</div>`;
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3500);
+      }, 100);
+    }, 200);
+  }
+
+  // ── Form steps ────────────────────────────────────────────────────────────
+  function goStep(n) {
+    [1,2,3].forEach(i => {
+      document.getElementById('formStep'+i).classList.toggle('hidden', i !== n);
+      const circle = document.getElementById('step'+i+'-circle');
+      const label = document.getElementById('step'+i+'-label');
+      if (i < n) { circle.classList.add('done'); circle.classList.remove('active'); circle.textContent = '✓'; }
+      else if (i === n) { circle.classList.add('active'); circle.classList.remove('done'); circle.textContent = i; }
+      else { circle.classList.remove('active','done'); circle.textContent = i; }
+      label.classList.toggle('active', i === n);
+      if (i < 3) {
+        const line = document.getElementById('line'+i);
+        line.classList.toggle('done', i < n);
+      }
+    });
+    document.querySelector('.main-container').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // ── Price toggle ──────────────────────────────────────────────────────────
+  function togglePrice() {
+    const isFree = document.getElementById('evFree').checked;
+    document.getElementById('priceGroup').style.display = isFree ? 'none' : 'block';
+    document.getElementById('priceInfoGroup').style.display = isFree ? 'none' : 'block';
+  }
+
+  // ── Image preview ─────────────────────────────────────────────────────────
+  function previewImage(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('imagePreview').classList.remove('hidden');
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // ── Form submit ───────────────────────────────────────────────────────────
+  function submitForm() {
+    const required = {
+      evOrganizer: 'Nom de l\'organisateur',
+      evPhone: 'Téléphone',
+      evEmail: 'Email',
+    };
+    for (const [id, label] of Object.entries(required)) {
+      if (!document.getElementById(id).value.trim()) {
+        alert('⚠️ Champ obligatoire manquant : ' + label);
+        return;
+      }
+    }
+    if (!document.getElementById('evConsent').checked) {
+      alert('⚠️ Veuillez accepter les conditions avant de soumettre.');
+      return;
+    }
+
+    // Generate ref
+    const ref = 'VC-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 90000 + 10000);
+    document.getElementById('refNumber').textContent = ref;
+
+    // Show modal
+    document.getElementById('successModal').classList.add('visible');
+
+    // Add new event to data (simulation)
+    const newEvent = {
+      id: 'new-' + Date.now(),
+      title: document.getElementById('evTitle').value || 'Nouvel événement',
+      description: document.getElementById('evDescription').value || 'Description à venir.',
+      category: document.getElementById('evCategory').value || 'Autre',
+      date: document.getElementById('evDateStart').value || '2026-08-01',
+      time: document.getElementById('evTimeStart').value + (document.getElementById('evTimeEnd').value ? ' – ' + document.getElementById('evTimeEnd').value : ''),
+      location: document.getElementById('evLocation').value || 'Lieu à confirmer',
+      address: document.getElementById('evAddress').value || '',
+      image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600',
+      isFree: document.getElementById('evFree').checked,
+      price: document.getElementById('evPrice').value ? document.getElementById('evPrice').value + '€' : null,
+      organizer: document.getElementById('evOrganizer').value,
+      tags: document.getElementById('evTags').value.split(',').map(t => t.trim()).filter(Boolean),
+      emoji: '🎉'
+    };
+    EVENTS_DATA.unshift(newEvent);
+    activeEvents = [...EVENTS_DATA];
+    renderEvents();
+    renderSidebar();
+    updateStats();
+  }
+
+  function closeModal() {
+    document.getElementById('successModal').classList.remove('visible');
+    showTab('browse');
+    filterEvents();
+  }
+
+  function updateStats() {
+    const statValues = document.querySelectorAll('.stat-value');
+    statValues[0].textContent = EVENTS_DATA.length;
+    statValues[2].textContent = EVENTS_DATA.filter(e => e.isFree).length;
+  }
+
+  // ── CSS animation ─────────────────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .hidden-section { display: none !important; }
+  `;
+  document.head.appendChild(style);
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  renderEvents();
+  renderSidebar();
+</script>
+</body>
+</html>
