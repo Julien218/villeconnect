@@ -19,7 +19,7 @@ import { useRouter, Href } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
-import { CAROUSEL_ITEMS, SHOPS, COMMUNAL_ALERTS } from "@/data/mock-data";
+import { CAROUSEL_ITEMS, SHOPS, COMMUNAL_ALERTS, COMMUNAL_EVENTS } from "@/data/mock-data";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CAROUSEL_WIDTH = SCREEN_WIDTH - 32;
@@ -46,6 +46,7 @@ export default function HomeScreen() {
     { id: "garages", title: "Garages", icon: "car.fill" as const, color: colors.accent, route: "/shops" as Href },
     { id: "dci", title: "Ma demande", icon: "message.fill" as const, color: colors.primary, route: "/dci" as Href },
     { id: "commune", title: "Commune", icon: "building.columns.fill" as const, color: colors.communal, route: "/commune" as Href },
+    { id: "activities", title: "Activités", icon: "calendar.badge.plus" as const, color: "#7C3AED", route: "/activities" as Href },
   ];
 
   const promotionShops = SHOPS.filter((shop) => shop.hasPromotion);
@@ -180,6 +181,51 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* Upcoming Events Section */}
+        {COMMUNAL_EVENTS.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Prochains événements</Text>
+              <TouchableOpacity onPress={() => router.push("/activities" as Href)}>
+                <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {COMMUNAL_EVENTS.slice(0, 4).map((event) => {
+                const d = new Date(event.date);
+                const day = d.getDate().toString();
+                const month = d.toLocaleDateString("fr-BE", { month: "short" }).toUpperCase();
+                return (
+                  <TouchableOpacity
+                    key={event.id}
+                    style={[styles.eventCard, { backgroundColor: colors.surface }]}
+                    activeOpacity={0.7}
+                    onPress={() => router.push("/activities" as Href)}
+                  >
+                    <View style={[styles.eventDateBadge, { backgroundColor: colors.communal + "15" }]}>
+                      <Text style={[styles.eventDay, { color: colors.communal }]}>{day}</Text>
+                      <Text style={[styles.eventMonth, { color: colors.communal }]}>{month}</Text>
+                    </View>
+                    <Text style={[styles.eventTitle, { color: colors.foreground }]} numberOfLines={2}>
+                      {event.title}
+                    </Text>
+                    <View style={styles.eventMeta}>
+                      <Text style={[styles.eventLocation, { color: colors.muted }]} numberOfLines={1}>
+                        {event.location}
+                      </Text>
+                      {event.isFree && (
+                        <View style={[styles.freeBadge, { backgroundColor: colors.secondary + "20" }]}>
+                          <Text style={[styles.freeText, { color: colors.secondary }]}>Gratuit</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         )}
 
@@ -415,5 +461,48 @@ const styles = StyleSheet.create({
   promoText: {
     fontSize: 12,
     marginTop: 4,
+  },
+  eventCard: {
+    width: 160,
+    padding: 12,
+    borderRadius: 14,
+    marginRight: 10,
+    gap: 8,
+  },
+  eventDateBadge: {
+    width: 44,
+    height: 48,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  eventDay: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  eventMonth: {
+    fontSize: 9,
+    fontWeight: "700",
+  },
+  eventTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  eventMeta: {
+    gap: 4,
+  },
+  eventLocation: {
+    fontSize: 11,
+  },
+  freeBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  freeText: {
+    fontSize: 10,
+    fontWeight: "600",
   },
 });
