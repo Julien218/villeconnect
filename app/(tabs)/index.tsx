@@ -1,3 +1,7 @@
+/**
+ * © 2026 Julien Pagin — VilleConnect. Tous droits réservés.
+ * PROPRIETARY AND CONFIDENTIAL — Unauthorized copying strictly prohibited.
+ */
 import { useRef, useState, useEffect } from "react";
 import {
   ScrollView,
