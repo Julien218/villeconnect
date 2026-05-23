@@ -27,6 +27,7 @@ interface SettingItem {
 
 export default function ProfileScreen() {
   const colors = useColors();
+  useScreenshotProtection(true); // 🔒 Protection capture écran
   const [notifications, setNotifications] = useState(true);
   const [promotions, setPromotions] = useState(true);
   const [alerts, setAlerts] = useState(true);
