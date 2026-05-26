@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ma Commune — Bientôt disponible</title>
+  <meta name="description" content="Ma Commune — L'application citoyenne de Dour. Commerces locaux, événements, alertes communales, carburant et plus encore." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:   #10B981;
+      --green2:  #059669;
+      --blue:    #3B82F6;
+      --dark:    #0F172A;
+      --dark2:   #1E293B;
+      --dark3:   #334155;
+      --text:    #F8FAFC;
+      --muted:   #94A3B8;
+      --card:    rgba(30,41,59,0.8);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background animé ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(16,185,129,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(59,130,246,0.10) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper { position: relative; z-index: 1; }
+
+    /* ── NAVBAR ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15,23,42,0.85);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 18px; font-weight: 800; color: var(--text);
+    }
+    .nav-logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .nav-badge {
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.3);
+      color: var(--green);
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+      gap: 24px;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.25);
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 600; color: var(--green);
+      letter-spacing: 0.5px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 7vw, 72px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      max-width: 800px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    /* ── FORMULAIRE ── */
+    .form-wrapper {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 480px;
+      width: 100%;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    }
+    .form-title {
+      font-size: 18px; font-weight: 700; margin-bottom: 6px;
+    }
+    .form-sub {
+      font-size: 13px; color: var(--muted); margin-bottom: 20px;
+    }
+    .form-row {
+      display: flex; gap: 10px;
+    }
+    .form-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--green); }
+    .form-input::placeholder { color: var(--muted); }
+    .form-btn {
+      background: linear-gradient(135deg, var(--green), var(--green2));
+      border: none;
+      border-radius: 12px;
+      padding: 14px 22px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+      font-family: 'Inter', sans-serif;
+    }
+    .form-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .form-btn:active { transform: translateY(0); }
+    .form-note {
+      font-size: 11px; color: var(--muted); margin-top: 12px; text-align: center;
+    }
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 16px;
+    }
+    .form-success .success-icon { font-size: 40px; margin-bottom: 10px; }
+    .form-success h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .form-success p { font-size: 14px; color: var(--muted); }
+
+    /* ── STORES ── */
+    .stores {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      margin-top: 4px;
+    }
+    .store-btn {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 12px 20px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px; font-weight: 600;
+      transition: background 0.2s, border-color 0.2s;
+      cursor: default;
+      opacity: 0.6;
+    }
+    .store-btn.soon::after {
+      content: 'Bientôt';
+      background: rgba(16,185,129,0.2);
+      color: var(--green);
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
+    .store-icon { font-size: 22px; }
+
+    /* ── MOCKUP ── */
+    .mockup-section {
+      display: flex; justify-content: center;
+      padding: 20px 24px 60px;
+    }
+    .mockup-img {
+      max-width: 340px; width: 100%;
+      border-radius: 24px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-12px); }
+    }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 60px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .features-title {
+      text-align: center;
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .features-sub {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 48px;
+      font-size: 15px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover { transform: translateY(-4px); border-color: rgba(16,185,129,0.3); }
+    .feature-icon {
+      font-size: 32px; margin-bottom: 14px;
+      display: block;
+    }
+    .feature-name {
+      font-size: 16px; font-weight: 700; margin-bottom: 6px;
+    }
+    .feature-desc {
+      font-size: 13px; color: var(--muted); line-height: 1.6;
+    }
+    .feature-badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: var(--green);
+      font-size: 10px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .feature-badge.soon {
+      background: rgba(245,158,11,0.12);
+      border-color: rgba(245,158,11,0.2);
+      color: #F59E0B;
+    }
+
+    /* ── COMPTEUR ── */
+    .counter-section {
+      text-align: center;
+      padding: 48px 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .counter-title {
+      font-size: 14px; font-weight: 600;
+      color: var(--muted); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .counters {
+      display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+    }
+    .counter-item { text-align: center; }
+    .counter-num {
+      font-size: 40px; font-weight: 900;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .counter-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    /* ── CTA FINAL ── */
+    .cta-final {
+      text-align: center;
+      padding: 80px 24px;
+    }
+    .cta-final h2 {
+      font-size: clamp(26px, 5vw, 44px);
+      font-weight: 800; margin-bottom: 16px;
+    }
+    .cta-final p {
+      color: var(--muted); font-size: 16px; margin-bottom: 32px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 24px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-logo { font-size: 14px; font-weight: 700; color: var(--muted); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { color: var(--muted); font-size: 13px; text-decoration: none; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { font-size: 12px; color: var(--dark3); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      .form-row { flex-direction: column; }
+      .form-btn { width: 100%; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <div class="nav-logo-icon">🏘️</div>
+      Ma Commune
+    </div>
+    <div class="nav-badge">✨ Bientôt disponible</div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">📍 Dour · Belgique · 7370</div>
+    <h1>Votre ville,<br/><span>dans votre poche</span></h1>
+    <p class="hero-desc">
+      Commerces locaux, alertes communales, prix carburant, événements, DCI et bien plus.
+      <strong>Ma Commune</strong> connecte les citoyens de Dour à leur quotidien.
+    </p>
+
+    <!-- FORMULAIRE -->
+    <div class="form-wrapper">
+      <div id="form-content">
+        <div class="form-title">🔔 Soyez parmi les premiers !</div>
+        <div class="form-sub">Inscrivez-vous pour être notifié dès le lancement sur App Store & Play Store.</div>
+        <div class="form-row">
+          <input
+            id="email-input"
+            class="form-input"
+            type="email"
+            placeholder="votre@email.be"
+            autocomplete="email"
+          />
+          <button class="form-btn" onclick="submitWaitlist()">Je m'inscris</button>
+        </div>
+        <div class="form-note">🔒 Aucun spam. Juste un email au lancement. Promis.</div>
+      </div>
+      <div id="form-success" class="form-success">
+        <div class="success-icon">🎉</div>
+        <h3>Vous êtes sur la liste !</h3>
+        <p>On vous prévient dès que l'app est disponible sur les stores. À très vite !</p>
+      </div>
+    </div>
+
+    <!-- STORES -->
+    <div class="stores">
+      <div class="store-btn soon">
+        <span class="store-icon">🍎</span>
+        App Store
+      </div>
+      <div class="store-btn soon">
+        <span class="store-icon">🤖</span>
+        Google Play
+      </div>
+    </div>
+  </section>
+
+  <!-- MOCKUP -->
+  <div class="mockup-section">
+    <img
+      class="mockup-img"
+      src="https://media.base44.com/images/public/6a11d1493754e75ce76ee0de/a2f73bc56_generated_image.png"
+      alt="Ma Commune — aperçu de l'application"
+    />
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <h2 class="features-title">Tout ce dont vous avez besoin</h2>
+    <p class="features-sub">Une app pensée pour les citoyens de Dour et de la région.</p>
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <span class="feature-icon">🏪</span>
+        <div class="feature-name">Commerces locaux</div>
+        <div class="feature-desc">Découvrez les boutiques, restaurants et artisans de votre commune. Horaires, promos et contacts en un clic.</div>
+        <span class="feature-badge">Disponible</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">⛽</span>
+        <div class="feature-name">Carburant AI</div>
+        <div class="feature-desc">Prix officiels SPF Économie mis à jour quotidiennement. Trouvez la station la moins chère autour de vous.</div>
+        <span class="feature-badge">Disponible</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🚨</span>
+        <div class="feature-name">Alertes communales</div>
+        <div class="feature-desc">Travaux, fermetures, événements importants. Restez informé en temps réel avec des notifications push.</div>
+        <span class="feature-badge">Disponible</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">📅</span>
+        <div class="feature-name">Activités & Événements</div>
+        <div class="feature-desc">Marchés, tournois, braderies, concerts. Ne ratez plus aucun événement de votre commune.</div>
+        <span class="feature-badge">Disponible</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🤝</span>
+        <div class="feature-name">DCI — Demandes Citoyennes</div>
+        <div class="feature-desc">Besoin d'un plombier, électricien, déménageur ? Postez votre demande et recevez des offres de pros locaux.</div>
+        <span class="feature-badge">Disponible</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🔧</span>
+        <div class="feature-name">Garages & Artisans</div>
+        <div class="feature-desc">Trouvez un garage de confiance, prenez rendez-vous en ligne et comparez les tarifs en toute transparence.</div>
+        <span class="feature-badge">Disponible</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🛒</span>
+        <div class="feature-name">EcoPanier AI</div>
+        <div class="feature-desc">Optimisez vos courses avec l'IA. Menus intelligents, comparaison multi-enseignes et calcul d'économies.</div>
+        <span class="feature-badge soon">Bientôt</span>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🏅</span>
+        <div class="feature-name">Wallet Civique</div>
+        <div class="feature-desc">Gagnez des points en participant à la vie locale. Missions citoyennes, récompenses et fidélité commerçants.</div>
+        <span class="feature-badge soon">Bientôt</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- COMPTEURS -->
+  <div class="counter-section">
+    <div class="counter-title">Dour en chiffres</div>
+    <div class="counters">
+      <div class="counter-item">
+        <div class="counter-num" id="c1">6</div>
+        <div class="counter-label">Commerces référencés</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="c2">2</div>
+        <div class="counter-label">Garages partenaires</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="c3">3</div>
+        <div class="counter-label">Événements à venir</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num">🇧🇪</div>
+        <div class="counter-label">Made in Belgium</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA FINAL -->
+  <section class="cta-final">
+    <h2>Prêt à rejoindre<br/><span style="background:linear-gradient(135deg,#10B981,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">votre commune ?</span></h2>
+    <p>Soyez parmi les premiers à découvrir l'app au lancement.</p>
+    <div class="form-row" style="justify-content:center;gap:10px;flex-wrap:wrap;">
+      <input
+        id="email-input-2"
+        class="form-input"
+        type="email"
+        placeholder="votre@email.be"
+        style="max-width:280px;"
+      />
+      <button class="form-btn" onclick="submitWaitlist2()">Je veux être prévenu !</button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">🏘️ Ma Commune · Dour 7370</div>
+    <div class="footer-links">
+      <a href="mailto:contact@macommune.be">Contact</a>
+      <a href="#">Confidentialité</a>
+    </div>
+    <div class="footer-copy">© 2026 VilleConnect. Tous droits réservés.</div>
+  </footer>
+
+</div>
+
+<script>
+  // ── Formulaire liste d'attente ──────────────────────────────────────────────
+  const WEBHOOK = null; // Remplace par ton endpoint Make/Zapier si besoin
+
+  async function submitEmail(email) {
+    if (!email || !email.includes('@')) {
+      alert('Merci d\'entrer une adresse email valide 😊');
+      return false;
+    }
+    // Stockage local pour test
+    const list = JSON.parse(localStorage.getItem('waitlist') || '[]');
+    if (list.includes(email)) {
+      alert('Cette adresse est déjà enregistrée ! 👍');
+      return false;
+    }
+    list.push(email);
+    localStorage.setItem('waitlist', JSON.stringify(list));
+
+    // Optionnel : webhook externe
+    if (WEBHOOK) {
+      try {
+        await fetch(WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source: 'landing-ma-commune', date: new Date().toISOString() })
+        });
+      } catch(e) { console.error(e); }
+    }
+    return true;
+  }
+
+  async function submitWaitlist() {
+    const email = document.getElementById('email-input').value.trim();
+    const ok = await submitEmail(email);
+    if (ok) {
+      document.getElementById('form-content').style.display = 'none';
+      document.getElementById('form-success').style.display = 'block';
+    }
+  }
+
+  async function submitWaitlist2() {
+    const email = document.getElementById('email-input-2').value.trim();
+    const ok = await submitEmail(email);
+    if (ok) {
+      document.getElementById('email-input-2').value = '';
+      document.getElementById('email-input-2').placeholder = '✅ Enregistré !';
+    }
+  }
+
+  // ── Enter key support ───────────────────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (document.activeElement.id === 'email-input') submitWaitlist();
+      if (document.activeElement.id === 'email-input-2') submitWaitlist2();
+    }
+  });
+</script>
+</body>
+</html>
