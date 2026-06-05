@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect'Ville - CivicLoop™ | Infrastructure Numérique Territoriale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.02em;
+        }
+        
+        body {
+            background: #0a0e1a;
+            min-height: 100vh;
+        }
+
+        .gradient-bg {
+            background: radial-gradient(ellipse at top, #1e293b 0%, #0a0e1a 50%);
+        }
+
+        .glass-effect {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .glass-bright {
+            background: rgba(51, 65, 85, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
+        }
+
+        .gradient-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+        }
+
+        .gradient-civic {
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%);
+        }
+
+        .gradient-merchant {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.5);
+        }
+
+        .floating {
+            animation: floating 6s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(1deg); }
+            66% { transform: translateY(-10px) rotate(-1deg); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { 
+                box-shadow: 0 0 30px rgba(99, 102, 241, 0.4), inset 0 0 30px rgba(99, 102, 241, 0.1);
+            }
+            50% { 
+                box-shadow: 0 0 50px rgba(99, 102, 241, 0.6), inset 0 0 40px rgba(99, 102, 241, 0.15);
+            }
+        }
+
+        .qr-scan-line {
+            animation: qrScan 2.5s ease-in-out infinite;
+        }
+
+        @keyframes qrScan {
+            0%, 100% { transform: translateY(0); opacity: 0.3; }
+            50% { transform: translateY(100%); opacity: 1; }
+        }
+
+        .wallet-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.6) 100%);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .mission-glow {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+            border-left: 4px solid #10b981;
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .city-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.5);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef);
+        }
+
+        .trust-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            animation: trustPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes trustPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .rgpd-badge {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .onboarding-dot {
+            transition: all 0.3s ease;
+        }
+
+        .onboarding-dot.active {
+            width: 32px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+
+        .transaction-item {
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateX(4px);
+        }
+
+        .category-tag {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .category-tag:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .protection-icon {
+            animation: rotateProtection 20s linear infinite;
+        }
+
+        @keyframes rotateProtection {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="gradient-bg">
+    <div id="app"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==================== CONFIGURATION MULTI-TENANT ====================
+        const cities = [
+            { 
+                id: 'bxl_be_001', 
+                name: 'Bruxelles', 
+                country: 'Belgique', 
+                postalCode: '1000',
+                countryCode: 'BE',
+                logo: '🇧🇪',
+                branding: {
+                    primaryColor: '#6366f1',
+                    secondaryColor: '#8b5cf6',
+                    accentColor: '#d946ef'
+                },
+                population: '1.2M',
+                activeUsers: 8234,
+                activeMerchants: 156,
+                civicCreditsCirculating: 245678,
+                config: {
+                    maxDailyEarn: 50,
+                    creditExpiration: 365,
+                    qrValiditySeconds: 30,
+                    minRedemptionAmount: 10,
+                    maxWalletBalance: 5000
+                },
+                legal: {
+                    boipRegistered: true,
+                    euipoRegistered: true,
+                    rgpdCompliant: true,
+                    dpoAssigned: 'dpo@connectville.be'
+                }
+            },
+            { 
+                id: 'par_fr_001', 
+                name: 'Paris 15e', 
+                country: 'France',
+                postalCode: '75015',
+                countryCode: 'FR',
+                logo: '🇫🇷',
+                branding: {
+                    primaryColor: '#ef4444',
+                    secondaryColor: '#f97316',
+                    accentColor: '#ec4899'
+                },
+                population: '230K',
+                activeUsers: 12456,
+                activeMerchants: 234,
+                civicCreditsCirculating: 456789,
+                config: {
+                    maxDailyEarn: 60,
+                    creditExpiration: 365,
+                    qrValiditySeconds: 30,
+                    minRedemptionAmount: 10,
+                    maxWalletBalance: 6000
+                },
+                legal: {
+                    boipRegistered: false,
+                    euipoRegistered: true,
+                    rgpdCompliant: true,
+                    dpoAssigned: 'dpo@connectville.fr'
+                }
+            },
+            { 
+                id: 'ams_nl_001', 
+                name: 'Amsterdam', 
+                country: 'Pays-Bas',
+                postalCode: '1012',
+                countryCode: 'NL',
+                logo: '🇳🇱',
+                branding: {
+                    primaryColor: '#10b981',
+                    secondaryColor: '#06b6d4',
+                    accentColor: '#3b82f6'
+                },
+                population: '850K',
+                activeUsers: 6789,
+                activeMerchants: 189,
+                civicCreditsCirculating: 189234,
+                config: {
+                    maxDailyEarn: 55,
+                    creditExpiration: 365,
+                    qrValiditySeconds: 30,
+                    minRedemptionAmount: 10,
+                    maxWalletBalance: 5500
+                },
+                legal: {
+                    boipRegistered: true,
+                    euipoRegistered: true,
+                    rgpdCompliant: true,
+                    dpoAssigned: 'dpo@connectville.nl'
+                }
+            }
+        ];
+
+        // ==================== DONNÉES UTILISATEURS ====================
+        const userProfiles = {
+            citizen: {
+                id: 'usr_be_001_abc123',
+                email: 'marie.dubois@email.com',
+                firstName: 'Marie',
+                lastName: 'Dubois',
+                phone: '+32 475 12 34 56',
+                type: 'citizen',
+                role: 'citizen',
+                verified: true,
+                deviceFingerprint: 'fp_web_chrome_be_1234567890',
+                twoFactorEnabled: false,
+                trustScore: 94,
+                consentRGPD: true,
+                consentDate: '2026-01-15T10:30:00Z',
+                createdAt: '2025-11-20T08:00:00Z'
+            },
+            merchant: {
+                id: 'mch_be_001_xyz789',
+                businessName: 'La Boulangerie du Coin',
+                owner: 'Jean Martin',
+                email: 'jean@boulangerie.com',
+                phone: '+32 2 123 45 67',
+                type: 'merchant',
+                role: 'merchant',
+                verified: true,
+                subscription: 'premium',
+                rating: 4.8,
+                totalScans: 1234,
+                category: 'Alimentation',
+                address: 'Rue du Commerce 42, 1000 Bruxelles',
+                createdAt: '2025-10-01T09:00:00Z'
+            },
+            admin: {
+                id: 'adm_be_001_admin',
+                name: 'Sophie Leclerc',
+                email: 'admin@ville-bruxelles.be',
+                type: 'admin',
+                role: 'admin',
+                permissions: ['all']
+            }
+        };
+
+        const App = () => {
+            const [currentScreen, setCurrentScreen] = useState('onboarding');
+            const [onboardingStep, setOnboardingStep] = useState(0);
+            const [userType, setUserType] = useState(null);
+            const [selectedCity, setSelectedCity] = useState(null);
+            const [user, setUser] = useState(null);
+            const [showLegalModal, setShowLegalModal] = useState(false);
+            const [acceptedCGU, setAcceptedCGU] = useState(false);
+            const [acceptedRGPD, setAcceptedRGPD] = useState(false);
+            
+            const [civicWallet, setCivicWallet] = useState({
+                availableBalance: 0,
+                totalEarned: 0,
+                totalSpent: 0,
+                totalBonus: 0,
+                totalSponsor: 0,
+                updatedAt: null
+            });
+
+            const [transactions, setTransactions] = useState([]);
+
+            // ==================== ÉCRAN ONBOARDING ====================
+            const OnboardingScreen = () => {
+                const onboardingContent = [
+                    {
+                        icon: '🏙️',
+                        title: 'Bienvenue sur Connect\'Ville',
+                        subtitle: 'Infrastructure Numérique Territoriale',
+                        description: 'Connectez-vous à votre ville et participez activement à la vie locale',
+                        features: ['Multi-villes', 'Sécurisé', 'RGPD 🇪🇺']
+                    },
+                    {
+                        icon: '💎',
+                        title: 'CivicLoop™',
+                        subtitle: 'Le système de récompense local',
+                        description: 'Gagnez des CivicCredits en participant aux missions de votre ville',
+                        features: ['Non monétaire', 'Non transférable', 'Local uniquement']
+                    },
+                    {
+                        icon: '🎯',
+                        title: 'Missions & Récompenses',
+                        subtitle: 'Engagez-vous dans votre commune',
+                        description: 'Participez aux consultations, soutenez les commerces locaux et gagnez des avantages',
+                        features: ['Événements', 'Achats locaux', 'Entraide']
+                    }
+                ];
+
+                const currentContent = onboardingContent[onboardingStep];
+
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-between p-6">
+                        <div className="w-full max-w-md flex-1 flex flex-col justify-center">
+                            <div className="text-center mb-12 floating">
+                                <div className="text-8xl mb-6">{currentContent.icon}</div>
+                                <h1 className="text-4xl font-black text-white mb-3 title-font">{currentContent.title}</h1>
+                                <p className="text-cyan-400 text-lg font-semibold mb-2">{currentContent.subtitle}</p>
+                                <p className="text-slate-400 text-base leading-relaxed max-w-sm mx-auto">{currentContent.description}</p>
+                            </div>
+
+                            <div className="glass-bright rounded-2xl p-6 mb-8">
+                                {currentContent.features.map((feature, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 mb-3 last:mb-0">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                            <i className="fas fa-check text-emerald-400 text-sm"></i>
+                                        </div>
+                                        <span className="text-white font-medium">{feature}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Dots */}
+                            <div className="flex justify-center gap-2 mb-8">
+                                {onboardingContent.map((_, idx) => (
+                                    <div 
+                                        key={idx}
+                                        className={`h-2 rounded-full onboarding-dot ${idx === onboardingStep ? 'active' : 'w-2 bg-slate-700'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="w-full max-w-md space-y-3">
+                            {onboardingStep < onboardingContent.length - 1 ? (
+                                <>
+                                    <button 
+                                        onClick={() => setOnboardingStep(onboardingStep + 1)}
+                                        className="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg"
+                                    >
+                                        Suivant
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentScreen('auth')}
+                                        className="w-full text-slate-400 py-2 font-medium"
+                                    >
+                                        Passer
+                                    </button>
+                                </>
+                            ) : (
+                                <button 
+                                    onClick={() => setCurrentScreen('auth')}
+                                    className="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg"
+                                >
+                                    Commencer
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            // ==================== ÉCRAN AUTHENTIFICATION ====================
+            const AuthScreen = () => {
+                const [authMode, setAuthMode] = useState('login');
+                const [zipCode, setZipCode] = useState('');
+                const [email, setEmail] = useState('');
+                const [showDataProtection, setShowDataProtection] = useState(false);
+
+                const handleAuth = (method) => {
+                    if (zipCode) {
+                        const detectedCity = cities.find(c => c.postalCode === zipCode);
+                        if (detectedCity) {
+                            setSelectedCity(detectedCity);
+                        } else {
+                            // Fallback à Bruxelles si code postal non trouvé
+                            setSelectedCity(cities[0]);
+                        }
+                    }
+                    setShowLegalModal(true);
+                };
+
+                const proceedAfterConsent = () => {
+                    if (acceptedCGU && acceptedRGPD) {
+                        setShowLegalModal(false);
+                        setCurrentScreen('userTypeSelect');
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6">
+                        <div className="max-w-md w-full">
+                            <div className="text-center mb-8 fade-in">
+                                <div className="text-6xl mb-4 floating">🏙️</div>
+                                <h1 className="text-5xl font-black text-white mb-2 title-font">Connect'Ville</h1>
+                                <p className="text-cyan-400 text-lg font-semibold mb-1">Powered by CivicLoop™</p>
+                                <p className="text-slate-400 text-sm">Infrastructure Numérique Territoriale</p>
+                            </div>
+
+                            <div className="glass-effect rounded-3xl p-8 slide-in border-2 border-slate-700/50">
+                                {/* Protection RGPD Badge */}
+                                <div className="flex items-center justify-center gap-4 mb-6">
+                                    <div className="rgpd-badge px-4 py-2 rounded-full flex items-center gap-2">
+                                        <i className="fas fa-shield-alt text-white"></i>
+                                        <span className="text-white text-sm font-bold">RGPD 🇪🇺</span>
+                                    </div>
+                                    <div className="trust-badge px-4 py-2 rounded-full flex items-center gap-2">
+                                        <i className="fas fa-lock text-white"></i>
+                                        <span className="text-white text-sm font-bold">Sécurisé</span>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <label className="text-slate-300 text-sm mb-2 block font-semibold">Code Postal</label>
+                                    <input 
+                                        type="text"
+                                        value={zipCode}
+                                        onChange={(e) => setZipCode(e.target.value)}
+                                        placeholder="Ex: 1000, 75015, 1012"
+                                        className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition"
+                                    />
+                                    <p className="text-slate-500 text-xs mt-2 flex items-center gap-2">
+                                        <i className="fas fa-map-marker-alt"></i>
+                                        Détection automatique de votre ville
+                                    </p>
+                                </div>
+
+                                <div className="space-y-3 mb-6">
+                                    <button 
+                                        onClick={() => handleAuth('email')}
+                                        className="w-full btn-primary text-white py-4 rounded-xl font-bold text-lg hover:scale-105 transition-transform"
+                                    >
+                                        <i className="fas fa-envelope mr-2"></i>
+                                        Email / Mot de passe
+                                    </button>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button 
+                                            onClick={() => handleAuth('google')}
+                                            className="glass-bright border-slate-600 text-white py-3 rounded-xl font-semibold hover:bg-slate-700/50 transition"
+                                        >
+                                            <i className="fab fa-google mr-2"></i>
+                                            Google
+                                        </button>
+                                        <button 
+                                            onClick={() => handleAuth('facebook')}
+                                            className="glass-bright border-slate-600 text-white py-3 rounded-xl font-semibold hover:bg-slate-700/50 transition"
+                                        >
+                                            <i className="fab fa-facebook mr-2"></i>
+                                            Facebook
+                                        </button>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => handleAuth('itsme')}
+                                        className="w-full glass-bright border-2 border-orange-500/50 text-white py-3 rounded-xl font-semibold hover:bg-orange-500/20 transition"
+                                    >
+                                        <span className="text-lg mr-2">🇧🇪</span>
+                                        itsme® (Belgique)
+                                    </button>
+                                </div>
+
+                                <div className="border-t border-slate-700 pt-4">
+                                    <button 
+                                        onClick={() => setShowDataProtection(true)}
+                                        className="w-full text-slate-400 text-sm hover:text-white transition flex items-center justify-center gap-2"
+                                    >
+                                        <i className="fas fa-info-circle"></i>
+                                        Protection des données & Hébergement UE
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Footer légal */}
+                            <div className="text-center mt-6 space-y-2">
+                                <p className="text-slate-500 text-xs">
+                                    En continuant, vous acceptez les{' '}
+                                    <button className="text-indigo-400 hover:text-indigo-300 underline">CGU</button>
+                                    {' '}et la{' '}
+                                    <button className="text-indigo-400 hover:text-indigo-300 underline">Politique de confidentialité</button>
+                                </p>
+                                <div className="flex items-center justify-center gap-3 text-slate-600 text-xs">
+                                    <span>© 2026 Connect'Ville</span>
+                                    <span>•</span>
+                                    <span>Marque BOIP/EUIPO</span>
+                                    <span>•</span>
+                                    <span>Classes 9, 35, 42</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Consentement RGPD */}
+                        {showLegalModal && (
+                            <LegalConsentModal 
+                                onClose={() => setShowLegalModal(false)}
+                                onAccept={proceedAfterConsent}
+                                acceptedCGU={acceptedCGU}
+                                setAcceptedCGU={setAcceptedCGU}
+                                acceptedRGPD={acceptedRGPD}
+                                setAcceptedRGPD={setAcceptedRGPD}
+                                city={selectedCity}
+                            />
+                        )}
+
+                        {/* Modal Protection données */}
+                        {showDataProtection && (
+                            <DataProtectionModal onClose={() => setShowDataProtection(false)} />
+                        )}
+                    </div>
+                );
+            };
+
+            // ==================== MODAL CONSENTEMENT LÉGAL ====================
+            const LegalConsentModal = ({ onClose, onAccept, acceptedCGU, setAcceptedCGU, acceptedRGPD, setAcceptedRGPD, city }) => (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+                    <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="glass-effect rounded-3xl p-8 border-2 border-slate-700">
+                            <div className="text-center mb-6">
+                                <div className="text-5xl mb-3">🔒</div>
+                                <h3 className="text-3xl font-black text-white mb-2 title-font">Consentement & Protection</h3>
+                                <p className="text-slate-400">Conformité RGPD complète</p>
+                            </div>
+
+                            <div className="space-y-4 mb-6">
+                                {/* CGU */}
+                                <div className="glass-bright rounded-xl p-6">
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <input 
+                                            type="checkbox"
+                                            checked={acceptedCGU}
+                                            onChange={(e) => setAcceptedCGU(e.target.checked)}
+                                            className="mt-1 w-5 h-5 accent-indigo-600"
+                                        />
+                                        <div className="flex-1">
+                                            <h4 className="text-white font-bold mb-2">Conditions Générales d'Utilisation</h4>
+                                            <div className="text-slate-400 text-sm space-y-2">
+                                                <p>✓ Les CivicCredits sont <strong className="text-white">non monétaires</strong></p>
+                                                <p>✓ Non convertibles en euros</p>
+                                                <p>✓ Non transférables entre utilisateurs</p>
+                                                <p>✓ Valables uniquement dans le réseau local</p>
+                                                <p>✓ Expiration: {city?.config?.creditExpiration} jours</p>
+                                                <p className="text-xs text-slate-500 mt-2">
+                                                    ⚖️ Non soumis à la réglementation MiCA (non crypto-actif)
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button className="text-indigo-400 text-sm hover:text-indigo-300 underline">
+                                        Lire les CGU complètes
+                                    </button>
+                                </div>
+
+                                {/* RGPD */}
+                                <div className="glass-bright rounded-xl p-6">
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <input 
+                                            type="checkbox"
+                                            checked={acceptedRGPD}
+                                            onChange={(e) => setAcceptedRGPD(e.target.checked)}
+                                            className="mt-1 w-5 h-5 accent-indigo-600"
+                                        />
+                                        <div className="flex-1">
+                                            <h4 className="text-white font-bold mb-2">Protection des Données Personnelles (RGPD)</h4>
+                                            <div className="text-slate-400 text-sm space-y-2">
+                                                <p>✓ Hébergement <strong className="text-white">Union Européenne 🇪🇺</strong></p>
+                                                <p>✓ Droit à l'oubli garanti</p>
+                                                <p>✓ Données minimales collectées</p>
+                                                <p>✓ Logs chiffrés et sécurisés</p>
+                                                <p>✓ DPO désigné: <span className="text-cyan-400">{city?.legal?.dpoAssigned}</span></p>
+                                                <p>✓ Registre des traitements disponible</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button className="text-indigo-400 text-sm hover:text-indigo-300 underline">
+                                        Consulter la politique de confidentialité
+                                    </button>
+                                </div>
+
+                                {/* Marque protégée */}
+                                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl p-4">
+                                    <div className="flex items-center gap-3">
+                                        <i className="fas fa-trademark text-amber-400 text-2xl"></i>
+                                        <div className="flex-1 text-sm">
+                                            <p className="text-white font-semibold mb-1">Marque Protégée</p>
+                                            <p className="text-slate-400 text-xs">
+                                                BOIP (Benelux) {city?.legal?.boipRegistered && '✓'} • 
+                                                EUIPO (UE) {city?.legal?.euipoRegistered && '✓'} • 
+                                                Classes 9, 35, 42
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={onClose}
+                                    className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-white py-4 rounded-xl font-bold transition"
+                                >
+                                    Annuler
+                                </button>
+                                <button 
+                                    onClick={onAccept}
+                                    disabled={!acceptedCGU || !acceptedRGPD}
+                                    className="flex-1 btn-primary text-white py-4 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    J'accepte et je continue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // ==================== MODAL PROTECTION DONNÉES ====================
+            const DataProtectionModal = ({ onClose }) => (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+                    <div className="max-w-lg w-full">
+                        <div className="glass-effect rounded-3xl p-8 border-2 border-slate-700">
+                            <div className="text-center mb-6">
+                                <div className="text-5xl mb-3 protection-icon">🛡️</div>
+                                <h3 className="text-2xl font-black text-white mb-2 title-font">Protection Maximum</h3>
+                            </div>
+
+                            <div className="space-y-4 mb-6">
+                                <div className="glass-bright rounded-xl p-4">
+                                    <h4 className="text-white font-bold mb-2">🏛️ Hébergement Union Européenne</h4>
+                                    <p className="text-slate-400 text-sm">
+                                        Toutes vos données sont hébergées exclusivement sur des serveurs situés dans l'Union Européenne.
+                                    </p>
+                                </div>
+
+                                <div className="glass-bright rounded-xl p-4">
+                                    <h4 className="text-white font-bold mb-2">🔐 Chiffrement End-to-End</h4>
+                                    <p className="text-slate-400 text-sm">
+                                        Communications sécurisées par protocole TLS 1.3 et chiffrement AES-256.
+                                    </p>
+                                </div>
+
+                                <div className="glass-bright rounded-xl p-4">
+                                    <h4 className="text-white font-bold mb-2">🎯 Données Minimales</h4>
+                                    <p className="text-slate-400 text-sm">
+                                        Nous collectons uniquement les données strictement nécessaires au service.
+                                    </p>
+                                </div>
+
+                                <div className="glass-bright rounded-xl p-4">
+                                    <h4 className="text-white font-bold mb-2">⏱️ Droit à l'Oubli</h4>
+                                    <p className="text-slate-400 text-sm">
+                                        Suppression complète de vos données sur simple demande (max 30 jours).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={onClose}
+                                className="w-full btn-primary text-white py-4 rounded-xl font-bold"
+                            >
+                                Compris
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // ==================== SÉLECTION TYPE UTILISATEUR ====================
+            const UserTypeSelect = () => (
+                <div className="min-h-screen p-6">
+                    <div className="max-w-md mx-auto">
+                        <button 
+                            onClick={() => setCurrentScreen('auth')}
+                            className="text-slate-400 hover:text-white mb-6 flex items-center gap-2 transition"
+                        >
+                            <i className="fas fa-arrow-left"></i> Retour
+                        </button>
+
+                        <div className="text-center mb-8 fade-in">
+                            <h2 className="text-4xl font-black text-white mb-4 title-font">Bienvenue</h2>
+                            {selectedCity && (
+                                <div className="inline-flex items-center gap-3 bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-3 rounded-2xl border border-slate-600">
+                                    <span className="text-3xl">{selectedCity.logo}</span>
+                                    <div className="text-left">
+                                        <div className="text-white font-bold text-lg">{selectedCity.name}</div>
+                                        <div className="text-slate-400 text-sm">{selectedCity.country}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-4 slide-in">
+                            <UserTypeCard 
+                                icon="fa-user-circle"
+                                title="Citoyen"
+                                description="Missions, récompenses & entraide locale"
+                                features={['Gagnez des CivicCredits', 'Marketplace avantages', 'Participez aux missions']}
+                                gradient="from-indigo-600 via-purple-600 to-pink-600"
+                                onClick={() => {
+                                    setUserType('citizen');
+                                    setUser(userProfiles.citizen);
+                                    setCivicWallet({
+                                        availableBalance: 2300,
+                                        totalEarned: 2850,
+                                        totalSpent: 1200,
+                                        totalBonus: 450,
+                                        totalSponsor: 200,
+                                        updatedAt: new Date().toISOString()
+                                    });
+                                    // Simuler transactions
+                                    setTransactions([
+                                        { id: 'tx_001', type: 'earned', amount: 50, source: 'Mission: Consultation publique', date: '2026-02-15T14:30:00Z', status: 'completed' },
+                                        { id: 'tx_002', type: 'spent', amount: -25, source: 'Café Central - Café gratuit', date: '2026-02-14T11:15:00Z', status: 'completed' },
+                                        { id: 'tx_003', type: 'earned', amount: 30, source: 'Mission: Achat local', date: '2026-02-13T16:45:00Z', status: 'completed' },
+                                        { id: 'tx_004', type: 'bonus', amount: 20, source: 'Bonus parrainage', date: '2026-02-12T09:20:00Z', status: 'completed' }
+                                    ]);
+                                    setCurrentScreen('dashboard');
+                                }}
+                            />
+
+                            <UserTypeCard 
+                                icon="fa-store"
+                                title="Commerçant"
+                                description="Attirez clients & boostez fidélisation"
+                                features={['QR dynamiques sécurisés', 'Dashboard analytics', 'Offres sponsorisées']}
+                                gradient="from-amber-500 via-orange-500 to-red-600"
+                                onClick={() => {
+                                    setUserType('merchant');
+                                    setUser(userProfiles.merchant);
+                                    setCurrentScreen('dashboard');
+                                }}
+                            />
+
+                            <UserTypeCard 
+                                icon="fa-building"
+                                title="Commune"
+                                description="Pilotez l'engagement citoyen"
+                                features={['Analytics temps réel', 'Gestion missions', 'Export données RGPD']}
+                                gradient="from-blue-600 via-indigo-600 to-purple-600"
+                                onClick={() => {
+                                    setUserType('admin');
+                                    setUser(userProfiles.admin);
+                                    setCurrentScreen('dashboard');
+                                }}
+                            />
+                        </div>
+
+                        {/* Footer RGPD */}
+                        <div className="mt-8 text-center">
+                            <div className="inline-flex items-center gap-2 text-slate-500 text-xs">
+                                <i className="fas fa-shield-alt text-emerald-400"></i>
+                                <span>Données hébergées UE • RGPD compliant</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const UserTypeCard = ({ icon, title, description, features, gradient, onClick }) => (
+                <div 
+                    onClick={onClick}
+                    className="glass-effect rounded-3xl p-6 card-hover cursor-pointer border-2 border-slate-700/50"
+                >
+                    <div className="flex items-start gap-5 mb-5">
+                        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-3xl flex-shrink-0 shadow-xl`}>
+                            <i className={`fas ${icon}`}></i>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-black text-white mb-2 title-font">{title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
+                        </div>
+                        <i className="fas fa-chevron-right text-slate-600 text-2xl"></i>
+                    </div>
+                    <div className="space-y-2 pl-6 border-l-2 border-slate-700">
+                        {features.map((feature, idx) => (
+                            <div key={idx} className="flex items-center gap-3">
+                                <i className="fas fa-check-circle text-emerald-400 text-sm"></i>
+                                <span className="text-slate-300 text-sm font-medium">{feature}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            // ==================== DASHBOARD CITOYEN (Suite dans le prochain fichier) ====================
+            
+            const CitizenDashboard = () => {
+                const [activeTab, setActiveTab] = useState('home');
+                const [showQRScanner, setShowQRScanner] = useState(false);
+                const [showWalletDetail, setShowWalletDetail] = useState(false);
+
+                return (
+                    <div className="min-h-screen pb-24">
+                        {/* Header avec Wallet Premium */}
+                        <div className="bg-gradient-to-br from-slate-900 via-indigo-900/50 to-slate-900 p-6 pb-10">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl shadow-xl">
+                                        {user?.firstName?.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-400 text-sm">Bonjour,</p>
+                                        <h3 className="text-white font-bold text-xl">{user?.firstName} {user?.lastName}</h3>
+                                        {user?.verified && (
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1">
+                                                    <i className="fas fa-check-circle"></i> Vérifié
+                                                </span>
+                                                <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full text-xs font-semibold">
+                                                    Trust {user?.trustScore}%
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <i className="fas fa-bell text-slate-400 hover:text-white text-2xl cursor-pointer transition"></i>
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                                            3
+                                        </span>
+                                    </div>
+                                    {selectedCity && (
+                                        <div className="city-badge px-4 py-2 rounded-xl text-white text-sm font-bold flex items-center gap-2">
+                                            <span className="text-lg">{selectedCity.logo}</span>
+                                            <span>{selectedCity.name}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* CivicLoop Wallet Card */}
+                            <div 
+                                onClick={() => setShowWalletDetail(true)}
+                                className="wallet-card rounded-3xl p-8 pulse-glow cursor-pointer card-hover"
+                            >
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="text-4xl">💎</div>
+                                            <div>
+                                                <p className="text-slate-400 text-sm font-medium">CivicLoop™ Wallet</p>
+                                                <p className="text-xs text-slate-500">ID: {user?.id}</p>
+                                            </div>
+                                        </div>
+                                        <h2 className="text-6xl font-black text-white title-font mb-2">
+                                            {civicWallet.availableBalance.toLocaleString()}
+                                        </h2>
+                                        <p className="text-cyan-400 text-lg font-bold mb-4">CivicCredits disponibles</p>
+                                        
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+                                                <div className="text-emerald-400 text-sm font-bold mb-1">↗️ {civicWallet.totalEarned.toLocaleString()}</div>
+                                                <div className="text-slate-400 text-xs">Gagnés</div>
+                                            </div>
+                                            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3">
+                                                <div className="text-orange-400 text-sm font-bold mb-1">↘️ {civicWallet.totalSpent.toLocaleString()}</div>
+                                                <div className="text-slate-400 text-xs">Dépensés</div>
+                                            </div>
+                                            <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3">
+                                                <div className="text-purple-400 text-sm font-bold mb-1">🎁 {civicWallet.totalBonus.toLocaleString()}</div>
+                                                <div className="text-slate-400 text-xs">Bonus</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="mb-4">
+                                            <div className="text-slate-400 text-xs mb-1">Score confiance</div>
+                                            <div className="text-emerald-400 text-3xl font-black">{user?.trustScore}%</div>
+                                        </div>
+                                        <i className="fas fa-chevron-right text-slate-600 text-xl"></i>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-800/50 rounded-xl p-4 flex items-center justify-between border border-slate-700">
+                                    <div className="flex items-center gap-3">
+                                        <i className="fas fa-clock text-slate-400"></i>
+                                        <div>
+                                            <span className="text-slate-300 text-sm font-medium">
+                                                Expire dans {selectedCity?.config?.creditExpiration || 365} jours
+                                            </span>
+                                            <p className="text-slate-500 text-xs">
+                                                Max {selectedCity?.config?.maxDailyEarn || 50} credits/jour
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-slate-500 text-xs">
+                                        Non monétaire • Non transférable
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Contenu principal */}
+                        <div className="p-6 -mt-4">
+                            {activeTab === 'home' && (
+                                <>
+                                    {/* QR Scanner CTA */}
+                                    <div className="mb-8">
+                                        <button 
+                                            onClick={() => setShowQRScanner(true)}
+                                            className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white py-6 rounded-2xl font-black text-xl shadow-2xl hover:scale-105 transition-transform card-hover"
+                                        >
+                                            <div className="flex items-center justify-center gap-4">
+                                                <i className="fas fa-qrcode text-4xl"></i>
+                                                <div className="text-left">
+                                                    <div>Scanner QR</div>
+                                                    <div className="text-sm font-normal opacity-90">Mission ou Commerce</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <p className="text-center text-slate-500 text-xs mt-3">
+                                            🔒 QR Dynamique • Sécurisé • Anti-fraude
+                                        </p>
+                                    </div>
+
+                                    {/* Missions disponibles */}
+                                    <div className="mb-8">
+                                        <div className="flex items-center justify-between mb-5">
+                                            <h3 className="text-white font-black text-2xl title-font">🎯 Missions disponibles</h3>
+                                            <button className="text-indigo-400 hover:text-indigo-300 text-sm font-semibold">
+                                                Voir tout →
+                                            </button>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <MissionCard 
+                                                title="Participez à la consultation urbanisme"
+                                                credits={50}
+                                                type="consultation"
+                                                expiry="2j"
+                                                icon="📋"
+                                                difficulty="Facile"
+                                            />
+                                            <MissionCard 
+                                                title="Achetez chez un commerçant local"
+                                                credits={30}
+                                                type="achat"
+                                                expiry="7j"
+                                                icon="🛍️"
+                                                difficulty="Facile"
+                                            />
+                                            <MissionCard 
+                                                title="Assistez au concert municipal"
+                                                credits={40}
+                                                type="événement"
+                                                expiry="5j"
+                                                icon="🎵"
+                                                difficulty="Moyen"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Stats ville */}
+                                    <div>
+                                        <h3 className="text-white font-black text-2xl mb-5 title-font">📊 {selectedCity?.name} en chiffres</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <CityStatCard 
+                                                label="Citoyens actifs" 
+                                                value={selectedCity?.activeUsers || 0} 
+                                                icon="👥"
+                                                trend="+12%"
+                                            />
+                                            <CityStatCard 
+                                                label="Commerces" 
+                                                value={selectedCity?.activeMerchants || 0} 
+                                                icon="🏪"
+                                                trend="+8%"
+                                            />
+                                            <CityStatCard 
+                                                label="Credits actifs" 
+                                                value={(selectedCity?.civicCreditsCirculating || 0).toLocaleString()} 
+                                                icon="💎"
+                                                trend="+23%"
+                                            />
+                                            <CityStatCard 
+                                                label="Missions" 
+                                                value="67" 
+                                                icon="✅"
+                                                trend="+5"
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {activeTab === 'marketplace' && (
+                                <MarketplaceView />
+                            )}
+
+                            {activeTab === 'entraide' && (
+                                <EntraideView />
+                            )}
+
+                            {activeTab === 'wallet' && (
+                                <WalletDetailView 
+                                    wallet={civicWallet} 
+                                    transactions={transactions}
+                                    city={selectedCity}
+                                />
+                            )}
+
+                            {activeTab === 'profile' && (
+                                <ProfileView user={user} city={selectedCity} />
+                            )}
+                        </div>
+
+                        {/* QR Scanner Modal */}
+                        {showQRScanner && (
+                            <QRScannerModal 
+                                onClose={() => setShowQRScanner(false)}
+                                city={selectedCity}
+                            />
+                        )}
+
+                        {/* Wallet Detail Modal */}
+                        {showWalletDetail && (
+                            <WalletModal 
+                                onClose={() => setShowWalletDetail(false)}
+                                wallet={civicWallet}
+                                transactions={transactions}
+                                city={selectedCity}
+                            />
+                        )}
+
+                        {/* Bottom Navigation */}
+                        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} userType="citizen" />
+                    </div>
+                );
+            };
+
+            // ==================== COMPOSANTS (à continuer) ====================
+            
+            const MissionCard = ({ title, credits, type, expiry, icon, difficulty }) => (
+                <div className="glass-effect mission-glow rounded-2xl p-5 card-hover cursor-pointer border border-emerald-500/20">
+                    <div className="flex items-start gap-4">
+                        <div className="text-5xl">{icon}</div>
+                        <div className="flex-1">
+                            <h4 className="text-white font-bold text-lg mb-2">{title}</h4>
+                            <div className="flex items-center gap-2 flex-wrap mb-3">
+                                <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-full text-sm font-bold">
+                                    +{credits} credits
+                                </span>
+                                <span className="category-tag text-white/80 px-3 py-1.5 rounded-full text-xs font-medium">
+                                    {type}
+                                </span>
+                                <span className="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-full text-xs font-semibold">
+                                    {difficulty}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-400 text-sm flex items-center gap-2">
+                                    <i className="fas fa-clock"></i>
+                                    Expire dans {expiry}
+                                </span>
+                                <i className="fas fa-arrow-right text-indigo-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const CityStatCard = ({ label, value, icon, trend }) => (
+                <div className="stat-card glass-effect rounded-2xl p-5">
+                    <div className="text-4xl mb-3">{icon}</div>
+                    <div className="text-white text-3xl font-black mb-1">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+                    <div className="flex items-center justify-between">
+                        <div className="text-slate-400 text-sm font-medium">{label}</div>
+                        {trend && (
+                            <div className="text-emerald-400 text-sm font-bold">{trend}</div>
+                        )}
+                    </div>
+                </div>
+            );
+
+            // Suite des composants dans le message suivant car limite de caractères...
+            
+            // ==================== RENDER PRINCIPAL ====================
+            return (
+                <>
+                    {currentScreen === 'onboarding' && <OnboardingScreen />}
+                    {currentScreen === 'auth' && <AuthScreen />}
+                    {currentScreen === 'userTypeSelect' && <UserTypeSelect />}
+                    {currentScreen === 'dashboard' && userType === 'citizen' && <CitizenDashboard />}
+                    {/* Les autres dashboards suivent le même pattern */}
+                </>
+            );
+        };
+
+        // Initialisation
+        const root = ReactDOM.createRoot(document.getElementById('app'));
+        root.render(<App />);
+    </script>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
