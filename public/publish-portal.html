@@ -237,7 +237,7 @@
 <nav class="navbar">
   <a class="nav-brand" href="#">
     <div class="nav-logo">MC</div>
-    Ma Commune <span style="color:#7c3aed; font-weight:400; margin-left:2px">· Publier</span>
+    <span class="dynamic-app-name">Ma Commune</span> <span style="color:#7c3aed; font-weight:400; margin-left:2px">· Publier</span>
   </a>
   <div class="nav-links">
     <a class="nav-link" href="events-portal.html">📋 Mes événements</a>
@@ -250,7 +250,7 @@
 <div class="hero">
   <div class="hero-tag">🚀 Publication multi-canaux</div>
   <h1>Publiez votre événement <span>partout en un clic</span></h1>
-  <p>Remplissez une seule fois. Nous générons les textes adaptés et publions simultanément sur tous vos canaux.</p>
+  <p>Entrez votre code postal — <span class="dynamic-app-name">votre AppConnect</span> se configure automatiquement et publie sur tous vos canaux.</p>
   <div class="hero-channels">
     <div class="channel-pill">📱 Ma Commune App</div>
     <div class="channel-pill">📘 Facebook</div>
@@ -720,7 +720,7 @@ function toggleChannel(el, key) {
 
 // ── Reach summary ─────────────────────────────────────────────────────────────
 const REACH = {
-  app: { name: '📱 Ma Commune App', reach: '1 200 habitants', color: '#6366f1' },
+  app: { name: '📱 [AppName]', reach: '1 200 habitants', color: '#6366f1' },
   fb:  { name: '📘 Facebook', reach: '3 400 vues estimées', color: '#1877f2' },
   ig:  { name: '📸 Instagram', reach: '800 impressions', color: '#e1306c' },
   web: { name: '🌐 Site web', reach: 'Référencé Google', color: '#059669' },
@@ -729,6 +729,9 @@ const REACH = {
 };
 
 function updateReachSummary() {
+  // Mise à jour dynamique du nom de l'app
+  const brand = getBranding(document.getElementById('evPostal')?.value || '7370');
+  REACH.app.name = '📱 ' + brand.appName;
   const el = document.getElementById('reachSummary');
   if (selectedChannels.size === 0) {
     el.innerHTML = '<div style="text-align:center; color:var(--muted); font-size:13px; padding:20px 0;">Aucun canal sélectionné</div>';
@@ -756,10 +759,86 @@ function getEmoji(cat) {
   return map[cat] || '🎪';
 }
 
-function getCityName(postal) {
-  const map = {'7370':'Dour','7000':'Mons','1000':'Bruxelles','4000':'Liège','8000':'Bruges','5000':'Namur','6000':'Charleroi','3000':'Leuven'};
-  return map[postal] || 'Ma Commune';
+function // ── CityBranding Engine (JS port de lib/city-branding.ts) ──────────────────
+const BELGIAN_CITIES = {
+  "1000":"Bruxelles","1020":"Laeken","1030":"Schaerbeek","1040":"Etterbeek",
+  "1050":"Ixelles","1060":"Saint-Gilles","1070":"Anderlecht","1080":"Molenbeek",
+  "1090":"Jette","1150":"Woluwe-Saint-Pierre","1160":"Auderghem",
+  "1180":"Uccle","1190":"Forest","1200":"Woluwe-Saint-Lambert","1210":"Saint-Josse",
+  "1300":"Wavre","1348":"Louvain-la-Neuve","1400":"Nivelles","1420":"Braine-l'Alleud",
+  "1500":"Halle","1700":"Dilbeek","1800":"Vilvoorde","1850":"Grimbergen",
+  "2000":"Anvers","2300":"Turnhout","2500":"Lier","2800":"Malines","2900":"Schoten",
+  "3000":"Louvain","3500":"Hasselt","3600":"Genk","3700":"Tongres","3800":"Sint-Truiden",
+  "4000":"Liège","4040":"Herstal","4100":"Seraing","4200":"Huy",
+  "4700":"Eupen","4800":"Verviers","4900":"Spa",
+  "5000":"Namur","5500":"Dinant","5600":"Philippeville",
+  "6000":"Charleroi","6001":"Marcinelle","6060":"Charleroi","6110":"Montigny-le-Tilleul",
+  "6200":"Châtelet","6220":"Fleurus","6460":"Chimay","6530":"Thuin",
+  "6700":"Arlon","6800":"Libramont","6900":"Marche-en-Famenne",
+  "7000":"Mons","7050":"Jurbise","7060":"Soignies","7100":"La Louvière",
+  "7130":"Binche","7140":"Morlanwelz","7160":"Chapelle-lez-Herlaimont",
+  "7170":"Manage","7190":"Ecaussinnes","7300":"Boussu",
+  "7320":"Bernissart","7330":"Saint-Ghislain","7340":"Colfontaine","7350":"Hensies",
+  "7370":"Dour","7380":"Quiévrain","7390":"Quaregnon",
+  "7500":"Tournai","7600":"Péruwelz","7700":"Mouscron","7800":"Ath","7900":"Leuze",
+  "8000":"Bruges","8400":"Ostende","8500":"Courtrai","8800":"Roulers",
+  "9000":"Gand","9100":"Saint-Nicolas","9200":"Termonde",
+  "9300":"Alost","9700":"Oudenaarde","9800":"Deinze","9900":"Eeklo",
+};
+
+const CITY_COLORS = {
+  "7":"#2563EB","1":"#dc2626","4":"#7c3aed","5":"#059669",
+  "6":"#1e293b","2":"#1d4ed8","3":"#1d4ed8","8":"#1e40af","9":"#1e40af",
+};
+const CITY_COLOR_OVERRIDE = {
+  "7370":"#2563EB","7000":"#1d4ed8","1000":"#dc2626","4000":"#7c3aed",
+  "6000":"#1e293b","5000":"#059669","9000":"#1e40af","8000":"#1e3a5f",
+};
+const CITY_EMOJI = {
+  "7370":"⛏️","7000":"🏰","1000":"🇧🇪","4000":"🌊","6000":"🏭",
+  "5000":"🏛️","9000":"🌸","8000":"⛪","8400":"🌊","4900":"🛁",
+  "3000":"🎓","2000":"⚓","4800":"🏔️","7500":"🏟️","5500":"🏰",
+};
+
+function slugify(str) {
+  return str.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]/g,"");
 }
+function cleanCity(name) { return name.split("(")[0].trim(); }
+
+function getBranding(postal) {
+  const p = (postal || "7370").trim();
+  const raw = BELGIAN_CITIES[p] || "Ma Commune";
+  const cityName = cleanCity(raw);
+  const slug = slugify(cityName);
+  const primary = CITY_COLOR_OVERRIDE[p] || CITY_COLORS[p[0]] || "#2563EB";
+  const emoji = CITY_EMOJI[p] || "🏘️";
+  return {
+    appName:  cityName + "Connect",
+    cityName,
+    slug,
+    postalCode: p,
+    hashtag:  "#" + cityName.replace(/\s/g,"") + "Connect",
+    instagramHandle: "macommune." + slug,
+    shortName: "Ma Commune · " + cityName,
+    primary,
+    emoji,
+    hashtagsFull: [
+      "#" + cityName.replace(/\s/g,"") + "Connect",
+      "#" + slug,
+      "#macommune",
+      "#communebelge",
+      "#belgique",
+      "#evenementlocal",
+      "#" + slug + "events",
+      "#sortir",
+    ],
+  };
+}
+
+// Alias legacy
+function getCityName(postal) { return getBranding(postal).cityName; }
 
 function formatDate(dateStr) {
   if (!dateStr) return 'Date à définir';
@@ -776,8 +855,14 @@ function updatePreview() {
   const loc = document.getElementById('evLocation').value || 'Lieu à définir';
   const isFree = document.getElementById('evFree').checked;
   const emoji = getEmoji(cat);
-  const city = getCityName(postal);
+  const brand = getBranding(postal);
+  const city = brand.cityName;
   const dateLabel = formatDate(dateStr);
+  // Mettre à jour navbar + hero avec le bon AppName
+  const appNameEls = document.querySelectorAll('.dynamic-app-name');
+  appNameEls.forEach(el => el.textContent = brand.appName);
+  const navBrand = document.querySelector('.nav-brand span');
+  if (navBrand) navBrand.textContent = ' · ' + brand.appName;
 
   // Title count
   document.getElementById('titleCount').textContent = document.getElementById('evTitle').value.length;
@@ -840,8 +925,14 @@ function generateTexts() {
   const isFree = document.getElementById('evFree').checked;
   const price = document.getElementById('evPrice').value;
   const emoji = getEmoji(cat);
-  const city = getCityName(postal);
+  const brand = getBranding(postal);
+  const city = brand.cityName;
   const dateLabel = formatDate(dateStr);
+  // Mettre à jour navbar + hero avec le bon AppName
+  const appNameEls = document.querySelectorAll('.dynamic-app-name');
+  appNameEls.forEach(el => el.textContent = brand.appName);
+  const navBrand = document.querySelector('.nav-brand span');
+  if (navBrand) navBrand.textContent = ' · ' + brand.appName;
   const citySlug = city.toLowerCase().replace(/\s/g, '');
   const catClean = cat.replace(/^[^ ]+ /, '');
 
@@ -856,7 +947,7 @@ ${isFree ? '✅ Entrée gratuite' : `💶 ${price ? price + '€' : 'Entrée pay
 ${desc}
 
 👤 Organisé par : ${organizer}
-📱 Retrouvez tous les détails sur Ma Commune App`;
+📱 Retrouvez tous les détails sur ${brand.appName}`;
 
   // Facebook
   document.getElementById('textFb').textContent =
@@ -872,7 +963,7 @@ ${desc ? desc + '\n\n' : ''}${isFree ? '✅ Entrée entièrement gratuite — ve
 👤 Organisé par ${organizer}
 
 🔔 Likez cette page et activez les notifications pour ne rater aucun événement local !
-📲 Téléchargez Ma Commune App pour recevoir toutes les alertes`;
+📲 Téléchargez ${brand.appName} pour recevoir toutes les alertes`;
 
   // Instagram
   document.getElementById('textIg').textContent =
@@ -907,16 +998,26 @@ ${desc}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📲 Téléchargez Ma Commune App pour ne rater aucun événement de ${city}.
+📲 Téléchargez ${brand.appName} pour ne rater aucun événement de ${city}.
 🔕 Se désinscrire : désabonnement@macommune.be`;
 
   // Hashtags
+  // Hashtags depuis le moteur CityBranding
+  const brand = getBranding(postal);
+  const catTag = '#' + catClean.toLowerCase().replace(/\s/g,'');
   const tags = [
-    `#${citySlug}`, `#macommune`, `#${catClean.toLowerCase().replace(/\s/g,'')}`,
-    `#evenementlocal`, `#${city.toLowerCase().replace(/\s/g,'')}belgique`,
-    `#belgique`, `#communebelge`, `#viequartier`,
+    brand.hashtag,
+    `#${brand.slug}`,
+    '#macommune',
+    catTag,
+    '#evenementlocal',
+    '#communebelge',
+    '#belgique',
     isFree ? '#gratuit' : '#evenementpayant',
-    `#${citySlug}events`, '#agendalocal', '#sortir',
+    `#${brand.slug}events`,
+    '#agendalocal',
+    '#sortir',
+    '#viequartier',
   ];
 
   const container = document.getElementById('hashtagList');
@@ -1020,6 +1121,53 @@ updateReachSummary();
 // Pré-remplir date avec aujourd'hui + 7 jours
 const d = new Date(); d.setDate(d.getDate() + 7);
 document.getElementById('evDateStart').value = d.toISOString().split('T')[0];
+
+// ── Branding initial (code postal par défaut = 7370 / Dour) ──────────────────
+(function applyBranding(postal) {
+  const brand = getBranding(postal);
+  // Navbar
+  const navSpan = document.querySelector('.nav-brand span');
+  if (navSpan) navSpan.textContent = '· ' + brand.appName;
+  // Hero subtitle
+  document.querySelectorAll('.dynamic-app-name').forEach(el => el.textContent = brand.appName);
+  // Channel push info
+  const ccEl = document.getElementById('cityNameChannel');
+  if (ccEl) ccEl.textContent = brand.cityName;
+  // Couleur primaire CSS
+  document.documentElement.style.setProperty('--primary', brand.primary);
+  document.documentElement.style.setProperty('--primary-dk', brand.primary);
+})('7370');
+
+// ── Listener code postal → rebrand complet en live ───────────────────────────
+document.getElementById('evPostal').addEventListener('input', function() {
+  if (this.value.length < 4) return;
+  const brand = getBranding(this.value);
+
+  // Navbar & labels dynamiques
+  document.querySelectorAll('.dynamic-app-name').forEach(el => el.textContent = brand.appName);
+  const navSpan = document.querySelector('.nav-brand span');
+  if (navSpan) navSpan.textContent = '· ' + brand.appName;
+
+  // Push notification info
+  const ccEl = document.getElementById('cityNameChannel');
+  if (ccEl) ccEl.textContent = brand.cityName;
+
+  // Canal App — nom dynamique
+  const appCard = document.querySelector('.channel-card.app .channel-name');
+  if (appCard) appCard.textContent = '📱 ' + brand.appName;
+
+  // Couleur primaire → rebrand visuel instantané
+  document.documentElement.style.setProperty('--primary', brand.primary);
+  document.documentElement.style.setProperty('--primary-dk', brand.primary);
+
+  // Instagram handle preview
+  document.querySelectorAll('#pCityIg, #pCityIg2').forEach(el => el.textContent = brand.slug);
+
+  // Reach summary + preview
+  updateReachSummary();
+  updatePreview();
+});
+
 updatePreview();
 </script>
 </body>
