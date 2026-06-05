@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ma Commune — Publier un événement</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #2563EB;
+      --primary-dk: #1D4ED8;
+      --indigo: #6366f1;
+      --purple: #7c3aed;
+      --green: #059669;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --bg: #f0f4ff;
+      --surface: #fff;
+      --fg: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,.07);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,.12);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--primary); text-decoration: none; }
+    .nav-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2563EB, #7c3aed); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 14px; }
+    .nav-links { display: flex; gap: 8px; align-items: center; }
+    .nav-link { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; text-decoration: none; transition: all .15s; }
+    .nav-link:hover { background: var(--bg); color: var(--fg); }
+    .nav-badge { background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #2563EB 100%);
+      color: #fff; padding: 48px 28px; text-align: center;
+    }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: .5px; margin-bottom: 16px; }
+    .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; line-height: 1.2; }
+    .hero h1 span { background: linear-gradient(90deg, #a5b4fc, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: rgba(255,255,255,.75); font-size: 16px; max-width: 560px; margin: 0 auto 28px; }
+    .hero-channels { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .channel-pill { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 20px; padding: 8px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+    /* ── LAYOUT ── */
+    .layout { max-width: 1200px; margin: 0 auto; padding: 32px 20px; display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    /* ── CARDS ── */
+    .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+    .card-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--fg); }
+    .card-subtitle { font-size: 12px; color: var(--muted); }
+    .card-body { padding: 22px; }
+
+    /* ── FORM ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-group.inline { flex-direction: row; align-items: center; gap: 12px; }
+    label { font-size: 13px; font-weight: 600; color: var(--fg); }
+    label .req { color: var(--red); margin-left: 2px; }
+    input[type=text], input[type=email], input[type=tel], input[type=date], input[type=time], input[type=number], input[type=url], textarea, select {
+      padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+      font-family: inherit; font-size: 14px; color: var(--fg); background: var(--surface);
+      transition: border-color .15s, box-shadow .15s; outline: none; width: 100%;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+    textarea { resize: vertical; min-height: 90px; }
+    .form-tip { font-size: 11px; color: var(--muted); }
+    .char-count { font-size: 11px; color: var(--muted); text-align: right; }
+
+    /* ── TOGGLE ── */
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+    .toggle { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 24px; cursor: pointer; transition: .2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+    .toggle input:checked + .toggle-slider { background: var(--primary); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .toggle-label { font-size: 14px; font-weight: 500; cursor: pointer; }
+
+    /* ── CANAUX DE PUBLICATION ── */
+    .channels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .channel-card {
+      border: 2px solid var(--border); border-radius: 12px; padding: 14px;
+      cursor: pointer; transition: all .2s; position: relative; user-select: none;
+    }
+    .channel-card:hover { border-color: var(--primary); background: #eff6ff; }
+    .channel-card.selected { border-color: var(--primary); background: #eff6ff; }
+    .channel-card.selected::after { content: '✓'; position: absolute; top: 8px; right: 10px; color: var(--primary); font-weight: 800; font-size: 16px; }
+    .channel-card input { display: none; }
+    .channel-logo { font-size: 28px; margin-bottom: 6px; display: block; }
+    .channel-name { font-size: 13px; font-weight: 700; color: var(--fg); }
+    .channel-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .channel-card.fb { --c: #1877f2; } .channel-card.fb.selected { border-color: #1877f2; background: #eff6ff; }
+    .channel-card.ig { --c: #e1306c; } .channel-card.ig.selected { border-color: #e1306c; background: #fff0f5; }
+    .channel-card.app { --c: #6366f1; } .channel-card.app.selected { border-color: #6366f1; background: #eef2ff; }
+    .channel-card.web { --c: #059669; } .channel-card.web.selected { border-color: #059669; background: #f0fdf4; }
+    .channel-card.tiktok { --c: #010101; } .channel-card.tiktok.selected { border-color: #010101; background: #f8f8f8; }
+    .channel-card.google { --c: #EA4335; } .channel-card.google.selected { border-color: #EA4335; background: #fff5f5; }
+
+    /* ── APERÇU POST ── */
+    .preview-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 16px; }
+    .preview-tab { padding: 10px 14px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+    .preview-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .preview-body { padding: 16px; }
+
+    /* FB Preview */
+    .fb-post { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; font-family: -apple-system, sans-serif; }
+    .fb-header { display: flex; align-items: center; gap: 10px; padding: 12px; }
+    .fb-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2563EB, #7c3aed); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 14px; }
+    .fb-page-name { font-weight: 700; font-size: 13px; color: #1c1e21; }
+    .fb-page-meta { font-size: 11px; color: #65676b; }
+    .fb-text { padding: 0 12px 12px; font-size: 14px; color: #1c1e21; line-height: 1.5; white-space: pre-wrap; }
+    .fb-image { width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); display: flex; align-items: center; justify-content: center; color: #6366f1; font-size: 32px; }
+    .fb-footer { display: flex; justify-content: space-around; padding: 8px 12px; border-top: 1px solid #ddd; }
+    .fb-action { font-size: 13px; font-weight: 600; color: #65676b; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    .fb-action:hover { background: #f0f2f5; }
+
+    /* IG Preview */
+    .ig-post { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+    .ig-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+    .ig-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 12px; }
+    .ig-username { font-size: 13px; font-weight: 700; }
+    .ig-image { width: 100%; height: 220px; background: linear-gradient(135deg, #1e1b4b, #7c3aed); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .ig-actions { padding: 10px 12px 4px; display: flex; gap: 14px; font-size: 22px; }
+    .ig-caption { padding: 4px 12px 12px; font-size: 13px; color: #1c1e21; line-height: 1.4; }
+    .ig-caption strong { font-weight: 700; }
+
+    /* App Preview */
+    .app-post { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #0f0f1a; color: #fff; }
+    .app-header { background: #1a1a2e; padding: 12px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #2d2d4e; }
+    .app-dot { width: 8px; height: 8px; border-radius: 50%; background: #6366f1; }
+    .app-city { font-size: 12px; color: #a5b4fc; font-weight: 600; }
+    .app-event-card { margin: 12px; background: #1e1e3a; border-radius: 12px; overflow: hidden; }
+    .app-event-img { height: 120px; background: linear-gradient(135deg, #312e81, #6366f1); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+    .app-event-body { padding: 12px; }
+    .app-event-cat { font-size: 10px; font-weight: 700; color: #6366f1; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; }
+    .app-event-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .app-event-meta { font-size: 12px; color: #94a3b8; display: flex; gap: 10px; flex-wrap: wrap; }
+    .app-notif { margin: 12px; background: #1e3a5f; border-radius: 10px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px; }
+    .app-notif-icon { font-size: 20px; flex-shrink: 0; }
+    .app-notif-title { font-size: 12px; font-weight: 700; color: #bfdbfe; }
+    .app-notif-text { font-size: 11px; color: #93c5fd; margin-top: 2px; }
+
+    /* ── TEXTE GÉNÉRÉ ── */
+    .generated-text { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.6; color: var(--fg); white-space: pre-wrap; position: relative; min-height: 80px; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; background: var(--primary); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .copy-btn:hover { background: var(--primary-dk); }
+    .copy-btn.copied { background: var(--green); }
+    .regen-btn { width: 100%; margin-top: 8px; padding: 8px; background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all .15s; }
+    .regen-btn:hover { background: var(--bg); color: var(--fg); }
+
+    /* ── HASHTAGS ── */
+    .hashtags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .hashtag { background: #eff6ff; color: var(--primary); border-radius: 16px; padding: 3px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+    .hashtag:hover { background: var(--primary); color: #fff; }
+    .hashtag.selected { background: var(--primary); color: #fff; }
+
+    /* ── PLANNING ── */
+    .schedule-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .sched-btn { padding: 10px 8px; border: 2px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; transition: all .15s; }
+    .sched-btn:hover { border-color: var(--primary); }
+    .sched-btn.active { border-color: var(--primary); background: #eff6ff; }
+    .sched-btn .sched-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .sched-btn .sched-label { font-size: 11px; font-weight: 600; color: var(--fg); }
+
+    /* ── BTN ── */
+    .btn { padding: 11px 22px; border-radius: 10px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dk); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(37,99,235,.3); }
+    .btn-secondary { background: #f1f5f9; color: var(--fg); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-publish { background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; width: 100%; justify-content: center; padding: 14px; font-size: 15px; }
+    .btn-publish:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(99,102,241,.4); }
+    .btn-publish:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-sm { padding: 7px 14px; font-size: 12px; }
+
+    /* ── SIDEBAR ── */
+    .sidebar-section { margin-bottom: 20px; }
+
+    /* ── SUCCESS ── */
+    .success-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .3s; }
+    .success-overlay.visible { opacity: 1; pointer-events: all; }
+    .success-modal { background: #fff; border-radius: 20px; padding: 40px; max-width: 480px; width: 90%; text-align: center; box-shadow: var(--shadow-lg); transform: scale(.9); transition: transform .3s; }
+    .success-overlay.visible .success-modal { transform: scale(1); }
+    .success-emoji { font-size: 56px; margin-bottom: 16px; }
+    .success-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    .success-sub { color: var(--muted); font-size: 15px; margin-bottom: 24px; line-height: 1.5; }
+    .success-channels { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .success-channel { background: var(--bg); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; }
+    .success-ref { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 700; color: var(--green); margin-bottom: 24px; }
+
+    /* ── STATUS ── */
+    .status-bar { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 16px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+    /* ── STEPS ── */
+    .steps { display: flex; align-items: center; margin-bottom: 24px; }
+    .step { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .step-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--muted); transition: all .2s; flex-shrink: 0; }
+    .step-circle.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .step-circle.done { border-color: var(--green); background: var(--green); color: #fff; }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .step-label.active { color: var(--primary); }
+    .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 8px; }
+    .step-line.done { background: var(--green); }
+
+    .hidden { display: none !important; }
+    .mt-12 { margin-top: 12px; }
+    .mt-8 { margin-top: 8px; }
+    .flex { display: flex; }
+    .gap-8 { gap: 8px; }
+    .justify-between { justify-content: space-between; }
+    .align-center { align-items: center; }
+    .w-full { width: 100%; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="#">
+    <div class="nav-logo">MC</div>
+    Ma Commune <span style="color:#7c3aed; font-weight:400; margin-left:2px">· Publier</span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="events-portal.html">📋 Mes événements</a>
+    <a class="nav-link" href="landing.html">🏠 Accueil</a>
+    <span class="nav-badge">✨ Nouveau</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">🚀 Publication multi-canaux</div>
+  <h1>Publiez votre événement <span>partout en un clic</span></h1>
+  <p>Remplissez une seule fois. Nous générons les textes adaptés et publions simultanément sur tous vos canaux.</p>
+  <div class="hero-channels">
+    <div class="channel-pill">📱 Ma Commune App</div>
+    <div class="channel-pill">📘 Facebook</div>
+    <div class="channel-pill">📸 Instagram</div>
+    <div class="channel-pill">🌐 Site web</div>
+    <div class="channel-pill">📧 Newsletter</div>
+    <div class="channel-pill">🔔 Push notif</div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- COLONNE GAUCHE — FORMULAIRE -->
+  <div class="left-col">
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step">
+        <div class="step-circle active" id="s1">1</div>
+        <span class="step-label active" id="sl1">Événement</span>
+      </div>
+      <div class="step-line" id="line1"></div>
+      <div class="step">
+        <div class="step-circle" id="s2">2</div>
+        <span class="step-label" id="sl2">Canaux</span>
+      </div>
+      <div class="step-line" id="line2"></div>
+      <div class="step">
+        <div class="step-circle" id="s3">3</div>
+        <span class="step-label" id="sl3">Textes & Planning</span>
+      </div>
+    </div>
+
+    <!-- ── ÉTAPE 1 : Infos événement ── -->
+    <div id="step1">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon" style="background:#eff6ff">🎪</div>
+          <div>
+            <div class="card-title">Informations de l'événement</div>
+            <div class="card-subtitle">Ces infos seront utilisées pour générer tous vos posts</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Titre de l'événement <span class="req">*</span></label>
+            <input type="text" id="evTitle" placeholder="Ex : Marché du terroir de Dour, Fête de quartier..." oninput="updatePreview()" maxlength="100" />
+            <div class="char-count"><span id="titleCount">0</span>/100</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Catégorie <span class="req">*</span></label>
+              <select id="evCategory" onchange="updatePreview()">
+                <option value="">-- Choisir --</option>
+                <option>🎭 Culture</option>
+                <option>⚽ Sport</option>
+                <option>🥕 Marché</option>
+                <option>🎉 Fête locale</option>
+                <option>🌱 Environnement</option>
+                <option>🏛️ Communal</option>
+                <option>🎓 Formation</option>
+                <option>🤝 Solidarité</option>
+                <option>🎵 Concert</option>
+                <option>🍽️ Gastronomie</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Code postal <span class="req">*</span></label>
+              <input type="text" id="evPostal" placeholder="Ex : 7370" maxlength="4" value="7370" oninput="updatePreview()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description courte <span class="req">*</span></label>
+            <textarea id="evDesc" placeholder="Décrivez votre événement en quelques lignes…" oninput="updatePreview(); updateCharCount('evDesc','descCount',280)" maxlength="500"></textarea>
+            <div class="char-count"><span id="descCount">0</span>/280 recommandés</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>📅 Date de début <span class="req">*</span></label>
+              <input type="date" id="evDateStart" oninput="updatePreview()" />
+            </div>
+            <div class="form-group">
+              <label>⏰ Heure</label>
+              <input type="time" id="evTime" value="14:00" oninput="updatePreview()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>📍 Lieu <span class="req">*</span></label>
+            <input type="text" id="evLocation" placeholder="Ex : Parc communal de Dour, Salle des fêtes..." oninput="updatePreview()" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>👤 Organisateur <span class="req">*</span></label>
+              <input type="text" id="evOrganizer" placeholder="Nom / Association..." oninput="updatePreview()" />
+            </div>
+            <div class="form-group">
+              <label>📧 Email contact <span class="req">*</span></label>
+              <input type="email" id="evEmail" placeholder="contact@exemple.be" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="evFree" checked onchange="togglePrice(); updatePreview()" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label" onclick="document.getElementById('evFree').click()">Entrée gratuite</span>
+            </div>
+          </div>
+          <div id="priceGroup" class="hidden form-group">
+            <label>Prix d'entrée (€)</label>
+            <input type="number" id="evPrice" placeholder="0.00" min="0" step="0.50" oninput="updatePreview()" />
+          </div>
+
+          <div class="form-group">
+            <label>🖼️ Image (URL ou upload)</label>
+            <input type="url" id="evImageUrl" placeholder="https://..." oninput="updatePreview()" />
+            <div class="form-tip">Laisser vide pour utiliser l'icône de la catégorie</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <div></div>
+        <button class="btn btn-primary" onclick="goStep(2)">Choisir les canaux →</button>
+      </div>
+    </div>
+
+    <!-- ── ÉTAPE 2 : Canaux ── -->
+    <div id="step2" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon" style="background:#eef2ff">📡</div>
+          <div>
+            <div class="card-title">Canaux de publication</div>
+            <div class="card-subtitle">Sélectionnez où publier votre événement</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="channels-grid">
+            <label class="channel-card app selected" onclick="toggleChannel(this, 'app')">
+              <span class="channel-logo">📱</span>
+              <div class="channel-name">Ma Commune App</div>
+              <div class="channel-desc">Notif push + agenda</div>
+            </label>
+            <label class="channel-card fb" onclick="toggleChannel(this, 'fb')">
+              <span class="channel-logo">📘</span>
+              <div class="channel-name">Facebook Page</div>
+              <div class="channel-desc">Post + événement FB</div>
+            </label>
+            <label class="channel-card ig" onclick="toggleChannel(this, 'ig')">
+              <span class="channel-logo">📸</span>
+              <div class="channel-name">Instagram</div>
+              <div class="channel-desc">Post + Stories</div>
+            </label>
+            <label class="channel-card web selected" onclick="toggleChannel(this, 'web')">
+              <span class="channel-logo">🌐</span>
+              <div class="channel-name">Site web</div>
+              <div class="channel-desc">Page événements</div>
+            </label>
+            <label class="channel-card tiktok" onclick="toggleChannel(this, 'tiktok')">
+              <span class="channel-logo">🎵</span>
+              <div class="channel-name">TikTok</div>
+              <div class="channel-desc">Texte + légende</div>
+            </label>
+            <label class="channel-card google" onclick="toggleChannel(this, 'google')">
+              <span class="channel-logo">📧</span>
+              <div class="channel-name">Newsletter</div>
+              <div class="channel-desc">Email aux abonnés</div>
+            </label>
+          </div>
+
+          <div style="margin-top:20px; padding:14px; background:#f0fdf4; border-radius:10px; border:1px solid #86efac;">
+            <div style="font-size:13px; font-weight:700; color:#15803d; margin-bottom:4px;">🔔 Notification push incluse</div>
+            <div style="font-size:12px; color:#16a34a;">Tous les habitants de <strong id="cityNameChannel">Dour</strong> recevront automatiquement une notification dans Ma Commune App.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Retour</button>
+        <button class="btn btn-primary" onclick="goStep(3); generateTexts()">Générer les textes →</button>
+      </div>
+    </div>
+
+    <!-- ── ÉTAPE 3 : Textes & Planning ── -->
+    <div id="step3" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon" style="background:#fef3c7">✍️</div>
+          <div>
+            <div class="card-title">Textes générés automatiquement</div>
+            <div class="card-subtitle">Adaptés à chaque canal — modifiables avant publication</div>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <!-- Texte App / Web -->
+          <div class="form-group">
+            <label>📱 Ma Commune App + 🌐 Site web</label>
+            <div style="position:relative">
+              <div class="generated-text" id="textApp" contenteditable="true"></div>
+              <button class="copy-btn" onclick="copyText('textApp', this)">Copier</button>
+            </div>
+          </div>
+
+          <!-- Texte Facebook -->
+          <div class="form-group" id="textFbWrap">
+            <label>📘 Facebook</label>
+            <div style="position:relative">
+              <div class="generated-text" id="textFb" contenteditable="true"></div>
+              <button class="copy-btn" onclick="copyText('textFb', this)">Copier</button>
+            </div>
+            <button class="regen-btn" onclick="regenText('fb')">🔄 Regénérer version Facebook</button>
+          </div>
+
+          <!-- Texte Instagram -->
+          <div class="form-group" id="textIgWrap">
+            <label>📸 Instagram</label>
+            <div style="position:relative">
+              <div class="generated-text" id="textIg" contenteditable="true"></div>
+              <button class="copy-btn" onclick="copyText('textIg', this)">Copier</button>
+            </div>
+            <button class="regen-btn" onclick="regenText('ig')">🔄 Regénérer version Instagram</button>
+          </div>
+
+          <!-- Texte Newsletter -->
+          <div class="form-group" id="textNewsletterWrap">
+            <label>📧 Newsletter</label>
+            <div style="position:relative">
+              <div class="generated-text" id="textNewsletter" contenteditable="true"></div>
+              <button class="copy-btn" onclick="copyText('textNewsletter', this)">Copier</button>
+            </div>
+          </div>
+
+          <!-- Hashtags -->
+          <div class="form-group mt-12">
+            <label>🏷️ Hashtags suggérés</label>
+            <div class="hashtags" id="hashtagList"></div>
+            <div class="form-tip mt-8">Cliquez pour sélectionner/désélectionner</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planning -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon" style="background:#fce7f3">🗓️</div>
+          <div>
+            <div class="card-title">Planification de la publication</div>
+            <div class="card-subtitle">Quand voulez-vous publier ?</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="schedule-options">
+            <div class="sched-btn active" id="schedNow" onclick="setSchedule('now')">
+              <span class="sched-icon">⚡</span>
+              <span class="sched-label">Maintenant</span>
+            </div>
+            <div class="sched-btn" id="schedLater" onclick="setSchedule('later')">
+              <span class="sched-icon">🕐</span>
+              <span class="sched-label">Planifier</span>
+            </div>
+            <div class="sched-btn" id="schedJ7" onclick="setSchedule('j7')">
+              <span class="sched-icon">📅</span>
+              <span class="sched-label">J-7 auto</span>
+            </div>
+          </div>
+
+          <div id="schedDatePicker" class="hidden form-row">
+            <div class="form-group">
+              <label>Date de publication</label>
+              <input type="date" id="schedDate" />
+            </div>
+            <div class="form-group">
+              <label>Heure</label>
+              <input type="time" id="schedTime" value="09:00" />
+            </div>
+          </div>
+
+          <div id="schedJ7Info" class="hidden" style="background:#eff6ff; border-radius:10px; padding:12px; font-size:13px; color:var(--primary);">
+            📅 La publication sera automatiquement programmée <strong>7 jours avant l'événement</strong> à 9h00.
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between">
+        <button class="btn btn-secondary" onclick="goStep(2)">← Retour</button>
+        <button class="btn btn-publish" onclick="publishEvent()">
+          🚀 Publier sur tous les canaux sélectionnés
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COLONNE DROITE — SIDEBAR -->
+  <div class="right-col">
+
+    <!-- Aperçu live -->
+    <div class="card sidebar-section">
+      <div class="card-header">
+        <div class="card-icon" style="background:#f3e8ff">👁️</div>
+        <div>
+          <div class="card-title">Aperçu en temps réel</div>
+          <div class="card-subtitle">Voir le rendu sur chaque canal</div>
+        </div>
+      </div>
+      <div class="preview-tabs">
+        <div class="preview-tab active" onclick="switchPreview('app', this)">📱 App</div>
+        <div class="preview-tab" onclick="switchPreview('fb', this)">📘 FB</div>
+        <div class="preview-tab" onclick="switchPreview('ig', this)">📸 IG</div>
+      </div>
+      <div class="preview-body">
+        <!-- App Preview -->
+        <div id="previewApp">
+          <div class="app-post">
+            <div class="app-header">
+              <div class="app-dot"></div>
+              <div class="app-city">Ma Commune · <span id="pCityApp">Dour</span></div>
+            </div>
+            <div class="app-event-card">
+              <div class="app-event-img" id="pImgApp">🎪</div>
+              <div class="app-event-body">
+                <div class="app-event-cat" id="pCatApp">ÉVÉNEMENT</div>
+                <div class="app-event-title" id="pTitleApp">Votre événement</div>
+                <div class="app-event-meta">
+                  <span id="pDateApp">📅 Date à définir</span>
+                  <span id="pLocApp">📍 Lieu</span>
+                </div>
+              </div>
+            </div>
+            <div class="app-notif">
+              <div class="app-notif-icon">🔔</div>
+              <div>
+                <div class="app-notif-title">Notification push</div>
+                <div class="app-notif-text" id="pNotifText">Nouvel événement dans votre commune !</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FB Preview -->
+        <div id="previewFb" class="hidden">
+          <div class="fb-post">
+            <div class="fb-header">
+              <div class="fb-avatar">MC</div>
+              <div>
+                <div class="fb-page-name">Ma Commune · <span id="pCityFb">Dour</span></div>
+                <div class="fb-page-meta">Page officielle · Maintenant</div>
+              </div>
+            </div>
+            <div class="fb-text" id="pTextFb">Votre texte Facebook apparaîtra ici…</div>
+            <div class="fb-image" id="pImgFb">🎪</div>
+            <div class="fb-footer">
+              <span class="fb-action">👍 J'aime</span>
+              <span class="fb-action">💬 Commenter</span>
+              <span class="fb-action">↗️ Partager</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- IG Preview -->
+        <div id="previewIg" class="hidden">
+          <div class="ig-post">
+            <div class="ig-header">
+              <div class="ig-avatar">MC</div>
+              <div class="ig-username">macommune.<span id="pCityIg">dour</span></div>
+            </div>
+            <div class="ig-image" id="pImgIg">🎪</div>
+            <div class="ig-actions">❤️ 💬 ↗️</div>
+            <div class="ig-caption">
+              <strong>macommune.<span id="pCityIg2">dour</span></strong>
+              <span id="pTextIg"> Votre légende Instagram…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Résumé canaux -->
+    <div class="card sidebar-section">
+      <div class="card-header">
+        <div class="card-icon" style="background:#f0fdf4">📊</div>
+        <div>
+          <div class="card-title">Résumé de diffusion</div>
+          <div class="card-subtitle">Portée estimée</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="reachSummary">
+          <div style="text-align:center; color:var(--muted); font-size:13px; padding:20px 0;">Sélectionnez des canaux pour voir l'estimation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card sidebar-section" style="background: linear-gradient(135deg, #1e1b4b, #312e81); color:#fff; border:none;">
+      <div class="card-body">
+        <div style="font-size:16px; font-weight:800; margin-bottom:8px;">💡 Conseils de publication</div>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:8px;">
+          <li style="font-size:12px; color:#c7d2fe;">📸 Les posts avec image ont <strong style="color:#fff">3× plus</strong> d'engagement</li>
+          <li style="font-size:12px; color:#c7d2fe;">⏰ Publiez entre <strong style="color:#fff">18h-20h</strong> pour max de visibilité</li>
+          <li style="font-size:12px; color:#c7d2fe;">🏷️ 5-10 hashtags est l'idéal sur Instagram</li>
+          <li style="font-size:12px; color:#c7d2fe;">🔔 Les notifs push ont un taux d'ouverture de <strong style="color:#fff">65%</strong></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="success-overlay" id="successModal">
+  <div class="success-modal">
+    <div class="success-emoji">🚀</div>
+    <div class="success-title">Événement publié !</div>
+    <div class="success-sub">Votre événement a été diffusé avec succès sur tous les canaux sélectionnés.</div>
+    <div class="success-channels" id="successChannels"></div>
+    <div class="success-ref" id="successRef">Référence : VC-2026-XXXXX</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn btn-primary w-full" style="justify-content:center" onclick="closeModal()">
+        ✅ Voir tous mes événements
+      </button>
+      <button class="btn btn-secondary w-full" style="justify-content:center" onclick="newEvent()">
+        ➕ Publier un autre événement
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── État global ────────────────────────────────────────────────────────────────
+const selectedChannels = new Set(['app', 'web']);
+let scheduleMode = 'now';
+const selectedHashtags = new Set();
+
+// ── Step navigation ────────────────────────────────────────────────────────────
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i).classList.toggle('hidden', i !== n);
+    const circle = document.getElementById('s'+i);
+    const label = document.getElementById('sl'+i);
+    if (i < n) { circle.className = 'step-circle done'; circle.textContent = '✓'; }
+    else if (i === n) { circle.className = 'step-circle active'; circle.textContent = i; }
+    else { circle.className = 'step-circle'; circle.textContent = i; }
+    label.className = 'step-label' + (i === n ? ' active' : '');
+    if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < n ? ' done' : '');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Toggle channel ─────────────────────────────────────────────────────────────
+function toggleChannel(el, key) {
+  el.classList.toggle('selected');
+  if (selectedChannels.has(key)) selectedChannels.delete(key);
+  else selectedChannels.add(key);
+  updateReachSummary();
+}
+
+// ── Reach summary ─────────────────────────────────────────────────────────────
+const REACH = {
+  app: { name: '📱 Ma Commune App', reach: '1 200 habitants', color: '#6366f1' },
+  fb:  { name: '📘 Facebook', reach: '3 400 vues estimées', color: '#1877f2' },
+  ig:  { name: '📸 Instagram', reach: '800 impressions', color: '#e1306c' },
+  web: { name: '🌐 Site web', reach: 'Référencé Google', color: '#059669' },
+  tiktok: { name: '🎵 TikTok', reach: 'Portée virale', color: '#010101' },
+  google: { name: '📧 Newsletter', reach: '450 abonnés', color: '#EA4335' },
+};
+
+function updateReachSummary() {
+  const el = document.getElementById('reachSummary');
+  if (selectedChannels.size === 0) {
+    el.innerHTML = '<div style="text-align:center; color:var(--muted); font-size:13px; padding:20px 0;">Aucun canal sélectionné</div>';
+    return;
+  }
+  let total = 0;
+  let html = '';
+  for (const k of selectedChannels) {
+    if (!REACH[k]) continue;
+    html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+      <span style="font-size:13px; font-weight:600;">${REACH[k].name}</span>
+      <span style="font-size:12px; color:var(--muted);">${REACH[k].reach}</span>
+    </div>`;
+  }
+  el.innerHTML = html + `<div style="margin-top:10px; padding:10px; background:#eff6ff; border-radius:8px; text-align:center;">
+    <div style="font-size:11px; color:var(--muted);">Portée totale estimée</div>
+    <div style="font-size:20px; font-weight:800; color:var(--primary);">${selectedChannels.size * 800 + 1200}+</div>
+    <div style="font-size:11px; color:var(--muted);">personnes touchées</div>
+  </div>`;
+}
+
+// ── Live preview ───────────────────────────────────────────────────────────────
+function getEmoji(cat) {
+  const map = {'🎭 Culture':'🎭','⚽ Sport':'⚽','🥕 Marché':'🥕','🎉 Fête locale':'🎉','🌱 Environnement':'🌱','🏛️ Communal':'🏛️','🎓 Formation':'🎓','🤝 Solidarité':'🤝','🎵 Concert':'🎵','🍽️ Gastronomie':'🍽️'};
+  return map[cat] || '🎪';
+}
+
+function getCityName(postal) {
+  const map = {'7370':'Dour','7000':'Mons','1000':'Bruxelles','4000':'Liège','8000':'Bruges','5000':'Namur','6000':'Charleroi','3000':'Leuven'};
+  return map[postal] || 'Ma Commune';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'Date à définir';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('fr-BE', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function updatePreview() {
+  const title = document.getElementById('evTitle').value || 'Votre événement';
+  const cat = document.getElementById('evCategory').value;
+  const postal = document.getElementById('evPostal').value;
+  const dateStr = document.getElementById('evDateStart').value;
+  const time = document.getElementById('evTime').value;
+  const loc = document.getElementById('evLocation').value || 'Lieu à définir';
+  const isFree = document.getElementById('evFree').checked;
+  const emoji = getEmoji(cat);
+  const city = getCityName(postal);
+  const dateLabel = formatDate(dateStr);
+
+  // Title count
+  document.getElementById('titleCount').textContent = document.getElementById('evTitle').value.length;
+
+  // City names
+  ['App','Fb'].forEach(s => { const el = document.getElementById('pCity'+s); if(el) el.textContent = city; });
+  ['Ig','Ig2'].forEach(s => { const el = document.getElementById('pCityIg'+(s==='Ig'?'':s)); if(el) el.textContent = city.toLowerCase(); });
+  document.getElementById('cityNameChannel').textContent = city;
+
+  // App preview
+  document.getElementById('pTitleApp').textContent = title;
+  document.getElementById('pCatApp').textContent = (cat || 'ÉVÉNEMENT').replace(/^[^ ]+ /, '').toUpperCase();
+  document.getElementById('pDateApp').textContent = '📅 ' + dateLabel;
+  document.getElementById('pLocApp').textContent = '📍 ' + loc;
+  document.getElementById('pNotifText').textContent = `Nouveau : ${title} le ${dateLabel} à ${loc}`;
+  document.getElementById('pImgApp').textContent = emoji;
+
+  // FB preview
+  document.getElementById('pImgFb').textContent = emoji;
+  document.getElementById('pTextFb').textContent = `${emoji} ${title}\n\n📅 ${dateLabel}${time ? ' à ' + time : ''}\n📍 ${loc}\n${isFree ? '✅ Entrée gratuite' : '💶 Entrée payante'}\n\nOrganisé par ${document.getElementById('evOrganizer').value || 'Ma Commune'}`;
+
+  // IG preview
+  document.getElementById('pImgIg').textContent = emoji;
+  document.getElementById('pTextIg').textContent = ` ${title} ✨\n${dateLabel} • ${loc}`;
+}
+
+// ── Char count ─────────────────────────────────────────────────────────────────
+function updateCharCount(inputId, countId, max) {
+  const len = document.getElementById(inputId).value.length;
+  const el = document.getElementById(countId);
+  el.textContent = len;
+  el.style.color = len > max ? 'var(--red)' : 'var(--muted)';
+}
+
+// ── Price toggle ───────────────────────────────────────────────────────────────
+function togglePrice() {
+  const isFree = document.getElementById('evFree').checked;
+  document.getElementById('priceGroup').classList.toggle('hidden', isFree);
+}
+
+// ── Preview tab ────────────────────────────────────────────────────────────────
+function switchPreview(type, tabEl) {
+  ['app','fb','ig'].forEach(t => {
+    document.getElementById('preview'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('hidden', t !== type);
+  });
+  document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+}
+
+// ── Génération de textes ───────────────────────────────────────────────────────
+function generateTexts() {
+  const title = document.getElementById('evTitle').value || 'Événement local';
+  const cat = document.getElementById('evCategory').value || 'Événement';
+  const dateStr = document.getElementById('evDateStart').value;
+  const time = document.getElementById('evTime').value;
+  const loc = document.getElementById('evLocation').value || 'Lieu à confirmer';
+  const organizer = document.getElementById('evOrganizer').value || 'Ma Commune';
+  const desc = document.getElementById('evDesc').value || '';
+  const postal = document.getElementById('evPostal').value || '7370';
+  const isFree = document.getElementById('evFree').checked;
+  const price = document.getElementById('evPrice').value;
+  const emoji = getEmoji(cat);
+  const city = getCityName(postal);
+  const dateLabel = formatDate(dateStr);
+  const citySlug = city.toLowerCase().replace(/\s/g, '');
+  const catClean = cat.replace(/^[^ ]+ /, '');
+
+  // App / Web
+  document.getElementById('textApp').textContent =
+`${emoji} ${title}
+
+📅 ${dateLabel}${time ? ' à ' + time : ''}
+📍 ${loc}
+${isFree ? '✅ Entrée gratuite' : `💶 ${price ? price + '€' : 'Entrée payante'}`}
+
+${desc}
+
+👤 Organisé par : ${organizer}
+📱 Retrouvez tous les détails sur Ma Commune App`;
+
+  // Facebook
+  document.getElementById('textFb').textContent =
+`${emoji} ${title} — ${city}
+
+Bonjour à tous les habitants de ${city} !
+
+📅 Rendez-vous le ${dateLabel}${time ? ' à ' + time : ''}
+📍 ${loc}
+
+${desc ? desc + '\n\n' : ''}${isFree ? '✅ Entrée entièrement gratuite — venez nombreux !' : `💶 Entrée : ${price ? price + '€' : 'voir détails'}`}
+
+👤 Organisé par ${organizer}
+
+🔔 Likez cette page et activez les notifications pour ne rater aucun événement local !
+📲 Téléchargez Ma Commune App pour recevoir toutes les alertes`;
+
+  // Instagram
+  document.getElementById('textIg').textContent =
+`${emoji} ${title.toUpperCase()} ✨
+
+📅 ${dateLabel}${time ? ' · ' + time : ''}
+📍 ${loc}
+${isFree ? '🎉 GRATUIT' : `💶 ${price}€`}
+
+${desc ? desc.slice(0, 150) + (desc.length > 150 ? '…' : '') + '\n\n' : ''}Organisé par @${organizer.replace(/\s/g,'').toLowerCase()} 💙
+
+👇 Partagez avec vos amis !`;
+
+  // Newsletter
+  document.getElementById('textNewsletter').textContent =
+`Objet : ${emoji} ${title} le ${dateLabel} à ${city}
+
+Bonjour,
+
+Nous avons le plaisir de vous annoncer un événement dans votre commune.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${emoji} ${title}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📅 Date : ${dateLabel}${time ? ' à ' + time : ''}
+📍 Lieu : ${loc}
+${isFree ? '✅ Entrée gratuite' : `💶 Tarif : ${price ? price + '€' : 'voir conditions'}`}
+👤 Organisateur : ${organizer}
+
+${desc}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📲 Téléchargez Ma Commune App pour ne rater aucun événement de ${city}.
+🔕 Se désinscrire : désabonnement@macommune.be`;
+
+  // Hashtags
+  const tags = [
+    `#${citySlug}`, `#macommune`, `#${catClean.toLowerCase().replace(/\s/g,'')}`,
+    `#evenementlocal`, `#${city.toLowerCase().replace(/\s/g,'')}belgique`,
+    `#belgique`, `#communebelge`, `#viequartier`,
+    isFree ? '#gratuit' : '#evenementpayant',
+    `#${citySlug}events`, '#agendalocal', '#sortir',
+  ];
+
+  const container = document.getElementById('hashtagList');
+  container.innerHTML = '';
+  tags.forEach(tag => {
+    const el = document.createElement('span');
+    el.className = 'hashtag selected';
+    el.textContent = tag;
+    selectedHashtags.add(tag);
+    el.onclick = () => {
+      el.classList.toggle('selected');
+      if (selectedHashtags.has(tag)) selectedHashtags.delete(tag);
+      else selectedHashtags.add(tag);
+    };
+    container.appendChild(el);
+  });
+
+  // Visibility selon canaux sélectionnés
+  document.getElementById('textFbWrap').classList.toggle('hidden', !selectedChannels.has('fb'));
+  document.getElementById('textIgWrap').classList.toggle('hidden', !selectedChannels.has('ig'));
+  document.getElementById('textNewsletterWrap').classList.toggle('hidden', !selectedChannels.has('google'));
+}
+
+function regenText(type) {
+  const vars = ['super', 'génial', 'incroyable', 'exceptionnel', 'à ne pas manquer'];
+  const adj = vars[Math.floor(Math.random() * vars.length)];
+  const title = document.getElementById('evTitle').value || 'Événement';
+  if (type === 'fb') {
+    const current = document.getElementById('textFb').textContent;
+    document.getElementById('textFb').textContent = current.replace('Bonjour à tous', `Un événement ${adj} vous attend`) ;
+  }
+  if (type === 'ig') {
+    document.getElementById('textIg').textContent = document.getElementById('textIg').textContent.replace('✨', '🔥');
+  }
+}
+
+// ── Copy ────────────────────────────────────────────────────────────────────────
+function copyText(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copié !';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Schedule ────────────────────────────────────────────────────────────────────
+function setSchedule(mode) {
+  scheduleMode = mode;
+  ['now','later','j7'].forEach(m => document.getElementById('sched'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('active', m === mode));
+  document.getElementById('schedDatePicker').classList.toggle('hidden', mode !== 'later');
+  document.getElementById('schedJ7Info').classList.toggle('hidden', mode !== 'j7');
+}
+
+// ── Publish ─────────────────────────────────────────────────────────────────────
+function publishEvent() {
+  // Validation basique
+  const title = document.getElementById('evTitle').value.trim();
+  const organizer = document.getElementById('evOrganizer').value.trim();
+  const email = document.getElementById('evEmail').value.trim();
+  if (!title || !organizer || !email) {
+    alert('⚠️ Veuillez remplir tous les champs obligatoires (titre, organisateur, email).');
+    goStep(1);
+    return;
+  }
+  if (selectedChannels.size === 0) {
+    alert('⚠️ Sélectionnez au moins un canal de publication.');
+    goStep(2);
+    return;
+  }
+
+  // Simuler publication
+  const btn = document.querySelector('.btn-publish');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Publication en cours…';
+
+  setTimeout(() => {
+    const ref = 'VC-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 90000 + 10000);
+    document.getElementById('successRef').textContent = `Référence : ${ref}`;
+
+    const channelNames = [...selectedChannels].map(k => REACH[k]?.name || k);
+    document.getElementById('successChannels').innerHTML = channelNames.map(n => `<span class="success-channel">${n}</span>`).join('');
+
+    document.getElementById('successModal').classList.add('visible');
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Publier sur tous les canaux sélectionnés';
+  }, 2200);
+}
+
+function closeModal() {
+  document.getElementById('successModal').classList.remove('visible');
+  window.location.href = 'events-portal.html';
+}
+function newEvent() {
+  document.getElementById('successModal').classList.remove('visible');
+  location.reload();
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────────
+updateReachSummary();
+// Pré-remplir date avec aujourd'hui + 7 jours
+const d = new Date(); d.setDate(d.getDate() + 7);
+document.getElementById('evDateStart').value = d.toISOString().split('T')[0];
+updatePreview();
+</script>
+</body>
+</html>
