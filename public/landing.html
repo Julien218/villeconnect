@@ -392,6 +392,93 @@
       .footer-links { justify-content: center; }
       .cta-section { margin: 0 16px 60px; padding: 48px 24px; }
     }
+
+    /* ── DOWNLOAD / QR CODE ── */
+    .download-section {
+      padding: 80px 24px;
+      text-align: center;
+    }
+    .download-inner { max-width: 1000px; margin: 0 auto; }
+    .qr-cards-row {
+      display: flex; gap: 20px; justify-content: center; align-items: flex-start;
+      flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .qr-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px; padding: 24px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      width: 240px; transition: border-color .2s, transform .2s;
+    }
+    .qr-card:hover { border-color: rgba(16,185,129,0.25); transform: translateY(-4px); }
+    .qr-card-main {
+      border-color: rgba(16,185,129,0.3);
+      background: rgba(16,185,129,0.04);
+      box-shadow: 0 0 40px rgba(16,185,129,0.08);
+      width: 270px;
+    }
+    .qr-store-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 700; margin-bottom: 4px;
+    }
+    .qr-ios { background: #000; color: #fff; }
+    .qr-android { background: #01875f; color: #fff; }
+    .qr-img-wrap {
+      position: relative; width: 160px; height: 160px;
+      background: #fff; border-radius: 16px; padding: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .qr-img-wrap-main { width: 180px; height: 180px; }
+    .qr-img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
+    .qr-logo-overlay {
+      position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .qr-logo-main { width: 44px; height: 44px; font-size: 22px; border-radius: 12px; }
+    .qr-label { font-size: 14px; font-weight: 700; color: var(--text); }
+    .qr-label-main { font-size: 15px; }
+    .qr-sub { font-size: 12px; color: var(--muted2); text-align: center; }
+    .qr-dl-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: 10px; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: "Inter",sans-serif; width: 100%;
+      justify-content: center; transition: opacity .2s;
+    }
+    .qr-dl-btn:hover { opacity: 0.8; }
+    .qr-ios-btn { background: #000; color: #fff; }
+    .qr-android-btn { background: #01875f; color: #fff; }
+    .qr-main-top { text-align: center; margin-bottom: 4px; }
+    .qr-main-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; margin: 0 auto 8px;
+      box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+    }
+    .qr-main-name { font-size: 17px; font-weight: 800; }
+    .qr-main-tagline { font-size: 12px; color: var(--green); font-weight: 600; margin-top: 2px; }
+    .qr-stores-row {
+      display: flex; gap: 10px; align-items: center;
+      font-size: 12px; color: var(--muted); font-weight: 500;
+    }
+    .qr-store-mini { display: flex; align-items: center; gap: 4px; }
+    .qr-coming-note {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+      padding: 12px 24px; border-radius: 12px;
+      font-size: 13px; color: var(--muted); max-width: 600px;
+    }
+    @media (max-width: 640px) {
+      .qr-cards-row { flex-direction: column; align-items: center; }
+      .qr-card, .qr-card-main { width: 100%; max-width: 300px; }
+    }
+
   </style>
 </head>
 <body>
@@ -406,7 +493,7 @@
       Ma Commune
       <span class="nav-pill">BIENTÔT</span>
     </div>
-    <a href="#waitlist" class="nav-cta">Rejoindre la liste →</a>
+    <div style="display:flex;gap:10px;align-items:center"><a href="#download" style="color:var(--muted);font-size:14px;font-weight:600;text-decoration:none">📲 Télécharger</a><a href="#waitlist" class="nav-cta">Rejoindre →</a></div>
   </nav>
 
   <!-- HERO -->
@@ -575,6 +662,85 @@
       <div class="city-pill">Frameries (7080)</div>
       <div class="city-pill">Quaregnon (7390)</div>
       <div class="city-pill">+ votre commune</div>
+    </div>
+  </div>
+
+
+  <!-- SECTION QR CODE TÉLÉCHARGEMENT -->
+  <div class="download-section" id="download">
+    <div class="download-inner">
+      <div class="section-label" style="background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.2);color:var(--purple)">Téléchargement</div>
+      <h2 class="section-title">Scannez pour télécharger</h2>
+      <p style="font-size:16px;color:var(--muted);line-height:1.75;margin-bottom:40px;max-width:500px;margin-left:auto;margin-right:auto">
+        Disponible sur iPhone et Android dès septembre 2026.<br>Pointez votre appareil photo sur le QR code — c'est tout.
+      </p>
+
+      <div class="qr-cards-row">
+
+        <!-- QR iOS -->
+        <div class="qr-card">
+          <div class="qr-store-badge qr-ios">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            App Store
+          </div>
+          <div class="qr-img-wrap">
+            <img src="https://base44.app/api/apps/6a11d1493754e75ce76ee0de/files/mp/public/6a11d1493754e75ce76ee0de/1d8592f8a_qr_ios.png"
+              alt="QR App Store" class="qr-img" />
+            <div class="qr-logo-overlay">🏙️</div>
+          </div>
+          <div class="qr-label">Scan → iPhone</div>
+          <div class="qr-sub">iOS 15+ · iPhone & iPad</div>
+          <button class="qr-dl-btn qr-ios-btn" onclick="window.open('https://apps.apple.com/be/app/ma-commune','_blank')">
+            ↗ Ouvrir l'App Store
+          </button>
+        </div>
+
+        <!-- QR Universel central -->
+        <div class="qr-card qr-card-main">
+          <div class="qr-main-top">
+            <div class="qr-main-icon">🏙️</div>
+            <div class="qr-main-name">Ma Commune</div>
+            <div class="qr-main-tagline">iOS &amp; Android</div>
+          </div>
+          <div class="qr-img-wrap qr-img-wrap-main">
+            <img src="https://base44.app/api/apps/6a11d1493754e75ce76ee0de/files/mp/public/6a11d1493754e75ce76ee0de/696dbb304_qr_universal.png"
+              alt="QR Code universel Ma Commune" class="qr-img" />
+            <div class="qr-logo-overlay qr-logo-main">🏙️</div>
+          </div>
+          <div class="qr-label qr-label-main">📲 QR universel</div>
+          <div class="qr-sub">Détecte automatiquement iOS ou Android</div>
+          <div class="qr-stores-row" style="margin-top:4px">
+            <span class="qr-store-mini">🍎 App Store</span>
+            <span style="color:var(--muted2)">•</span>
+            <span class="qr-store-mini">▶ Google Play</span>
+          </div>
+        </div>
+
+        <!-- QR Android -->
+        <div class="qr-card">
+          <div class="qr-store-badge qr-android">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M3.18 23.76c.3.17.64.24.99.19l12.5-12.5L13 7.78 3.18 23.76zM20.77 10.34l-2.54-1.47-3.56 3.56 3.56 3.56 2.56-1.48c.73-.42.73-1.75-.02-2.17zM3.18.24C2.86.41 2.64.79 2.64 1.27v21.46l12.5-12.5L3.18.24z"/></svg>
+            Google Play
+          </div>
+          <div class="qr-img-wrap">
+            <img src="https://base44.app/api/apps/6a11d1493754e75ce76ee0de/files/mp/public/6a11d1493754e75ce76ee0de/f24c4f358_qr_android.png"
+              alt="QR Google Play" class="qr-img" />
+            <div class="qr-logo-overlay">🏙️</div>
+          </div>
+          <div class="qr-label">Scan → Android</div>
+          <div class="qr-sub">Android 10+ · Samsung, Pixel…</div>
+          <button class="qr-dl-btn qr-android-btn" onclick="window.open('https://play.google.com/store/apps/details?id=be.macommune','_blank')">
+            ▶ Ouvrir le Play Store
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Note lancement -->
+      <div class="qr-coming-note">
+        <span>🚧</span>
+        <span>Les QR codes seront actifs dès la mise en ligne officielle en <strong>septembre 2026</strong>. Inscrivez-vous à la liste d'attente pour être notifié en premier.</span>
+      </div>
     </div>
   </div>
 
