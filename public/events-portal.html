@@ -846,346 +846,331 @@
       Numéro de référence : <strong id="refNumber"></strong>
     </div>
     <button class="btn-lg btn-primary" style="width:100%" onclick="closeModal()">Voir tous les événements</button>
+<!-- ── SUCCESS MODAL ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h2>Événement soumis !</h2>
+    <p>Votre événement a été transmis à la commune pour validation. Vous recevrez une confirmation par email sous 24–48h.</p>
+    <div class="modal-ref">
+      Numéro de référence : <strong id="refNumber"></strong>
+    </div>
+    <p id="syncStatus" style="font-size:13px;margin-top:8px;font-weight:500"></p>
+    <button class="btn-lg btn-primary" style="width:100%;margin-top:16px" onclick="closeModal()">Voir tous les événements</button>
   </div>
 </div>
 
 <!-- ── JAVASCRIPT ─────────────────────────────────────────────────────────── -->
 <script>
-  // ── Data ──────────────────────────────────────────────────────────────────
-  const EVENTS_DATA = [
+  // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
+  // VilleConnect OS — Portail Organisateurs v2.0 — Full API Integration
+
+  const API_BASE = 'https://v-illec-onnect-e76ee0de.base44.app/api/functions';
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let EVENTS_DATA = [];
+  let activeEvents = [];
+
+  // ── Fallback data (si API indisponible) ───────────────────────────────────
+  const FALLBACK_EVENTS = [
     {
-      id: "e1", title: "Marché hebdomadaire du samedi",
-      description: "Retrouvez chaque samedi matin les producteurs locaux, maraîchers, fromagers et artisans de la région. Fruits, légumes de saison, produits du terroir belge.",
-      category: "Marché", date: "2026-05-30", time: "8h00 – 13h00",
-      location: "Place du Marché", address: "Place du Marché, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600",
-      isFree: true, organizer: "Commune de Ville",
-      tags: ["Local", "Alimentation", "Hebdomadaire"], emoji: "🛒"
+      id:"fb-1",ref:"VC-2026-11001",title:"Fête de la Musique — Dour",
+      description:"Grande fête musicale en plein air avec des artistes locaux.",
+      category:"Musique",date_start:"2026-06-21",time_start:"14:00",time_end:"23:00",
+      location:"Grand-Place de Dour",postal_code:"7370",city:"Dour",
+      organizer:"Ville de Dour",is_free:true,price:null,status:"approved",
+      tags:["musique","été","famille"],
+      image_url:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600",emoji:"🎵"
     },
     {
-      id: "e2", title: "Concert en plein air — Jazz & Blues",
-      description: "Soirée musicale exceptionnelle dans le parc communal. Trois groupes locaux se succèdent sur scène. Amenez vos pique-niques, l'entrée est libre.",
-      category: "Culture", date: "2026-06-07", time: "19h00 – 23h00",
-      location: "Parc Communal", address: "Rue du Parc 12, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600",
-      isFree: true, organizer: "Maison de la Culture",
-      tags: ["Musique", "Famille", "Soirée"], emoji: "🎷"
+      id:"fb-2",ref:"VC-2026-11002",title:"Marché de Producteurs",
+      description:"Produits frais locaux, artisanat belge et animations enfants.",
+      category:"Commerce",date_start:"2026-06-14",time_start:"08:00",time_end:"13:00",
+      location:"Rue Haute",postal_code:"7370",city:"Dour",
+      organizer:"Association des Commerçants",is_free:true,price:null,status:"approved",
+      tags:["marché","local","bio"],
+      image_url:"https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600",emoji:"🥦"
     },
     {
-      id: "e3", title: "Tournoi de football intercommunal",
-      description: "Le club local ouvre son tournoi annuel aux équipes des communes voisines. Matches toute la journée, buvette et animations pour les enfants.",
-      category: "Sport", date: "2026-06-14", time: "9h00 – 18h00",
-      location: "Stade Municipal", address: "Rue du Stade 5, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600",
-      isFree: true, organizer: "FC VilleConnect",
-      tags: ["Sport", "Jeunesse", "Compétition"], emoji: "⚽"
-    },
-    {
-      id: "e4", title: "Atelier jardinage urbain",
-      description: "Apprenez les bases du compostage, de la permaculture et du potager balcon. Matériel fourni. Places limitées à 20 personnes — inscription obligatoire.",
-      category: "Environnement", date: "2026-06-21", time: "10h00 – 12h30",
-      location: "Maison de la Nature", address: "Avenue Verte 3, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600",
-      isFree: false, price: "5€ / personne", organizer: "Éco-quartier Ville",
-      tags: ["Écologie", "Atelier", "Inscription"], emoji: "🌱"
-    },
-    {
-      id: "e5", title: "Fête de quartier — Rue des Acacias",
-      description: "La rue des Acacias ferme à la circulation pour une après-midi de fête entre voisins. Jeux pour enfants, musique, barbecue collectif.",
-      category: "Communal", date: "2026-07-05", time: "15h00 – 21h00",
-      location: "Rue des Acacias", address: "Rue des Acacias, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=600",
-      isFree: true, organizer: "Comité de quartier",
-      tags: ["Voisinage", "Famille", "Convivialité"], emoji: "🎊"
-    },
-    {
-      id: "e6", title: "Exposition photo — 'Notre Ville'",
-      description: "Les habitants ont photographié leur quotidien pendant 3 mois. 120 clichés exposés à la galerie communale. Vernissage le vendredi 11 juillet à 18h.",
-      category: "Culture", date: "2026-07-11", time: "18h00 – 20h00",
-      location: "Galerie Communale", address: "Rue de l'Art 7, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=600",
-      isFree: true, organizer: "Service Culturel",
-      tags: ["Art", "Photo", "Vernissage"], emoji: "📸"
-    },
-    {
-      id: "e7", title: "Stage vacances — Multi-sports jeunes",
-      description: "Stage d'été pour les 8–14 ans : tennis, natation, basket, escalade. Encadrement par des moniteurs diplômés.",
-      category: "Jeunesse", date: "2026-07-07", time: "9h00 – 16h00",
-      location: "Centre Sportif", address: "Boulevard du Sport 20, 1000 Ville",
-      image: "https://images.unsplash.com/photo-1547347298-4074fc3086f0?w=600",
-      isFree: false, price: "45€ / semaine", organizer: "Service Jeunesse",
-      tags: ["Enfants", "Vacances", "Sport"], emoji: "🏊"
-    },
-    {
-      id: "e8", title: "Journée portes ouvertes — Recyclerie",
-      description: "Découvrez la recyclerie communale : dépôt de vêtements, meubles, électronique. Ateliers réparation gratuits.",
-      category: "Environnement", date: "2026-07-18", time: "10h00 – 17h00",
-      location: "Recyclerie de Ville", address: "Zone Artisanale, Rue du Tri 2",
-      image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600",
-      isFree: true, organizer: "Commune de Ville",
-      tags: ["Écologie", "Solidarité", "DIY"], emoji: "♻️"
-    },
+      id:"fb-3",ref:"VC-2026-11003",title:"Tournoi de Football Amateur",
+      description:"5ème édition inter-communes. 8 équipes participantes.",
+      category:"Sport",date_start:"2026-06-20",time_start:"10:00",time_end:"18:00",
+      location:"Stade Communal de Dour",postal_code:"7370",city:"Dour",
+      organizer:"R.F.C. Dour",is_free:false,price:"3",status:"approved",
+      tags:["football","sport","compétition"],
+      image_url:"https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600",emoji:"⚽"
+    }
   ];
 
-  let activeEvents = [...EVENTS_DATA];
-  let activeCat = "tous";
-  let activeFree = "tous";
-
-  // ── Tab switching ─────────────────────────────────────────────────────────
-  function showTab(tab) {
-    document.getElementById('section-browse').classList.toggle('hidden-section', tab !== 'browse');
-    document.getElementById('section-form').classList.toggle('active', tab === 'form');
-    document.getElementById('tab-browse').classList.toggle('active', tab === 'browse');
-    document.getElementById('tab-form').classList.toggle('active', tab === 'form');
-    if (tab === 'form') {
-      document.getElementById('soumettre')?.scrollIntoView?.();
-      document.querySelector('.main-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
-
-  // ── Filters ───────────────────────────────────────────────────────────────
-  function selectCat(el) {
-    document.querySelectorAll('#filterChips .chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    activeCat = el.dataset.cat;
-    filterEvents();
-  }
-  function selectFree(el) {
-    document.querySelectorAll('#freeChips .chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    activeFree = el.dataset.free;
-    filterEvents();
-  }
-  function resetFilters() {
-    document.querySelector('#filterChips .chip').click();
-    document.querySelector('#freeChips .chip').click();
-    document.getElementById('searchInput').value = '';
-    filterEvents();
-  }
-
-  function filterEvents() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    activeEvents = EVENTS_DATA.filter(e => {
-      const matchCat = activeCat === 'tous' || e.category === activeCat;
-      const matchFree = activeFree === 'tous'
-        || (activeFree === 'gratuit' && e.isFree)
-        || (activeFree === 'payant' && !e.isFree);
-      const matchQ = !q || e.title.toLowerCase().includes(q)
-        || e.location.toLowerCase().includes(q)
-        || e.tags.some(t => t.toLowerCase().includes(q))
-        || e.organizer.toLowerCase().includes(q);
-      return matchCat && matchFree && matchQ;
-    });
-    renderEvents();
-  }
-
-  function sortEvents(by) {
-    if (by === 'date') activeEvents.sort((a,b) => a.date.localeCompare(b.date));
-    if (by === 'name') activeEvents.sort((a,b) => a.title.localeCompare(b.title));
-    if (by === 'free') activeEvents.sort((a,b) => (b.isFree ? 1 : 0) - (a.isFree ? 1 : 0));
-    renderEvents();
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  function renderEvents() {
+  // ── Charger les événements depuis l'API ───────────────────────────────────
+  async function loadEvents(postal_code) {
+    postal_code = postal_code || '7370';
     const grid = document.getElementById('eventsGrid');
-    const empty = document.getElementById('emptyState');
-    const count = document.getElementById('resultsCount');
-
-    count.textContent = activeEvents.length + ' événement' + (activeEvents.length > 1 ? 's' : '') + ' trouvé' + (activeEvents.length > 1 ? 's' : '');
-
-    if (activeEvents.length === 0) {
-      grid.innerHTML = '';
-      empty.classList.remove('hidden');
-      return;
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted)">⏳ Chargement des événements…</div>';
+    try {
+      const res = await fetch(`${API_BASE}/getEvents?postal_code=${postal_code}&limit=50&status=approved`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      EVENTS_DATA = data.events || [];
+    } catch (err) {
+      console.warn('API indisponible, fallback:', err);
+      EVENTS_DATA = FALLBACK_EVENTS;
     }
-    empty.classList.add('hidden');
-
-    grid.innerHTML = activeEvents.map(ev => {
-      const d = new Date(ev.date);
-      const day = d.getDate();
-      const mon = d.toLocaleDateString('fr-BE', { month: 'short' }).toUpperCase();
-      const fullDate = d.toLocaleDateString('fr-BE', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-
-      return `
-        <div class="event-card" onclick="handleEventClick('${ev.id}')">
-          <div class="event-card-img">
-            <img src="${ev.image}" alt="${ev.title}" onerror="this.parentElement.innerHTML='${ev.emoji}'" />
-          </div>
-          <div class="event-card-body">
-            <div class="event-card-badges">
-              <span class="badge badge-cat">${ev.category}</span>
-              ${ev.isFree ? '<span class="badge badge-free">✅ Gratuit</span>' : `<span class="badge badge-paid">💶 ${ev.price || 'Payant'}</span>`}
-            </div>
-            <div class="event-card-title">${ev.title}</div>
-            <div class="event-card-desc">${ev.description}</div>
-            <div class="event-card-meta">
-              <div class="meta-row"><span class="meta-icon">📅</span>${fullDate}</div>
-              <div class="meta-row"><span class="meta-icon">⏰</span>${ev.time}</div>
-              <div class="meta-row"><span class="meta-icon">📍</span>${ev.location}</div>
-              <div class="meta-row"><span class="meta-icon">👤</span>${ev.organizer}</div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
-              ${ev.tags.map(t => `<span style="font-size:11px;color:var(--muted);background:var(--bg);padding:2px 7px;border-radius:5px;border:1px solid var(--border)">#${t}</span>`).join('')}
-            </div>
-            <div class="event-card-footer">
-              <button class="btn-sm btn-primary" onclick="event.stopPropagation();reprendreEvent('${ev.id}')">📋 Reprendre</button>
-              <button class="btn-sm btn-outline" onclick="event.stopPropagation()">🔔 Me rappeler</button>
-              <button class="btn-sm btn-icon btn-outline" onclick="event.stopPropagation()" title="Partager">↗️</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // ── Sidebar quick events ──────────────────────────────────────────────────
-  function renderSidebar() {
-    const el = document.getElementById('sidebarEvents');
-    el.innerHTML = EVENTS_DATA.slice(0, 5).map(ev => {
-      const d = new Date(ev.date);
-      const day = d.getDate();
-      const mon = d.toLocaleDateString('fr-BE', { month: 'short' }).toUpperCase();
-      return `
-        <div class="quick-event" onclick="showTab('browse')">
-          <div class="quick-date">
-            <div class="quick-date-day">${day}</div>
-            <div class="quick-date-mon">${mon}</div>
-          </div>
-          <div>
-            <div class="quick-event-title">${ev.title}</div>
-            <div class="quick-event-loc">📍 ${ev.location}</div>
-            <span class="quick-event-badge" style="background:${ev.isFree ? '#DCFCE7' : '#FEF3C7'};color:${ev.isFree ? '#059669' : '#92400E'}">
-              ${ev.isFree ? 'Gratuit' : ev.price || 'Payant'}
-            </span>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // ── Handle event click (detail) ───────────────────────────────────────────
-  function handleEventClick(id) {
-    const ev = EVENTS_DATA.find(e => e.id === id);
-    if (!ev) return;
-    const d = new Date(ev.date);
-    alert(`📅 ${ev.title}\n\n📅 ${d.toLocaleDateString('fr-BE', {weekday:'long',day:'numeric',month:'long',year:'numeric'})}\n⏰ ${ev.time}\n📍 ${ev.location}\n👤 ${ev.organizer}\n\n${ev.description}\n\n${ev.isFree ? '✅ Entrée gratuite' : '💶 ' + (ev.price || 'Payant')}`);
-  }
-
-  // ── Reprendre un événement → pré-remplir le formulaire ───────────────────
-  function reprendreEvent(id) {
-    const ev = EVENTS_DATA.find(e => e.id === id);
-    if (!ev) return;
-    showTab('form');
-    goStep(1);
-
-    setTimeout(() => {
-      document.getElementById('evTitle').value = ev.title + ' (copie)';
-      document.getElementById('evCategory').value = ev.category;
-      document.getElementById('evDescription').value = ev.description;
-      document.getElementById('evTags').value = ev.tags.join(', ');
-      goStep(2);
-      setTimeout(() => {
-        document.getElementById('evLocation').value = ev.location;
-        document.getElementById('evAddress').value = ev.address;
-        document.getElementById('evTimeStart').value = ev.time.split('–')[0].trim().replace('h', ':').padStart(5,'0');
-        document.getElementById('evFree').checked = ev.isFree;
-        togglePrice();
-        goStep(1);
-
-        // Notification
-        const msg = document.createElement('div');
-        msg.innerHTML = `<div style="position:fixed;top:80px;right:20px;z-index:300;background:#1E293B;color:#fff;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);animation:slideIn .3s ease">📋 Événement « ${ev.title} » repris dans le formulaire !</div>`;
-        document.body.appendChild(msg);
-        setTimeout(() => msg.remove(), 3500);
-      }, 100);
-    }, 200);
-  }
-
-  // ── Form steps ────────────────────────────────────────────────────────────
-  function goStep(n) {
-    [1,2,3].forEach(i => {
-      document.getElementById('formStep'+i).classList.toggle('hidden', i !== n);
-      const circle = document.getElementById('step'+i+'-circle');
-      const label = document.getElementById('step'+i+'-label');
-      if (i < n) { circle.classList.add('done'); circle.classList.remove('active'); circle.textContent = '✓'; }
-      else if (i === n) { circle.classList.add('active'); circle.classList.remove('done'); circle.textContent = i; }
-      else { circle.classList.remove('active','done'); circle.textContent = i; }
-      label.classList.toggle('active', i === n);
-      if (i < 3) {
-        const line = document.getElementById('line'+i);
-        line.classList.toggle('done', i < n);
-      }
-    });
-    document.querySelector('.main-container').scrollIntoView({ behavior:'smooth', block:'start' });
-  }
-
-  // ── Price toggle ──────────────────────────────────────────────────────────
-  function togglePrice() {
-    const isFree = document.getElementById('evFree').checked;
-    document.getElementById('priceGroup').style.display = isFree ? 'none' : 'block';
-    document.getElementById('priceInfoGroup').style.display = isFree ? 'none' : 'block';
-  }
-
-  // ── Image preview ─────────────────────────────────────────────────────────
-  function previewImage(input) {
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        document.getElementById('previewImg').src = e.target.result;
-        document.getElementById('imagePreview').classList.remove('hidden');
-      };
-      reader.readAsDataURL(input.files[0]);
-    }
-  }
-
-  // ── Form submit ───────────────────────────────────────────────────────────
-  function submitForm() {
-    const required = {
-      evOrganizer: 'Nom de l\'organisateur',
-      evPhone: 'Téléphone',
-      evEmail: 'Email',
-    };
-    for (const [id, label] of Object.entries(required)) {
-      if (!document.getElementById(id).value.trim()) {
-        alert('⚠️ Champ obligatoire manquant : ' + label);
-        return;
-      }
-    }
-    if (!document.getElementById('evConsent').checked) {
-      alert('⚠️ Veuillez accepter les conditions avant de soumettre.');
-      return;
-    }
-
-    // Generate ref
-    const ref = 'VC-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 90000 + 10000);
-    document.getElementById('refNumber').textContent = ref;
-
-    // Show modal
-    document.getElementById('successModal').classList.add('visible');
-
-    // Add new event to data (simulation)
-    const newEvent = {
-      id: 'new-' + Date.now(),
-      title: document.getElementById('evTitle').value || 'Nouvel événement',
-      description: document.getElementById('evDescription').value || 'Description à venir.',
-      category: document.getElementById('evCategory').value || 'Autre',
-      date: document.getElementById('evDateStart').value || '2026-08-01',
-      time: document.getElementById('evTimeStart').value + (document.getElementById('evTimeEnd').value ? ' – ' + document.getElementById('evTimeEnd').value : ''),
-      location: document.getElementById('evLocation').value || 'Lieu à confirmer',
-      address: document.getElementById('evAddress').value || '',
-      image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600',
-      isFree: document.getElementById('evFree').checked,
-      price: document.getElementById('evPrice').value ? document.getElementById('evPrice').value + '€' : null,
-      organizer: document.getElementById('evOrganizer').value,
-      tags: document.getElementById('evTags').value.split(',').map(t => t.trim()).filter(Boolean),
-      emoji: '🎉'
-    };
-    EVENTS_DATA.unshift(newEvent);
     activeEvents = [...EVENTS_DATA];
     renderEvents();
     renderSidebar();
     updateStats();
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  function showTab(tab) {
+    document.querySelectorAll('.events-section').forEach(s => s.classList.add('hidden-section'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    const section = document.getElementById('section-' + tab);
+    if (section) section.classList.remove('hidden-section');
+    const link = document.querySelector(`.nav-link[onclick*="'${tab}'"]`);
+    if (link) link.classList.add('active');
+    if (tab === 'submit') { goStep(1); }
+  }
+
+  // ── Form steps ────────────────────────────────────────────────────────────
+  function goStep(step) {
+    [1,2,3].forEach(s => {
+      const el = document.getElementById('formStep' + s);
+      if (el) el.classList.toggle('hidden', s !== step);
+    });
+    updateProgress(step);
+    const fc = document.querySelector('.form-container');
+    if (fc) window.scrollTo({ top: fc.offsetTop - 80, behavior: 'smooth' });
+  }
+
+  function updateProgress(step) {
+    document.querySelectorAll('.step-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i < step);
+      dot.classList.toggle('done', i < step - 1);
+    });
+    const bar = document.getElementById('progressBar');
+    if (bar) bar.style.width = (((step - 1) / 2) * 100) + '%';
+  }
+
+  function togglePrice() {
+    const isFree = document.getElementById('evFree')?.checked;
+    const pg = document.getElementById('priceGroup');
+    const pig = document.getElementById('priceInfoGroup');
+    if (pg) pg.style.display = isFree ? 'none' : 'block';
+    if (pig) pig.style.display = isFree ? 'none' : 'block';
+  }
+
+  function previewImage(input) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('imagePreview');
+      const img = document.getElementById('previewImg');
+      if (preview) preview.classList.remove('hidden');
+      if (img) img.src = e.target.result;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const CAT_COLORS = {
+    'Musique':'#7C3AED','Sport':'#059669','Culture':'#2563EB',
+    'Marché':'#D97706','Commerce':'#D97706','Famille':'#EC4899','Autre':'#6B7280'
+  };
+  const CAT_EMOJIS = {
+    'Musique':'🎵','Sport':'⚽','Culture':'🎭','Marché':'🛒','Commerce':'🏪','Famille':'👨‍👩‍👧','Autre':'📅'
+  };
+
+  function fmtDate(d) {
+    if (!d) return '';
+    try {
+      return new Date(d + 'T00:00:00').toLocaleDateString('fr-BE', { day:'numeric', month:'long', year:'numeric' });
+    } catch { return d; }
+  }
+
+  function renderEvents() {
+    const grid = document.getElementById('eventsGrid');
+    if (!grid) return;
+    if (!activeEvents.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted)">😕 Aucun événement trouvé pour ce filtre.</div>';
+      return;
+    }
+    grid.innerHTML = activeEvents.map(ev => {
+      const color = CAT_COLORS[ev.category] || '#6B7280';
+      const emoji = ev.emoji || CAT_EMOJIS[ev.category] || '📅';
+      const img = ev.image_url || 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600';
+      return `<div class="event-card" onclick="handleEventClick('${ev.id}')">
+        <div class="event-card-img" style="background-image:url(${img});background-size:cover;background-position:center">
+          <span style="font-size:28px;line-height:1">${emoji}</span>
+        </div>
+        <div class="event-card-body">
+          <div class="event-card-badges">
+            <span class="badge" style="background:${color}22;color:${color}">${ev.category}</span>
+            <span class="badge" style="background:${ev.is_free?'#DCFCE7':'#FEF3C7'};color:${ev.is_free?'#059669':'#92400E'}">${ev.is_free?'🆓 Gratuit':'💶 '+ev.price+'€'}</span>
+          </div>
+          <div class="event-card-title">${ev.title}</div>
+          <div class="event-card-desc">${ev.description}</div>
+          <div class="event-card-meta">
+            <span>📅 ${fmtDate(ev.date_start)}${ev.time_start?' · '+ev.time_start:''}</span>
+            <span>📍 ${ev.location}${ev.city?', '+ev.city:''}</span>
+          </div>
+          <div class="event-card-footer">
+            <button class="btn-sm btn-primary" onclick="event.stopPropagation();reprendreEvent('${ev.id}')">📋 Reprendre</button>
+            <button class="btn-sm btn-outline" onclick="event.stopPropagation()">🔔 Me rappeler</button>
+            <button class="btn-sm btn-icon btn-outline" onclick="event.stopPropagation();shareEvent('${ev.id}')" title="Partager">↗️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderSidebar() {
+    const el = document.getElementById('quickEventsList');
+    if (!el) return;
+    el.innerHTML = EVENTS_DATA.slice(0,5).map(ev => `
+      <div class="quick-event" onclick="showTab('browse')">
+        <div class="quick-event-emoji">${ev.emoji||'📅'}</div>
+        <div>
+          <div class="quick-event-title">${ev.title}</div>
+          <div class="quick-event-loc">📍 ${ev.location}</div>
+          <span class="quick-event-badge" style="background:${ev.is_free?'#DCFCE7':'#FEF3C7'};color:${ev.is_free?'#059669':'#92400E'}">${ev.is_free?'Gratuit':ev.price+'€'}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function updateStats() {
+    const statValues = document.querySelectorAll('.stat-value');
+    if (statValues[0]) statValues[0].textContent = EVENTS_DATA.length;
+    if (statValues[2]) statValues[2].textContent = EVENTS_DATA.filter(e => e.is_free).length;
+  }
+
+  // ── Filtres ───────────────────────────────────────────────────────────────
+  function filterEvents() {
+    const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const cat = document.getElementById('catFilter')?.value || '';
+    const free = document.getElementById('freeFilter')?.checked || false;
+    activeEvents = EVENTS_DATA.filter(e => {
+      if (q && !e.title?.toLowerCase().includes(q) && !e.description?.toLowerCase().includes(q) && !e.location?.toLowerCase().includes(q)) return false;
+      if (cat && e.category !== cat) return false;
+      if (free && !e.is_free) return false;
+      return true;
+    });
+    renderEvents();
+  }
+
+  // ── Détail événement ──────────────────────────────────────────────────────
+  function handleEventClick(id) {
+    const ev = EVENTS_DATA.find(e => e.id === id);
+    if (!ev) return;
+    // Ouvrir un mini-modal detail si il existe, sinon alert
+    const m = document.getElementById('eventDetailModal');
+    if (m) {
+      document.getElementById('detailTitle').textContent = ev.title||'';
+      document.getElementById('detailDate').textContent = fmtDate(ev.date_start)+(ev.time_start?' · '+ev.time_start+(ev.time_end?' – '+ev.time_end:''):'');
+      document.getElementById('detailLoc').textContent = (ev.location||'')+(ev.city?', '+ev.city:'');
+      document.getElementById('detailOrg').textContent = ev.organizer||'';
+      document.getElementById('detailDesc').textContent = ev.description||'';
+      document.getElementById('detailPrice').textContent = ev.is_free?'🆓 Entrée gratuite':'💶 '+ev.price+'€';
+      m.classList.add('visible');
+    }
+  }
+  function closeEventModal() { document.getElementById('eventDetailModal')?.classList.remove('visible'); }
+
+  // ── Reprendre ─────────────────────────────────────────────────────────────
+  function reprendreEvent(id) {
+    const ev = EVENTS_DATA.find(e => e.id === id);
+    if (!ev) return;
+    showTab('submit');
+    setTimeout(() => {
+      const set = (fid, val) => { const el = document.getElementById(fid); if(el && val!==undefined) el.value = val; };
+      set('evTitle', ev.title); set('evDescription', ev.description); set('evCategory', ev.category);
+      set('evLocation', ev.location); set('evAddress', ev.address||''); set('evPostal', ev.postal_code||'7370');
+      set('evDateStart', ev.date_start); set('evTimeStart', ev.time_start); set('evTimeEnd', ev.time_end);
+      const freeEl = document.getElementById('evFree');
+      if (freeEl) { freeEl.checked = !!ev.is_free; togglePrice(); }
+      if (!ev.is_free && ev.price) set('evPrice', ev.price);
+    }, 150);
+  }
+
+  // ── Partager ──────────────────────────────────────────────────────────────
+  function shareEvent(id) {
+    const ev = EVENTS_DATA.find(e => e.id === id);
+    if (!ev) return;
+    if (navigator.share) {
+      navigator.share({ title: ev.title, text: `${ev.title} — ${fmtDate(ev.date_start)} à ${ev.location}`, url: window.location.href });
+    } else {
+      navigator.clipboard?.writeText(window.location.href).then(() => alert('🔗 Lien copié !'));
+    }
+  }
+
+  // ── Soumettre → API ───────────────────────────────────────────────────────
+  async function submitForm() {
+    const required = { evOrganizer:"Nom de l'organisateur", evPhone:'Téléphone', evEmail:'Email' };
+    for (const [fid, label] of Object.entries(required)) {
+      if (!document.getElementById(fid)?.value.trim()) {
+        alert('⚠️ Champ obligatoire manquant : ' + label); return;
+      }
+    }
+    if (!document.getElementById('evConsent')?.checked) {
+      alert('⚠️ Veuillez accepter les conditions avant de soumettre.'); return;
+    }
+
+    const btn = document.querySelector('#formStep3 .btn-primary[onclick*="submitForm"]');
+    const orig = btn?.textContent || '✅ Soumettre';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
+
+    try {
+      const postal_code = document.getElementById('evPostal')?.value?.trim() || '7370';
+      const tags = (document.getElementById('evTags')?.value || '').split(',').map(t=>t.trim()).filter(Boolean);
+
+      const payload = {
+        title: document.getElementById('evTitle')?.value || '',
+        description: document.getElementById('evDescription')?.value || '',
+        category: document.getElementById('evCategory')?.value || 'Autre',
+        date_start: document.getElementById('evDateStart')?.value || '',
+        date_end: document.getElementById('evDateEnd')?.value || '',
+        time_start: document.getElementById('evTimeStart')?.value || '',
+        time_end: document.getElementById('evTimeEnd')?.value || '',
+        location: document.getElementById('evLocation')?.value || '',
+        address: document.getElementById('evAddress')?.value || '',
+        postal_code,
+        organizer: document.getElementById('evOrganizer')?.value || '',
+        phone: document.getElementById('evPhone')?.value || '',
+        email: document.getElementById('evEmail')?.value || '',
+        website: document.getElementById('evWebsite')?.value || '',
+        is_free: document.getElementById('evFree')?.checked !== false,
+        price: document.getElementById('evPrice')?.value || null,
+        capacity: document.getElementById('evCapacity')?.value || null,
+        tags,
+        recurrence: document.getElementById('evRecurrence')?.value || 'none',
+      };
+
+      const res = await fetch(`${API_BASE}/submitEvent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById('refNumber').textContent = data.ref || 'VC-???';
+        const syncEl = document.getElementById('syncStatus');
+        if (syncEl) {
+          syncEl.textContent = data.railway_synced ? '✅ Synchronisé avec VilleConnect' : '⏳ En attente de validation par la commune';
+          syncEl.style.color = data.railway_synced ? '#059669' : '#D97706';
+        }
+        document.getElementById('successModal').classList.add('visible');
+        setTimeout(() => loadEvents(postal_code), 2500);
+      } else {
+        alert('❌ Erreur : ' + (data.error || 'Impossible de soumettre. Réessayez.'));
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+      alert('❌ Erreur réseau. Vérifiez votre connexion et réessayez.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = orig; }
+    }
   }
 
   function closeModal() {
@@ -1194,23 +1179,21 @@
     filterEvents();
   }
 
-  function updateStats() {
-    const statValues = document.querySelectorAll('.stat-value');
-    statValues[0].textContent = EVENTS_DATA.length;
-    statValues[2].textContent = EVENTS_DATA.filter(e => e.isFree).length;
-  }
-
-  // ── CSS animation ─────────────────────────────────────────────────────────
+  // ── CSS animations ────────────────────────────────────────────────────────
   const style = document.createElement('style');
   style.textContent = `
-    @keyframes slideIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform:translateX(0); } }
-    .hidden-section { display: none !important; }
+    @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .hidden-section { display:none !important; }
+    .event-card { animation: slideIn .3s ease; }
   `;
   document.head.appendChild(style);
 
   // ── Init ──────────────────────────────────────────────────────────────────
-  renderEvents();
-  renderSidebar();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => loadEvents('7370'));
+  } else {
+    loadEvents('7370');
+  }
 </script>
 </body>
 </html>
