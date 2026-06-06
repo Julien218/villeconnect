@@ -2,6 +2,7 @@
   "expo": {
     "name": "Ma Commune",
     "slug": "macommune",
+    "owner": "js-innov.ia",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,11 +31,15 @@
     },
     "extra": {
       "eas": {
-        "projectId": "macommune-villeconnect"
+        "projectId": "9945412e-d2d1-490b-a583-d7568cddd47d"
       }
     },
-    "plugins": [
-      "expo-router"
-    ]
+    "plugins": ["expo-router"],
+    "updates": {
+      "url": "https://u.expo.dev/9945412e-d2d1-490b-a583-d7568cddd47d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
