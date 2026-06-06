@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <!-- © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés. -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ma Commune — Bientôt disponible</title>
-  <meta name="description" content="Ma Commune — L'application citoyenne de Dour. Commerces locaux, événements, alertes communales, carburant et plus encore." />
+  <title>Ma Commune — L'app citoyenne belge</title>
+  <meta name="description" content="Ma Commune, c'est votre ville dans votre poche. Commerces locaux, événements, alertes, carburant, wallet civique. Bientôt disponible en Belgique." />
+  <meta property="og:title" content="Ma Commune — L'app citoyenne belge" />
+  <meta property="og:description" content="La première plateforme hyperlocale intelligente de Belgique. Rejoignez la liste d'attente." />
+  <meta property="og:image" content="https://media.base44.com/images/public/6a11d1493754e75ce76ee0de/10499c263_generated_image.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
@@ -14,12 +18,15 @@
       --green:   #10B981;
       --green2:  #059669;
       --blue:    #3B82F6;
-      --dark:    #0F172A;
-      --dark2:   #1E293B;
-      --dark3:   #334155;
-      --text:    #F8FAFC;
-      --muted:   #94A3B8;
-      --card:    rgba(30,41,59,0.8);
+      --purple:  #7C3AED;
+      --dark:    #0A0F1E;
+      --dark2:   #111827;
+      --dark3:   #1F2937;
+      --surface: rgba(255,255,255,0.04);
+      --border:  rgba(255,255,255,0.08);
+      --text:    #F9FAFB;
+      --muted:   #9CA3AF;
+      --muted2:  #6B7280;
     }
 
     html { scroll-behavior: smooth; }
@@ -32,550 +39,698 @@
       overflow-x: hidden;
     }
 
-    /* ── Background animé ── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+    /* ── Ambient glow background ── */
+    .bg-ambient {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(16,185,129,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(59,130,246,0.10) 0%, transparent 60%);
-      pointer-events: none;
-      z-index: 0;
+        radial-gradient(ellipse 70% 55% at 15% 0%, rgba(16,185,129,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 50% at 85% 90%, rgba(59,130,246,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 70% 20%, rgba(124,58,237,0.06) 0%, transparent 50%);
     }
 
     .wrapper { position: relative; z-index: 1; }
 
     /* ── NAVBAR ── */
     nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 40px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(15,23,42,0.85);
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(10,15,30,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
     }
     .nav-logo {
       display: flex; align-items: center; gap: 10px;
-      font-size: 18px; font-weight: 800; color: var(--text);
+      font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
     }
     .nav-logo-icon {
       width: 36px; height: 36px; border-radius: 10px;
       background: linear-gradient(135deg, var(--green), var(--blue));
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      font-size: 18px; box-shadow: 0 0 20px rgba(16,185,129,0.35);
     }
-    .nav-badge {
-      background: rgba(16,185,129,0.15);
-      border: 1px solid rgba(16,185,129,0.3);
-      color: var(--green);
-      padding: 4px 12px; border-radius: 20px;
-      font-size: 12px; font-weight: 600;
+    .nav-pill {
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.25);
+      color: var(--green); padding: 4px 12px;
+      border-radius: 20px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.8px; text-transform: uppercase;
     }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      color: #fff; border: none; padding: 10px 22px;
+      border-radius: 10px; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      text-decoration: none;
+    }
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
 
     /* ── HERO ── */
     .hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; flex-direction: column; align-items: center;
       text-align: center;
-      padding: 80px 24px 60px;
-      gap: 24px;
+      padding: 90px 24px 60px;
+      gap: 28px;
     }
     .hero-eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(16,185,129,0.1);
-      border: 1px solid rgba(16,185,129,0.25);
-      padding: 6px 16px; border-radius: 20px;
+      border: 1px solid rgba(16,185,129,0.22);
+      padding: 6px 18px; border-radius: 30px;
       font-size: 13px; font-weight: 600; color: var(--green);
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
+    }
+    .hero-eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:.5; transform:scale(1.3); }
     }
     .hero h1 {
-      font-size: clamp(36px, 7vw, 72px);
-      font-weight: 900;
-      line-height: 1.1;
-      letter-spacing: -1px;
-      max-width: 800px;
+      font-size: clamp(38px, 7vw, 78px);
+      font-weight: 900; line-height: 1.08;
+      letter-spacing: -2px; max-width: 820px;
     }
-    .hero h1 span {
-      background: linear-gradient(135deg, var(--green), var(--blue));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero-desc {
-      font-size: clamp(16px, 2.5vw, 20px);
-      color: var(--muted);
-      max-width: 560px;
-      line-height: 1.7;
-    }
-
-    /* ── FORMULAIRE ── */
-    .form-wrapper {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 20px;
-      padding: 32px;
-      max-width: 480px;
-      width: 100%;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
-    }
-    .form-title {
-      font-size: 18px; font-weight: 700; margin-bottom: 6px;
-    }
-    .form-sub {
-      font-size: 13px; color: var(--muted); margin-bottom: 20px;
-    }
-    .form-row {
-      display: flex; gap: 10px;
-    }
-    .form-input {
-      flex: 1;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 14px 16px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .form-input:focus { border-color: var(--green); }
-    .form-input::placeholder { color: var(--muted); }
-    .form-btn {
-      background: linear-gradient(135deg, var(--green), var(--green2));
-      border: none;
-      border-radius: 12px;
-      padding: 14px 22px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
-      white-space: nowrap;
-      font-family: 'Inter', sans-serif;
-    }
-    .form-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-    .form-btn:active { transform: translateY(0); }
-    .form-note {
-      font-size: 11px; color: var(--muted); margin-top: 12px; text-align: center;
-    }
-    .form-success {
-      display: none;
-      text-align: center;
-      padding: 16px;
-    }
-    .form-success .success-icon { font-size: 40px; margin-bottom: 10px; }
-    .form-success h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-    .form-success p { font-size: 14px; color: var(--muted); }
-
-    /* ── STORES ── */
-    .stores {
-      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-      margin-top: 4px;
-    }
-    .store-btn {
-      display: flex; align-items: center; gap: 10px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 12px 20px;
-      color: var(--text);
-      text-decoration: none;
-      font-size: 14px; font-weight: 600;
-      transition: background 0.2s, border-color 0.2s;
-      cursor: default;
-      opacity: 0.6;
-    }
-    .store-btn.soon::after {
-      content: 'Bientôt';
-      background: rgba(16,185,129,0.2);
-      color: var(--green);
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-left: 4px;
-    }
-    .store-icon { font-size: 22px; }
-
-    /* ── MOCKUP ── */
-    .mockup-section {
-      display: flex; justify-content: center;
-      padding: 20px 24px 60px;
-    }
-    .mockup-img {
-      max-width: 340px; width: 100%;
-      border-radius: 24px;
-      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
-      animation: float 4s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50%       { transform: translateY(-12px); }
-    }
-
-    /* ── FEATURES ── */
-    .features {
-      padding: 60px 24px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .features-title {
-      text-align: center;
-      font-size: clamp(24px, 4vw, 36px);
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-    .features-sub {
-      text-align: center;
-      color: var(--muted);
-      margin-bottom: 48px;
-      font-size: 15px;
-    }
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-    }
-    .feature-card {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 16px;
-      padding: 24px;
-      backdrop-filter: blur(10px);
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .feature-card:hover { transform: translateY(-4px); border-color: rgba(16,185,129,0.3); }
-    .feature-icon {
-      font-size: 32px; margin-bottom: 14px;
-      display: block;
-    }
-    .feature-name {
-      font-size: 16px; font-weight: 700; margin-bottom: 6px;
-    }
-    .feature-desc {
-      font-size: 13px; color: var(--muted); line-height: 1.6;
-    }
-    .feature-badge {
-      display: inline-block;
-      margin-top: 10px;
-      background: rgba(16,185,129,0.12);
-      border: 1px solid rgba(16,185,129,0.2);
-      color: var(--green);
-      font-size: 10px; font-weight: 700;
-      padding: 3px 10px; border-radius: 20px;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .feature-badge.soon {
-      background: rgba(245,158,11,0.12);
-      border-color: rgba(245,158,11,0.2);
-      color: #F59E0B;
-    }
-
-    /* ── COMPTEUR ── */
-    .counter-section {
-      text-align: center;
-      padding: 48px 24px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .counter-title {
-      font-size: 14px; font-weight: 600;
-      color: var(--muted); letter-spacing: 1px;
-      text-transform: uppercase; margin-bottom: 20px;
-    }
-    .counters {
-      display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
-    }
-    .counter-item { text-align: center; }
-    .counter-num {
-      font-size: 40px; font-weight: 900;
-      background: linear-gradient(135deg, var(--green), var(--blue));
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--green) 0%, var(--blue) 55%, var(--purple) 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .counter-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .hero-desc {
+      font-size: clamp(16px, 2.3vw, 20px);
+      color: var(--muted); max-width: 580px; line-height: 1.75;
+    }
 
-    /* ── CTA FINAL ── */
-    .cta-final {
-      text-align: center;
-      padding: 80px 24px;
+    /* ── WAITLIST CARD ── */
+    .waitlist-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 24px; padding: 36px;
+      max-width: 520px; width: 100%;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
     }
-    .cta-final h2 {
-      font-size: clamp(26px, 5vw, 44px);
-      font-weight: 800; margin-bottom: 16px;
+    .waitlist-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
     }
-    .cta-final p {
-      color: var(--muted); font-size: 16px; margin-bottom: 32px;
+    .waitlist-icon {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; box-shadow: 0 8px 24px rgba(16,185,129,0.3);
     }
+    .waitlist-title { font-size: 20px; font-weight: 800; }
+    .waitlist-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+    .counter-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
+      color: var(--green); padding: 5px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; margin-bottom: 22px;
+    }
+    #waitlistCount { font-weight: 800; }
+
+    .form-field {
+      display: grid; gap: 10px; margin-bottom: 14px;
+    }
+    .field-row { display: flex; gap: 10px; }
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 13px 16px;
+      color: var(--text); font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color .2s, background .2s;
+    }
+    .form-input:focus { border-color: var(--green); background: rgba(16,185,129,0.05); }
+    .form-input::placeholder { color: var(--muted2); }
+    select.form-input option { background: var(--dark2); }
+
+    .form-btn {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      border: none; border-radius: 14px;
+      color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: opacity .2s, transform .15s;
+      box-shadow: 0 8px 32px rgba(16,185,129,0.35);
+      font-family: 'Inter', sans-serif;
+    }
+    .form-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+    .form-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .form-note {
+      text-align: center; font-size: 12px; color: var(--muted2); margin-top: 12px;
+    }
+
+    /* Success state */
+    .success-state { display: none; text-align: center; padding: 8px 0; }
+    .success-icon { font-size: 52px; margin-bottom: 12px; }
+    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-pos {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; font-size: 32px; font-weight: 900; margin-bottom: 8px;
+    }
+    .success-msg { font-size: 14px; color: var(--muted); }
+
+    /* ── SOCIAL PROOF ── */
+    .proof-strip {
+      display: flex; gap: 32px; align-items: center;
+      flex-wrap: wrap; justify-content: center;
+      padding: 12px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 0 80px;
+    }
+    .proof-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); font-weight: 500;
+    }
+    .proof-item .icon { font-size: 16px; }
+
+    /* ── FEATURES ── */
+    .section { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      display: inline-block;
+      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+      color: var(--blue); padding: 5px 16px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.8px;
+      text-transform: uppercase; margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 900; letter-spacing: -1px;
+      line-height: 1.15; margin-bottom: 12px;
+    }
+    .section-desc {
+      font-size: 16px; color: var(--muted); max-width: 540px;
+      line-height: 1.75; margin-bottom: 52px;
+    }
+
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px;
+      transition: border-color .2s, transform .2s;
+      position: relative; overflow: hidden;
+    }
+    .feat-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .feat-card:hover { border-color: rgba(16,185,129,0.25); transform: translateY(-3px); }
+    .feat-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 16px;
+    }
+    .feat-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feat-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+    .feat-badge {
+      display: inline-block; margin-top: 12px;
+      background: rgba(16,185,129,0.1); color: var(--green);
+      padding: 3px 10px; border-radius: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    }
+
+    /* ── MOCKUP SECTION ── */
+    .mockup-section {
+      display: flex; align-items: center; gap: 60px;
+      padding: 60px 24px 80px; max-width: 1100px; margin: 0 auto;
+      flex-wrap: wrap;
+    }
+    .mockup-text { flex: 1; min-width: 280px; }
+    .mockup-img { flex: 1; min-width: 280px; text-align: center; }
+    .mockup-img img {
+      max-width: 420px; width: 100%;
+      border-radius: 24px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .mockup-list { list-style: none; margin-top: 24px; display: flex; flex-direction: column; gap: 14px; }
+    .mockup-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      font-size: 15px; color: var(--muted);
+    }
+    .mockup-list li .check {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(16,185,129,0.15); color: var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── VILLES ── */
+    .cities-section {
+      padding: 60px 24px 80px; text-align: center;
+    }
+    .cities-label {
+      font-size: 12px; color: var(--muted2); font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 28px;
+    }
+    .cities-grid {
+      display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+      max-width: 760px; margin: 0 auto;
+    }
+    .city-pill {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 30px; padding: 10px 20px;
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      transition: all .2s;
+    }
+    .city-pill.active {
+      background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.25);
+      color: var(--green);
+    }
+    .city-pill:hover { border-color: rgba(16,185,129,0.2); color: var(--text); }
+
+    /* ── CTA BOTTOM ── */
+    .cta-section {
+      margin: 0 24px 80px; border-radius: 28px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(59,130,246,0.10) 50%, rgba(124,58,237,0.08) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 72px 40px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(16,185,129,0.08) 0%, transparent 60%);
+    }
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900; letter-spacing: -1px; margin-bottom: 16px;
+      position: relative;
+    }
+    .cta-section p {
+      font-size: 16px; color: var(--muted); margin-bottom: 36px;
+      position: relative; max-width: 500px; margin-left: auto; margin-right: auto;
+    }
+    .cta-row {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      position: relative;
+    }
+    .cta-input {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 14px 20px;
+      color: var(--text); font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none; width: 280px;
+      transition: border-color .2s;
+    }
+    .cta-input:focus { border-color: var(--green); }
+    .cta-input::placeholder { color: var(--muted2); }
+    .cta-btn {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      border: none; border-radius: 12px; padding: 14px 28px;
+      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity .2s, transform .15s;
+      box-shadow: 0 8px 24px rgba(16,185,129,0.3);
+    }
+    .cta-btn:hover { opacity: 0.88; transform: translateY(-2px); }
 
     /* ── FOOTER ── */
     footer {
-      border-top: 1px solid rgba(255,255,255,0.06);
-      padding: 24px 40px;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 12px;
+      border-top: 1px solid var(--border);
+      padding: 40px 40px 32px;
+      display: flex; flex-wrap: wrap; gap: 24px;
+      align-items: center; justify-content: space-between;
     }
-    .footer-logo { font-size: 14px; font-weight: 700; color: var(--muted); }
-    .footer-links { display: flex; gap: 20px; }
-    .footer-links a { color: var(--muted); font-size: 13px; text-decoration: none; }
+    .footer-logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 800;
+    }
+    .footer-links {
+      display: flex; gap: 24px; flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: var(--muted2); font-size: 13px; text-decoration: none;
+      transition: color .2s;
+    }
     .footer-links a:hover { color: var(--text); }
-    .footer-copy { font-size: 12px; color: var(--dark3); }
+    .footer-copy {
+      color: var(--muted2); font-size: 12px;
+      width: 100%; text-align: center;
+      border-top: 1px solid var(--border); padding-top: 20px; margin-top: 8px;
+    }
 
-    /* ── RESPONSIVE ── */
-    @media (max-width: 600px) {
-      nav { padding: 16px 20px; }
-      .form-row { flex-direction: column; }
-      .form-btn { width: 100%; }
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      nav { padding: 14px 20px; }
+      .nav-cta { display: none; }
+      .hero { padding: 60px 20px 40px; }
+      .waitlist-card { padding: 24px 20px; }
+      .field-row { flex-direction: column; }
+      .mockup-section { flex-direction: column-reverse; gap: 36px; }
       footer { flex-direction: column; text-align: center; }
+      .footer-links { justify-content: center; }
+      .cta-section { margin: 0 16px 60px; padding: 48px 24px; }
     }
   </style>
 </head>
 <body>
+
+<div class="bg-ambient"></div>
 <div class="wrapper">
 
-  <!-- NAV -->
+  <!-- NAVBAR -->
   <nav>
     <div class="nav-logo">
-      <div class="nav-logo-icon">🏘️</div>
+      <div class="nav-logo-icon">🏙️</div>
       Ma Commune
+      <span class="nav-pill">BIENTÔT</span>
     </div>
-    <div class="nav-badge">✨ Bientôt disponible</div>
+    <a href="#waitlist" class="nav-cta">Rejoindre la liste →</a>
   </nav>
 
   <!-- HERO -->
-  <section class="hero">
-    <div class="hero-eyebrow">📍 Dour · Belgique · 7370</div>
-    <h1>Votre ville,<br/><span>dans votre poche</span></h1>
+  <section class="hero" id="top">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      Lancement en Belgique — Septembre 2026
+    </div>
+    <h1>Votre commune, <br><span class="gradient">dans votre poche.</span></h1>
     <p class="hero-desc">
-      Commerces locaux, alertes communales, prix carburant, événements, DCI et bien plus.
-      <strong>Ma Commune</strong> connecte les citoyens de Dour à leur quotidien.
+      La première plateforme hyperlocale intelligente de Belgique. Commerces, événements, alertes, carburant, wallet civique — tout ce qui se passe près de chez vous.
     </p>
 
-    <!-- FORMULAIRE -->
-    <div class="form-wrapper">
+    <!-- WAITLIST CARD -->
+    <div class="waitlist-card" id="waitlist">
       <div id="form-content">
-        <div class="form-title">🔔 Soyez parmi les premiers !</div>
-        <div class="form-sub">Inscrivez-vous pour être notifié dès le lancement sur App Store & Play Store.</div>
-        <div class="form-row">
-          <input
-            id="email-input"
-            class="form-input"
-            type="email"
-            placeholder="votre@email.be"
-            autocomplete="email"
-          />
-          <button class="form-btn" onclick="submitWaitlist()">Je m'inscris</button>
+        <div class="waitlist-header">
+          <div class="waitlist-icon">🚀</div>
+          <div>
+            <div class="waitlist-title">Accès anticipé</div>
+          </div>
         </div>
-        <div class="form-note">🔒 Aucun spam. Juste un email au lancement. Promis.</div>
+        <p class="waitlist-sub">Inscrivez-vous pour être parmi les premiers à découvrir l'app.</p>
+
+        <div class="counter-badge">
+          <span>👥</span>
+          <span id="waitlistCount">—</span> <span>personnes déjà inscrites</span>
+        </div>
+
+        <div class="form-field">
+          <input type="email" id="emailInput" class="form-input"
+            placeholder="votre@email.be" autocomplete="email" />
+          <div class="field-row">
+            <input type="text" id="postalInput" class="form-input"
+              placeholder="Code postal (ex: 7370)" maxlength="4" style="flex:1" />
+            <select id="roleSelect" class="form-input" style="flex:1">
+              <option value="citoyen">👤 Citoyen</option>
+              <option value="commerçant">🏪 Commerçant</option>
+              <option value="organisateur">🎪 Organisateur</option>
+              <option value="commune">🏛️ Commune</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="form-btn" id="submitBtn" onclick="joinWaitlist()">
+          🎯 Je veux accès en avant-première
+        </button>
+        <p class="form-note">🔒 Aucun spam. Désabonnement en 1 clic.</p>
       </div>
-      <div id="form-success" class="form-success">
+
+      <div class="success-state" id="success-content">
         <div class="success-icon">🎉</div>
-        <h3>Vous êtes sur la liste !</h3>
-        <p>On vous prévient dès que l'app est disponible sur les stores. À très vite !</p>
+        <div class="success-title">Vous êtes sur la liste !</div>
+        <div class="success-pos" id="successPosition">#1</div>
+        <p class="success-msg">On vous prévient en premier dès le lancement.<br>Partagez à vos voisins pour grimper dans la liste 👇</p>
+        <br>
+        <button onclick="shareApp()" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--green);padding:11px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">
+          📤 Partager avec mes voisins
+        </button>
       </div>
     </div>
+  </section>
 
-    <!-- STORES -->
-    <div class="stores">
-      <div class="store-btn soon">
-        <span class="store-icon">🍎</span>
-        App Store
+  <!-- PROOF STRIP -->
+  <div class="proof-strip">
+    <div class="proof-item"><span class="icon">🇧🇪</span> Made in Belgium</div>
+    <div class="proof-item"><span class="icon">🔒</span> Données hébergées en Europe</div>
+    <div class="proof-item"><span class="icon">🆓</span> Gratuit pour les citoyens</div>
+    <div class="proof-item"><span class="icon">🏙️</span> Multi-communes</div>
+    <div class="proof-item"><span class="icon">📲</span> iOS & Android</div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="section-label">Fonctionnalités</div>
+    <h2 class="section-title">Tout ce dont votre commune a besoin</h2>
+    <p class="section-desc">Un écosystème complet pensé pour les citoyens, commerçants et organisateurs locaux.</p>
+
+    <div class="features-grid">
+
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(16,185,129,0.12)">🗺️</div>
+        <div class="feat-title">Carte locale intelligente</div>
+        <div class="feat-desc">Retrouvez tous les commerces, services et points d'intérêt de votre commune en temps réel. Filtrez par catégorie, horaires, avis.</div>
+        <span class="feat-badge">DISPONIBLE</span>
       </div>
-      <div class="store-btn soon">
-        <span class="store-icon">🤖</span>
-        Google Play
+
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(59,130,246,0.12)">📅</div>
+        <div class="feat-title">Agenda communal</div>
+        <div class="feat-desc">Tous les événements locaux au même endroit. Festivals, marchés, sport, culture. Rappels personnalisés et billets en ligne.</div>
+        <span class="feat-badge">DISPONIBLE</span>
       </div>
+
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(245,158,11,0.12)">⛽</div>
+        <div class="feat-title">Prix carburant en direct</div>
+        <div class="feat-desc">Comparez les prix dans les stations autour de vous. Alertes quand les prix baissent. Économisez jusqu'à 200€/an.</div>
+        <span class="feat-badge">NOUVEAU</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(124,58,237,0.12)">💎</div>
+        <div class="feat-title">Wallet Civique</div>
+        <div class="feat-desc">Gagnez des crédits en accomplissant des missions citoyennes. Échangez contre des avantages chez les commerçants locaux.</div>
+        <span class="feat-badge">BIENTÔT</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(239,68,68,0.12)">🚨</div>
+        <div class="feat-title">Alertes communales</div>
+        <div class="feat-desc">Recevez les notifications importantes de votre commune en temps réel. Travaux, fermetures, urgences, informations officielles.</div>
+        <span class="feat-badge">DISPONIBLE</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(20,184,166,0.12)">🤝</div>
+        <div class="feat-title">Entraide & DCI</div>
+        <div class="feat-desc">Proposez ou demandez de l'aide à vos voisins. Services de proximité, covoiturage, garde d'animaux, petits boulots locaux.</div>
+        <span class="feat-badge">BIENTÔT</span>
+      </div>
+
     </div>
   </section>
 
   <!-- MOCKUP -->
   <div class="mockup-section">
-    <img
-      class="mockup-img"
-      src="https://media.base44.com/images/public/6a11d1493754e75ce76ee0de/a2f73bc56_generated_image.png"
-      alt="Ma Commune — aperçu de l'application"
-    />
-  </div>
-
-  <!-- FEATURES -->
-  <section class="features">
-    <h2 class="features-title">Tout ce dont vous avez besoin</h2>
-    <p class="features-sub">Une app pensée pour les citoyens de Dour et de la région.</p>
-    <div class="features-grid">
-
-      <div class="feature-card">
-        <span class="feature-icon">🏪</span>
-        <div class="feature-name">Commerces locaux</div>
-        <div class="feature-desc">Découvrez les boutiques, restaurants et artisans de votre commune. Horaires, promos et contacts en un clic.</div>
-        <span class="feature-badge">Disponible</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">⛽</span>
-        <div class="feature-name">Carburant AI</div>
-        <div class="feature-desc">Prix officiels SPF Économie mis à jour quotidiennement. Trouvez la station la moins chère autour de vous.</div>
-        <span class="feature-badge">Disponible</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🚨</span>
-        <div class="feature-name">Alertes communales</div>
-        <div class="feature-desc">Travaux, fermetures, événements importants. Restez informé en temps réel avec des notifications push.</div>
-        <span class="feature-badge">Disponible</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">📅</span>
-        <div class="feature-name">Activités & Événements</div>
-        <div class="feature-desc">Marchés, tournois, braderies, concerts. Ne ratez plus aucun événement de votre commune.</div>
-        <span class="feature-badge">Disponible</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🤝</span>
-        <div class="feature-name">DCI — Demandes Citoyennes</div>
-        <div class="feature-desc">Besoin d'un plombier, électricien, déménageur ? Postez votre demande et recevez des offres de pros locaux.</div>
-        <span class="feature-badge">Disponible</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🔧</span>
-        <div class="feature-name">Garages & Artisans</div>
-        <div class="feature-desc">Trouvez un garage de confiance, prenez rendez-vous en ligne et comparez les tarifs en toute transparence.</div>
-        <span class="feature-badge">Disponible</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🛒</span>
-        <div class="feature-name">EcoPanier AI</div>
-        <div class="feature-desc">Optimisez vos courses avec l'IA. Menus intelligents, comparaison multi-enseignes et calcul d'économies.</div>
-        <span class="feature-badge soon">Bientôt</span>
-      </div>
-
-      <div class="feature-card">
-        <span class="feature-icon">🏅</span>
-        <div class="feature-name">Wallet Civique</div>
-        <div class="feature-desc">Gagnez des points en participant à la vie locale. Missions citoyennes, récompenses et fidélité commerçants.</div>
-        <span class="feature-badge soon">Bientôt</span>
-      </div>
-
+    <div class="mockup-text">
+      <div class="section-label">Technologie</div>
+      <h2 class="section-title">Propulsé par l'IA territoriale</h2>
+      <p style="font-size:16px;color:var(--muted);line-height:1.75;margin-bottom:8px">
+        VilleConnect OS s'adapte automatiquement à chaque commune. Branding, contenu, événements — tout est personnalisé pour votre ville.
+      </p>
+      <ul class="mockup-list">
+        <li><span class="check">✓</span>Branding dynamique par code postal belge</li>
+        <li><span class="check">✓</span>IA de recommandation locale</li>
+        <li><span class="check">✓</span>Génération automatique de contenu communal</li>
+        <li><span class="check">✓</span>Notifications intelligentes géolocalisées</li>
+        <li><span class="check">✓</span>Tableau de bord analytics pour les communes</li>
+        <li><span class="check">✓</span>API ouverte pour les intégrations locales</li>
+      </ul>
     </div>
-  </section>
-
-  <!-- COMPTEURS -->
-  <div class="counter-section">
-    <div class="counter-title">Dour en chiffres</div>
-    <div class="counters">
-      <div class="counter-item">
-        <div class="counter-num" id="c1">6</div>
-        <div class="counter-label">Commerces référencés</div>
-      </div>
-      <div class="counter-item">
-        <div class="counter-num" id="c2">2</div>
-        <div class="counter-label">Garages partenaires</div>
-      </div>
-      <div class="counter-item">
-        <div class="counter-num" id="c3">3</div>
-        <div class="counter-label">Événements à venir</div>
-      </div>
-      <div class="counter-item">
-        <div class="counter-num">🇧🇪</div>
-        <div class="counter-label">Made in Belgium</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CTA FINAL -->
-  <section class="cta-final">
-    <h2>Prêt à rejoindre<br/><span style="background:linear-gradient(135deg,#10B981,#3B82F6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">votre commune ?</span></h2>
-    <p>Soyez parmi les premiers à découvrir l'app au lancement.</p>
-    <div class="form-row" style="justify-content:center;gap:10px;flex-wrap:wrap;">
-      <input
-        id="email-input-2"
-        class="form-input"
-        type="email"
-        placeholder="votre@email.be"
-        style="max-width:280px;"
+    <div class="mockup-img">
+      <img
+        src="https://media.base44.com/images/public/6a11d1493754e75ce76ee0de/10499c263_generated_image.png"
+        alt="Ma Commune app mockup"
+        loading="lazy"
       />
-      <button class="form-btn" onclick="submitWaitlist2()">Je veux être prévenu !</button>
     </div>
-  </section>
+  </div>
+
+  <!-- VILLES -->
+  <div class="cities-section">
+    <div class="cities-label">Communes de lancement — Wallonie &amp; Belgique</div>
+    <div class="cities-grid">
+      <div class="city-pill active">🏙️ Dour (7370)</div>
+      <div class="city-pill">Mons (7000)</div>
+      <div class="city-pill">Charleroi (6000)</div>
+      <div class="city-pill">Namur (5000)</div>
+      <div class="city-pill">Liège (4000)</div>
+      <div class="city-pill">Bruxelles (1000)</div>
+      <div class="city-pill">Tournai (7500)</div>
+      <div class="city-pill">La Louvière (7100)</div>
+      <div class="city-pill">Braine-le-Comte (7090)</div>
+      <div class="city-pill">Saint-Ghislain (7330)</div>
+      <div class="city-pill">Frameries (7080)</div>
+      <div class="city-pill">Quaregnon (7390)</div>
+      <div class="city-pill">+ votre commune</div>
+    </div>
+  </div>
+
+  <!-- CTA BOTTOM -->
+  <div class="cta-section">
+    <h2>Prêt à transformer<br>votre commune ?</h2>
+    <p>Rejoignez les premiers citoyens et commerçants qui façonnent l'avenir de leur ville avec Ma Commune.</p>
+    <div class="cta-row">
+      <input type="email" id="emailInputBottom" class="cta-input" placeholder="votre@email.be" />
+      <button class="cta-btn" onclick="joinWaitlistBottom()">Je rejoins →</button>
+    </div>
+    <p id="ctaMsg" style="margin-top:14px;font-size:13px;color:var(--green);min-height:20px"></p>
+  </div>
 
   <!-- FOOTER -->
   <footer>
-    <div class="footer-logo">🏘️ Ma Commune · Dour 7370</div>
-    <div class="footer-links">
-      <a href="mailto:contact@macommune.be">Contact</a>
-      <a href="#">Confidentialité</a>
+    <div class="footer-logo">
+      <div class="nav-logo-icon" style="width:30px;height:30px;font-size:15px">🏙️</div>
+      Ma Commune · VilleConnect
     </div>
-    <div class="footer-copy">© 2026 VilleConnect. Tous droits réservés.</div>
+    <div class="footer-links">
+      <a href="#">Confidentialité</a>
+      <a href="#">Conditions</a>
+      <a href="#">Contact</a>
+      <a href="events-portal.html">Portail organisateurs</a>
+    </div>
+    <div class="footer-copy">
+      © 2026 Julien Pagin — Js-Innov.IA. Tous droits réservés. Plateforme citoyenne belge. VilleConnect OS™
+    </div>
   </footer>
 
 </div>
 
 <script>
-  // ── Formulaire liste d'attente ──────────────────────────────────────────────
-  const WEBHOOK = null; // Remplace par ton endpoint Make/Zapier si besoin
+  // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
+  const API_BASE = 'https://v-illec-onnect-e76ee0de.base44.app/api/functions';
 
-  async function submitEmail(email) {
+  // ── Charger le compteur ─────────────────────────────────────────────────
+  async function loadCount() {
+    try {
+      const res = await fetch(`${API_BASE}/joinWaitlist`);
+      const d = await res.json();
+      const el = document.getElementById('waitlistCount');
+      if (el) el.textContent = d.count > 0 ? d.count : '—';
+    } catch (e) {
+      const el = document.getElementById('waitlistCount');
+      if (el) el.textContent = '—';
+    }
+  }
+
+  // ── Inscription principale ─────────────────────────────────────────────
+  async function joinWaitlist() {
+    const email = document.getElementById('emailInput')?.value.trim();
+    const postal = document.getElementById('postalInput')?.value.trim() || '7370';
+    const role  = document.getElementById('roleSelect')?.value || 'citoyen';
+    const btn   = document.getElementById('submitBtn');
+
     if (!email || !email.includes('@')) {
-      alert('Merci d\'entrer une adresse email valide 😊');
-      return false;
+      flash(btn, '⚠️ Email invalide'); return;
     }
-    // Stockage local pour test
-    const list = JSON.parse(localStorage.getItem('waitlist') || '[]');
-    if (list.includes(email)) {
-      alert('Cette adresse est déjà enregistrée ! 👍');
-      return false;
-    }
-    list.push(email);
-    localStorage.setItem('waitlist', JSON.stringify(list));
 
-    // Optionnel : webhook externe
-    if (WEBHOOK) {
-      try {
-        await fetch(WEBHOOK, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, source: 'landing-ma-commune', date: new Date().toISOString() })
-        });
-      } catch(e) { console.error(e); }
-    }
-    return true;
-  }
+    btn.disabled = true;
+    btn.textContent = '⏳ Inscription…';
 
-  async function submitWaitlist() {
-    const email = document.getElementById('email-input').value.trim();
-    const ok = await submitEmail(email);
-    if (ok) {
-      document.getElementById('form-content').style.display = 'none';
-      document.getElementById('form-success').style.display = 'block';
-    }
-  }
+    try {
+      const res = await fetch(`${API_BASE}/joinWaitlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, postal_code: postal, role, source: 'landing-hero' }),
+      });
+      const d = await res.json();
 
-  async function submitWaitlist2() {
-    const email = document.getElementById('email-input-2').value.trim();
-    const ok = await submitEmail(email);
-    if (ok) {
-      document.getElementById('email-input-2').value = '';
-      document.getElementById('email-input-2').placeholder = '✅ Enregistré !';
+      if (d.success) {
+        document.getElementById('form-content').style.display = 'none';
+        const sc = document.getElementById('success-content');
+        sc.style.display = 'block';
+        const posEl = document.getElementById('successPosition');
+        if (posEl) posEl.textContent = d.already ? '✅ Déjà inscrit' : `#${d.position}`;
+        loadCount();
+      } else {
+        btn.disabled = false;
+        btn.textContent = '🎯 Je veux accès en avant-première';
+        alert('Erreur : ' + (d.error || 'Réessayez'));
+      }
+    } catch(err) {
+      btn.disabled = false;
+      btn.textContent = '🎯 Je veux accès en avant-première';
+      alert('Erreur réseau. Vérifiez votre connexion.');
     }
   }
 
-  // ── Enter key support ───────────────────────────────────────────────────────
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      if (document.activeElement.id === 'email-input') submitWaitlist();
-      if (document.activeElement.id === 'email-input-2') submitWaitlist2();
+  // ── Inscription CTA bottom ─────────────────────────────────────────────
+  async function joinWaitlistBottom() {
+    const email = document.getElementById('emailInputBottom')?.value.trim();
+    const msg   = document.getElementById('ctaMsg');
+    if (!email || !email.includes('@')) {
+      if (msg) msg.textContent = '⚠️ Entrez un email valide.';
+      return;
+    }
+    if (msg) msg.textContent = '⏳ Inscription…';
+    try {
+      const res = await fetch(`${API_BASE}/joinWaitlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'landing-cta' }),
+      });
+      const d = await res.json();
+      if (msg) msg.textContent = d.already ? '✅ Déjà inscrit !' : `🎉 ${d.message}`;
+      if (!d.already) document.getElementById('emailInputBottom').value = '';
+      loadCount();
+    } catch(e) {
+      if (msg) msg.textContent = '❌ Erreur réseau.';
+    }
+  }
+
+  // ── Partager ────────────────────────────────────────────────────────────
+  function shareApp() {
+    const text = '📲 Ma Commune — L\'app citoyenne belge. Rejoins la liste d\'attente !\n' + window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: 'Ma Commune', text, url: window.location.href });
+    } else {
+      navigator.clipboard?.writeText(text).then(() => alert('🔗 Lien copié !'));
+    }
+  }
+
+  // ── Enter key ───────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const aid = document.activeElement?.id;
+    if (aid === 'emailInput') joinWaitlist();
+    if (aid === 'emailInputBottom') joinWaitlistBottom();
+  });
+
+  // ── Helper flash ────────────────────────────────────────────────────────
+  function flash(btn, msg) {
+    const orig = btn.textContent;
+    btn.textContent = msg;
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }
+
+  // ── Code postal auto-detect ville ───────────────────────────────────────
+  const CP_CITIES = {
+    '7370':'Dour','7000':'Mons','6000':'Charleroi','5000':'Namur',
+    '4000':'Liège','1000':'Bruxelles','7500':'Tournai','7100':'La Louvière',
+    '7090':'Braine-le-Comte','7330':'Saint-Ghislain','7080':'Frameries','7390':'Quaregnon'
+  };
+  document.getElementById('postalInput')?.addEventListener('input', function() {
+    if (this.value.length === 4 && CP_CITIES[this.value]) {
+      this.style.borderColor = 'var(--green)';
+    } else {
+      this.style.borderColor = '';
     }
   });
+
+  // ── Init ────────────────────────────────────────────────────────────────
+  loadCount();
 </script>
 </body>
 </html>
