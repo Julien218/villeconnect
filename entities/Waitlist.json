@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "citoyen",
+        "commer\u00e7ant",
+        "organisateur",
+        "commune"
+      ]
+    },
+    "confirmed": {
+      "type": "boolean"
+    }
+  },
+  "required": [],
+  "name": "Waitlist"
+}
