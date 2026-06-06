@@ -4,6 +4,7 @@
     "slug": "macommune",
     "owner": "js-innov.ia",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -34,12 +35,12 @@
         "projectId": "9945412e-d2d1-490b-a583-d7568cddd47d"
       }
     },
-    "plugins": ["expo-router"],
+    "plugins": ["expo-router", "expo-font"],
     "updates": {
       "url": "https://u.expo.dev/9945412e-d2d1-490b-a583-d7568cddd47d"
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     }
   }
 }
