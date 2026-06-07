@@ -60,3 +60,14 @@ app.listen(PORT, () => {
   console.log(`🏙️  VilleConnect API running on port ${PORT}`);
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
 });
+
+// DEBUG — schema inspector (temporary)
+app.get('/api/schema/:table', async (req, res) => {
+  try {
+    const { db: dbPool } = require('./db');
+    const [rows] = await dbPool.execute(`DESCRIBE \`${req.params.table}\``);
+    res.json(rows);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
