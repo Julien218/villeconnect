@@ -1,9 +1,10 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
+import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { trpcQuery } from '@/shared/api-client';
 
 const { width } = Dimensions.get('window');
-const API = 'https://villeconnect-production.up.railway.app';
 
 const QUICK_ACTIONS = [
   { icon: '📅', label: 'Événements', route: '/(tabs)/events', color: '#3B82F6' },
@@ -16,6 +17,26 @@ const QUICK_ACTIONS = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [eventsCount, setEventsCount] = useState<number | null>(null);
+  const [shopsCount, setShopsCount] = useState<number | null>(null);
+  const [alertsCount, setAlertsCount] = useState<number | null>(null);
+  const [latestAlert, setLatestAlert] = useState<any | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const [ev, sh, al, alList] = await Promise.all([
+        trpcQuery<any>('events.stats', { postalCode: '7370' }),
+        trpcQuery<any>('shops.stats', { postalCode: '7370' }),
+        trpcQuery<any>('alerts.count', { postalCode: '7370' }),
+        trpcQuery<any[]>('alerts.list', { postalCode: '7370', limit: 1 }),
+      ]);
+      if (ev.data) setEventsCount(Number(ev.data.approved) || 0);
+      if (sh.data) setShopsCount(Number(sh.data.total) || 0);
+      if (al.data) setAlertsCount(Number(al.data.total) || 0);
+      if (alList.data && alList.data.length > 0) setLatestAlert(alList.data[0]);
+    })();
+  }, []);
+
   return (
     <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 40 }}>
 
@@ -25,11 +46,11 @@ export default function HomeScreen() {
         <Text style={s.heroTitle}>Bonjour 👋</Text>
         <Text style={s.heroSub}>Votre commune en temps réel</Text>
         <View style={s.heroStats}>
-          <View style={s.heroStat}><Text style={s.heroStatNum}>12</Text><Text style={s.heroStatLabel}>Événements</Text></View>
+          <View style={s.heroStat}><Text style={s.heroStatNum}>{eventsCount ?? '–'}</Text><Text style={s.heroStatLabel}>Événements</Text></View>
           <View style={s.heroStatDivider} />
-          <View style={s.heroStat}><Text style={s.heroStatNum}>47</Text><Text style={s.heroStatLabel}>Commerces</Text></View>
+          <View style={s.heroStat}><Text style={s.heroStatNum}>{shopsCount ?? '–'}</Text><Text style={s.heroStatLabel}>Commerces</Text></View>
           <View style={s.heroStatDivider} />
-          <View style={s.heroStat}><Text style={s.heroStatNum}>3</Text><Text style={s.heroStatLabel}>Alertes</Text></View>
+          <View style={s.heroStat}><Text style={s.heroStatNum}>{alertsCount ?? '–'}</Text><Text style={s.heroStatLabel}>Alertes</Text></View>
         </View>
       </View>
 
@@ -53,14 +74,20 @@ export default function HomeScreen() {
 
       {/* Alerte communale */}
       <Text style={s.sectionTitle}>Dernière alerte</Text>
-      <View style={s.alertCard}>
-        <View style={s.alertDot} />
-        <View style={{ flex: 1 }}>
-          <Text style={s.alertTitle}>Travaux rue de Mons</Text>
-          <Text style={s.alertDesc}>Circulation alternée du 8 au 15 juin — prévoir un détour par la rue des Écoles.</Text>
-          <Text style={s.alertDate}>Aujourd'hui · Commune de Dour</Text>
+      {latestAlert ? (
+        <View style={s.alertCard}>
+          <View style={s.alertDot} />
+          <View style={{ flex: 1 }}>
+            <Text style={s.alertTitle}>{latestAlert.title}</Text>
+            <Text style={s.alertDesc}>{latestAlert.message}</Text>
+            <Text style={s.alertDate}>{new Date(latestAlert.createdAt).toLocaleDateString('fr-BE')} · Commune de Dour</Text>
+          </View>
         </View>
-      </View>
+      ) : (
+        <View style={s.alertCard}>
+          <Text style={s.alertDesc}>Aucune alerte active pour l'instant.</Text>
+        </View>
+      )}
 
       {/* Footer version */}
       <Text style={s.version}>Ma Commune v1.0 · VilleConnect OS™ · © 2026 Js-Innov.IA</Text>
