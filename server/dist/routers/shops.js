@@ -9,17 +9,18 @@ exports.shopsRouter = (0, trpc_1.router)({
     list: trpc_1.publicProcedure
         .input(zod_1.z.object({ postalCode: zod_1.z.string().default('7370'), limit: zod_1.z.number().default(20) }))
         .query(async ({ input }) => {
-        const [rows] = await db_1.db.execute(`SELECT s.*, GROUP_CONCAT(sp.name SEPARATOR ',') as product_names
+        const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(input.limit) || 20)));
+        const [rows] = await db_1.db.execute(`SELECT s.id, s.name, s.category, s.description, s.address, s.postalCode, s.city,
+                s.phone, s.email, s.website, s.imageUrl, s.rating, s.reviewCount,
+                s.hasPromotion, s.promotionText, s.isActive, s.hours
          FROM shops s
-         LEFT JOIN shop_products sp ON sp.shop_id = s.id
-         WHERE s.postal_code = ?
-         GROUP BY s.id
+         WHERE s.postalCode = ? AND s.isActive = 1
          ORDER BY s.rating DESC
-         LIMIT ?`, [input.postalCode, input.limit]);
+         LIMIT ${safeLimit}`, [input.postalCode]);
         return rows;
     }),
     getById: trpc_1.publicProcedure
-        .input(zod_1.z.object({ id: zod_1.z.string() }))
+        .input(zod_1.z.object({ id: zod_1.z.number() }))
         .query(async ({ input }) => {
         const [rows] = await db_1.db.execute('SELECT * FROM shops WHERE id = ?', [input.id]);
         return rows[0] || null;
@@ -27,7 +28,13 @@ exports.shopsRouter = (0, trpc_1.router)({
     search: trpc_1.publicProcedure
         .input(zod_1.z.object({ q: zod_1.z.string(), postalCode: zod_1.z.string().default('7370') }))
         .query(async ({ input }) => {
-        const [rows] = await db_1.db.execute(`SELECT * FROM shops WHERE postal_code = ? AND (name LIKE ? OR category LIKE ?) LIMIT 20`, [input.postalCode, `%${input.q}%`, `%${input.q}%`]);
+        const [rows] = await db_1.db.execute(`SELECT * FROM shops WHERE postalCode = ? AND (name LIKE ? OR category LIKE ?) AND isActive = 1 LIMIT 20`, [input.postalCode, `%${input.q}%`, `%${input.q}%`]);
         return rows;
+    }),
+    stats: trpc_1.publicProcedure
+        .input(zod_1.z.object({ postalCode: zod_1.z.string().default('7370') }))
+        .query(async ({ input }) => {
+        const [rows] = await db_1.db.execute(`SELECT COUNT(*) as total, SUM(hasPromotion) as withPromo FROM shops WHERE postalCode = ? AND isActive = 1`, [input.postalCode]);
+        return rows[0];
     }),
 });

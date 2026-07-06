@@ -7,14 +7,15 @@ export const alertsRouter = router({
   list: publicProcedure
     .input(z.object({ postalCode: z.string().default('7370'), limit: z.number().default(10) }))
     .query(async ({ input }) => {
+      const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(input.limit) || 10)));
       const [rows] = await db.execute(
         `SELECT id, title, message, type, postalCode, city, startDate, endDate, isActive, createdAt
          FROM communal_alerts
          WHERE postalCode = ? AND isActive = 1
            AND (expiresAt IS NULL OR expiresAt > NOW())
          ORDER BY createdAt DESC
-         LIMIT ?`,
-        [input.postalCode, input.limit]
+         LIMIT ${safeLimit}`,
+        [input.postalCode]
       ) as any[];
       return rows;
     }),

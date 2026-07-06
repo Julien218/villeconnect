@@ -7,6 +7,7 @@ export const shopsRouter = router({
   list: publicProcedure
     .input(z.object({ postalCode: z.string().default('7370'), limit: z.number().default(20) }))
     .query(async ({ input }) => {
+      const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(input.limit) || 20)));
       const [rows] = await db.execute(
         `SELECT s.id, s.name, s.category, s.description, s.address, s.postalCode, s.city,
                 s.phone, s.email, s.website, s.imageUrl, s.rating, s.reviewCount,
@@ -14,8 +15,8 @@ export const shopsRouter = router({
          FROM shops s
          WHERE s.postalCode = ? AND s.isActive = 1
          ORDER BY s.rating DESC
-         LIMIT ?`,
-        [input.postalCode, input.limit]
+         LIMIT ${safeLimit}`,
+        [input.postalCode]
       ) as any[];
       return rows;
     }),

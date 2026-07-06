@@ -11,6 +11,7 @@ export const eventsRouter = router({
       category: z.string().optional(),
     }))
     .query(async ({ input }) => {
+      const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(input.limit) || 20)));
       let sql = `SELECT id, title, description, category, dateStart, dateEnd, timeLabel,
                         location, address, postalCode, city, imageUrl, isFree, price,
                         organizer, organizerPhone, organizerEmail, status, isRecurring
@@ -18,8 +19,7 @@ export const eventsRouter = router({
                  WHERE postalCode = ? AND status = 'approved' AND dateStart >= NOW()`;
       const params: any[] = [input.postalCode];
       if (input.category) { sql += ' AND category = ?'; params.push(input.category); }
-      sql += ' ORDER BY dateStart ASC LIMIT ?';
-      params.push(input.limit);
+      sql += ` ORDER BY dateStart ASC LIMIT ${safeLimit}`;
       const [rows] = await db.execute(sql, params) as any[];
       return rows;
     }),
