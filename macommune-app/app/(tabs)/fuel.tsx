@@ -1,7 +1,10 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { trpcQuery } from '@/shared/api-client';
+import { theme } from '@/shared/theme';
+import { GlassCard } from '@/components/glass-card';
 
 interface FuelStation {
   id: string; name: string; address: string;
@@ -45,7 +48,7 @@ export default function FuelScreen() {
   useEffect(() => { load(); }, [selected]);
 
   if (loading) {
-    return <View style={[s.screen, { justifyContent: 'center' }]}><ActivityIndicator color="#F59E0B" /></View>;
+    return <View style={[s.screen, { justifyContent: 'center' }]}><ActivityIndicator color={theme.colors.cyan} /></View>;
   }
 
   const sorted = [...stations].sort((a, b) => (a[selected] ?? 999) - (b[selected] ?? 999));
@@ -59,26 +62,29 @@ export default function FuelScreen() {
   return (
     <ScrollView
       style={s.screen}
-      contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#F59E0B" />}
+      contentContainerStyle={{ paddingBottom: 110 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={theme.colors.cyan} />}
     >
       {usingMock && <Text style={s.mockBadge}>⚠️ Prix de démonstration — intégration Statbel en cours de branchement DB</Text>}
 
       {/* Meilleur prix hero */}
-      <View style={s.hero}>
-        <Text style={s.heroLabel}>💡 Meilleur prix autour de vous</Text>
+      <LinearGradient
+        colors={[theme.colors.navyGrad2, theme.colors.cyanGrad1, theme.colors.cyanGrad2]}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={s.hero}
+      >
+        <Text style={s.heroLabel}>💡 MEILLEUR PRIX AUTOUR DE VOUS</Text>
         <Text style={s.heroStation}>{best.name}</Text>
-        <Text style={s.heroPrice}>
-          {selected === 'diesel' ? '🟡' : selected === 'e5' ? '🟢' : '🔵'}{' '}
-          {(best[selected] ?? 0).toFixed(3)} €/L
-        </Text>
+        <Text style={s.heroPrice}>{(best[selected] ?? 0).toFixed(3)} €/L</Text>
         <Text style={s.heroAddr}>📍 {best.address}  ·  {best.distance}</Text>
         {sorted.length > 1 && (
-          <Text style={s.heroEco}>
-            💰 Économie vs station la + chère : {(((sorted[sorted.length-1][selected] ?? 0) - (best[selected] ?? 0)) * 50).toFixed(2)}€ pour 50L
-          </Text>
+          <View style={s.heroEcoWrap}>
+            <Text style={s.heroEco}>
+              💰 Économie vs station la + chère : {(((sorted[sorted.length-1][selected] ?? 0) - (best[selected] ?? 0)) * 50).toFixed(2)}€ pour 50L
+            </Text>
+          </View>
         )}
-      </View>
+      </LinearGradient>
 
       {/* Sélecteur carburant */}
       <View style={s.tabs}>
@@ -95,17 +101,17 @@ export default function FuelScreen() {
         ))}
       </View>
 
-      <Text style={s.sectionTitle}>Stations proches</Text>
+      <Text style={s.sectionTitle}>STATIONS PROCHES</Text>
 
       {sorted.map((st, i) => (
-        <View key={st.id} style={[s.card, i === 0 && s.cardBest]}>
+        <GlassCard key={st.id} style={[s.card, i === 0 && s.cardBest] as any}>
           {i === 0 && <View style={s.bestBadge}><Text style={s.bestText}>⭐ Le moins cher</Text></View>}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               <Text style={s.stName}>{i + 1}. {st.name}</Text>
               <Text style={s.stAddr}>📍 {st.address}  ·  🚗 {st.distance}</Text>
             </View>
-            <Text style={[s.stPrice, i === 0 && { color: '#10B981' }]}>
+            <Text style={[s.stPrice, i === 0 && { color: theme.colors.success }]}>
               {(st[selected] ?? 0).toFixed(3)}€
             </Text>
           </View>
@@ -114,7 +120,7 @@ export default function FuelScreen() {
             <View style={s.priceTag}><Text style={s.priceTagLabel}>E5</Text><Text style={s.priceTagVal}>{st.e5.toFixed(3)}</Text></View>
             {st.e10 && <View style={s.priceTag}><Text style={s.priceTagLabel}>E10</Text><Text style={s.priceTagVal}>{st.e10.toFixed(3)}</Text></View>}
           </View>
-        </View>
+        </GlassCard>
       ))}
 
       <Text style={s.source}>Source : Statbel/SPF Économie Belgique · Mis à jour quotidiennement</Text>
@@ -123,30 +129,31 @@ export default function FuelScreen() {
 }
 
 const s = StyleSheet.create({
-  screen:         { flex: 1, backgroundColor: '#0A0F1E' },
-  mockBadge:      { color: '#F59E0B', fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginTop: 12 },
-  hero:           { margin: 16, backgroundColor: '#111827', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)', padding: 20 },
-  heroLabel:      { color: '#F59E0B', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  heroStation:    { color: '#F9FAFB', fontSize: 18, fontWeight: '900', marginBottom: 4 },
-  heroPrice:      { color: '#F9FAFB', fontSize: 36, fontWeight: '900', marginBottom: 4 },
-  heroAddr:       { color: '#9CA3AF', fontSize: 12, marginBottom: 8 },
-  heroEco:        { color: '#10B981', fontSize: 12, fontWeight: '600', backgroundColor: 'rgba(16,185,129,0.1)', borderRadius: 8, padding: 8 },
+  screen:         { flex: 1, backgroundColor: theme.colors.bgDeep },
+  mockBadge:      { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginTop: 12 },
+  hero:           { margin: 16, borderRadius: theme.radius.xl, padding: 20, ...theme.shadow.glow },
+  heroLabel:      { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
+  heroStation:    { color: '#fff', fontSize: 18, fontWeight: '900', marginBottom: 4 },
+  heroPrice:      { color: '#fff', fontSize: 36, fontWeight: '900', marginBottom: 4 },
+  heroAddr:       { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginBottom: 8 },
+  heroEcoWrap:    { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: theme.radius.sm, padding: 8, marginTop: 4 },
+  heroEco:        { color: '#fff', fontSize: 12, fontWeight: '600' },
   tabs:           { flexDirection: 'row', marginHorizontal: 16, gap: 8, marginBottom: 8 },
-  tab:            { flex: 1, backgroundColor: '#111827', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingVertical: 10, alignItems: 'center' },
-  tabActive:      { backgroundColor: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.4)' },
-  tabText:        { color: '#6B7280', fontSize: 13, fontWeight: '700' },
-  tabTextActive:  { color: '#F59E0B' },
-  sectionTitle:   { color: '#F9FAFB', fontSize: 15, fontWeight: '800', marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
-  card:           { marginHorizontal: 16, marginBottom: 10, backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: 16 },
-  cardBest:       { borderColor: 'rgba(16,185,129,0.3)' },
-  bestBadge:      { alignSelf: 'flex-start', backgroundColor: 'rgba(16,185,129,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 8 },
-  bestText:       { color: '#10B981', fontSize: 11, fontWeight: '700' },
-  stName:         { color: '#F9FAFB', fontSize: 14, fontWeight: '700', marginBottom: 3 },
-  stAddr:         { color: '#9CA3AF', fontSize: 12 },
-  stPrice:        { color: '#F59E0B', fontSize: 24, fontWeight: '900' },
+  tab:            { flex: 1, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.sm, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, alignItems: 'center' },
+  tabActive:      { backgroundColor: theme.colors.cyanSoft, borderColor: theme.colors.borderCyan },
+  tabText:        { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
+  tabTextActive:  { color: theme.colors.cyan },
+  sectionTitle:   { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
+  card:           { marginHorizontal: 16, marginBottom: 10, padding: 16 },
+  cardBest:       { borderColor: 'rgba(52,211,153,0.3)' },
+  bestBadge:      { alignSelf: 'flex-start', backgroundColor: 'rgba(52,211,153,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 8 },
+  bestText:       { color: theme.colors.success, fontSize: 11, fontWeight: '700' },
+  stName:         { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 3 },
+  stAddr:         { color: theme.colors.textSecondary, fontSize: 12 },
+  stPrice:        { color: theme.colors.cyan, fontSize: 24, fontWeight: '900' },
   priceRow:       { flexDirection: 'row', gap: 8, marginTop: 12 },
-  priceTag:       { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 8, alignItems: 'center' },
-  priceTagLabel:  { color: '#6B7280', fontSize: 10, fontWeight: '600' },
-  priceTagVal:    { color: '#F9FAFB', fontSize: 13, fontWeight: '700', marginTop: 2 },
-  source:         { color: '#374151', fontSize: 11, textAlign: 'center', marginTop: 16, marginHorizontal: 16 },
+  priceTag:       { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: theme.radius.sm, padding: 8, alignItems: 'center' },
+  priceTagLabel:  { color: theme.colors.textMuted, fontSize: 10, fontWeight: '600' },
+  priceTagVal:    { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700', marginTop: 2 },
+  source:         { color: theme.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 16, marginHorizontal: 16 },
 });

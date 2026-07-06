@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { trpcQuery } from '@/shared/api-client';
+import { theme } from '@/shared/theme';
+import { GlassCard } from '@/components/glass-card';
 
 // Fallback utilisé UNIQUEMENT si l'API est injoignable (jamais affiché si des données réelles existent).
 const MOCK_EVENTS = [
   { id: '1', title: 'Marché de Dour', date: '2026-06-14', time: '08:00', location: 'Grand-Place', category: 'marché', emoji: '🛒' },
   { id: '2', title: 'Fête de la Musique', date: '2026-06-21', time: '14:00', location: 'Parc communal', category: 'culture', emoji: '🎵' },
-  { id: '3', title: 'Tournoi de pétanque', date: '2026-06-28', time: '10:00', location: 'Place du Jeu de Balle', category: 'sport', emoji: '🏆' },
 ];
 
 const CAT_EMOJI: Record<string, string> = {
@@ -16,11 +17,10 @@ const CAT_EMOJI: Record<string, string> = {
 };
 
 const CAT_COLORS: Record<string, string> = {
-  Marché: '#10B981', Culture: '#3B82F6', Sport: '#F59E0B',
-  Jeunesse: '#7C3AED', Environnement: '#22C55E', Communal: '#EF4444', default: '#6B7280',
+  Marché: theme.colors.success, Culture: theme.colors.electric, Sport: theme.colors.warning,
+  Jeunesse: '#C084FC', Environnement: '#4ADE80', Communal: theme.colors.danger, default: theme.colors.cyan,
 };
 
-// Normalise une ligne de la table `events` (API réelle) vers le format d'affichage de l'écran.
 function normalizeApiEvent(ev: any) {
   return {
     id: String(ev.id),
@@ -46,7 +46,6 @@ export default function EventsScreen() {
       setEvents(data.map(normalizeApiEvent));
       setIsMock(false);
     } else {
-      // Repli mock uniquement si l'API échoue ou ne renvoie rien
       setEvents(MOCK_EVENTS);
       setIsMock(true);
       if (error) console.warn('[events] API indisponible, fallback mock:', error);
@@ -60,35 +59,35 @@ export default function EventsScreen() {
   return (
     <ScrollView
       style={s.screen}
-      contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#10B981" />}
+      contentContainerStyle={{ paddingBottom: 110 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={theme.colors.cyan} />}
     >
       <View style={s.header}>
         <Text style={s.headerSub}>Dour · {events.length} événements à venir</Text>
         {isMock && <Text style={s.mockBadge}>⚠️ Données hors-ligne (démo)</Text>}
       </View>
 
-      {loading && <ActivityIndicator color="#10B981" style={{ marginTop: 40 }} />}
+      {loading && <ActivityIndicator color={theme.colors.cyan} style={{ marginTop: 40 }} />}
 
       {!loading && events.map(ev => {
         const catColor = CAT_COLORS[ev.category] ?? CAT_COLORS.default;
         return (
-          <TouchableOpacity key={ev.id} style={s.card} activeOpacity={0.75}>
-            <View style={[s.dateBox, { backgroundColor: catColor + '22', borderColor: catColor + '44' }]}>
-              <Text style={[s.dateDay, { color: catColor }]}>
-                {new Date(ev.date).getDate()}
-              </Text>
-              <Text style={[s.dateMon, { color: catColor }]}>
-                {new Date(ev.date).toLocaleDateString('fr-BE', { month: 'short' }).toUpperCase()}
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.eventEmoji}>{ev.emoji} <Text style={s.eventTitle}>{ev.title}</Text></Text>
-              <Text style={s.eventMeta}>🕐 {ev.time}  ·  📍 {ev.location}</Text>
-              <View style={[s.catBadge, { backgroundColor: catColor + '18', borderColor: catColor + '40' }]}>
-                <Text style={[s.catText, { color: catColor }]}>{ev.category}</Text>
+          <TouchableOpacity key={ev.id} activeOpacity={0.8}>
+            <GlassCard style={s.card as any}>
+              <View style={[s.dateBox, { backgroundColor: catColor + '22', borderColor: catColor + '44' }]}>
+                <Text style={[s.dateDay, { color: catColor }]}>{new Date(ev.date).getDate()}</Text>
+                <Text style={[s.dateMon, { color: catColor }]}>
+                  {new Date(ev.date).toLocaleDateString('fr-BE', { month: 'short' }).toUpperCase()}
+                </Text>
               </View>
-            </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.eventEmoji}>{ev.emoji} <Text style={s.eventTitle}>{ev.title}</Text></Text>
+                <Text style={s.eventMeta}>🕐 {ev.time}  ·  📍 {ev.location}</Text>
+                <View style={[s.catBadge, { backgroundColor: catColor + '18', borderColor: catColor + '40' }]}>
+                  <Text style={[s.catText, { color: catColor }]}>{ev.category}</Text>
+                </View>
+              </View>
+            </GlassCard>
           </TouchableOpacity>
         );
       })}
@@ -97,17 +96,17 @@ export default function EventsScreen() {
 }
 
 const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: '#0A0F1E' },
+  screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
   header:      { padding: 16, paddingBottom: 8 },
-  headerSub:   { color: '#6B7280', fontSize: 13, fontWeight: '600' },
-  mockBadge:   { color: '#F59E0B', fontSize: 11, fontWeight: '700', marginTop: 4 },
-  card:        { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
-  dateBox:     { width: 52, borderRadius: 12, borderWidth: 1, alignItems: 'center', paddingVertical: 8 },
+  headerSub:   { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
+  mockBadge:   { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginTop: 4 },
+  card:        { marginHorizontal: 16, marginBottom: 12, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  dateBox:     { width: 52, borderRadius: theme.radius.sm, borderWidth: 1, alignItems: 'center', paddingVertical: 8 },
   dateDay:     { fontSize: 22, fontWeight: '900' },
   dateMon:     { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
-  eventEmoji:  { color: '#F9FAFB', fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  eventTitle:  { color: '#F9FAFB', fontSize: 15, fontWeight: '700' },
-  eventMeta:   { color: '#9CA3AF', fontSize: 12, marginBottom: 8 },
-  catBadge:    { alignSelf: 'flex-start', borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+  eventEmoji:  { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  eventTitle:  { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
+  eventMeta:   { color: theme.colors.textSecondary, fontSize: 12, marginBottom: 8 },
+  catBadge:    { alignSelf: 'flex-start', borderRadius: theme.radius.sm, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
   catText:     { fontSize: 11, fontWeight: '700' },
 });
