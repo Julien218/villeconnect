@@ -172,12 +172,24 @@ export const authRouter = router({
       // (openId différent, jamais lié à un vrai compte), on le fusionne dans CE
       // compte qui vient d'être authentifié. Sûr, idempotent, jamais bloquant pour
       // le login lui-même même en cas d'échec inattendu.
+      //
+      // `deviceOwnedByThisAccount` protège user_devices : on ne veut JAMAIS y
+      // enregistrer un openId qui appartient en réalité à un AUTRE identifiant
+      // (donor déjà fusionné ailleurs, ou vrai compte tiers) — sinon la table
+      // finirait par mentir sur quel appareil appartient à quel compte.
+      let deviceOwnedByThisAccount = input.deviceOpenId === openId;
       if (input.deviceOpenId && input.deviceOpenId !== openId) {
         try {
           const mergeResult = await mergeGuestDeviceIntoAccount(input.deviceOpenId, user.id, ctx.ip);
           if (mergeResult.merged) {
+            deviceOwnedByThisAccount = true;
             console.log(`[login] wallet fusionné pour user ${user.id}: +${mergeResult.creditsTransferred} CL, ${mergeResult.missionsReattached} mission(s) ré-attachée(s), ${mergeResult.missionsDeduped} doublon(s) ignoré(s)`);
+          } else if (mergeResult.reason === 'donor_not_found') {
+            // Device jamais vu nulle part — appareil neuf, légitimement à ce compte.
+            deviceOwnedByThisAccount = true;
           }
+          // 'donor_has_account' / 'already_merged_elsewhere' : cet openId identifie
+          // en réalité un AUTRE compte/donor — on ne le rattache surtout pas ici.
         } catch (e) {
           console.error('[login] échec fusion wallet (non bloquant):', (e as Error).message);
         }
@@ -185,7 +197,7 @@ export const authRouter = router({
 
       await db.execute('UPDATE users SET lastSignedIn = NOW() WHERE id = ?', [user.id]);
 
-      if (input.deviceOpenId) {
+      if (input.deviceOpenId && deviceOwnedByThisAccount) {
         try { await upsertUserDevice(user.id, input.deviceOpenId, input.platform); }
         catch (e) { console.error('[login] échec upsert user_devices (non bloquant):', (e as Error).message); }
       }
