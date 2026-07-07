@@ -73,6 +73,12 @@ export const walletRouter = router({
   // TOUJOURS de la mission en base (reward_amount), jamais d'un champ envoyé par le
   // client. Anti double-validation via contrainte UNIQUE(mission_id, user_id) + verrou
   // transactionnel (FOR UPDATE) pour éviter toute course/double-clic.
+  //
+  // IMPORTANT : ne suppose PAS que le wallet existe déjà (getWallet peut ne jamais
+  // avoir été appelé avant). Le wallet est créé de façon atomique (INSERT ... ON
+  // DUPLICATE KEY, protégé par la contrainte UNIQUE(user_id) déjà présente en DB) à
+  // l'intérieur de la même transaction, AVANT le crédit — aucun crédit ne peut donc
+  // être perdu silencieusement sur un wallet inexistant.
   completeMission: protectedProcedure
     .input(z.object({ missionId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -108,6 +114,16 @@ export const walletRouter = router({
 
         const rewardAmount = Number(mission.reward_amount);
 
+        // Crée le wallet s'il n'existe pas encore (baseline à 0 — le bonus de bienvenue
+        // reste géré exclusivement par getWallet). Idempotent grâce à la contrainte
+        // UNIQUE(user_id) déjà présente sur civic_wallets.
+        await conn.execute(
+          `INSERT INTO civic_wallets (user_id, available_balance, total_earned, trust_score)
+           VALUES (?, 0, 0, 42)
+           ON DUPLICATE KEY UPDATE user_id = user_id`,
+          [userId]
+        );
+
         await conn.execute(
           'INSERT INTO mission_completions (mission_id, user_id) VALUES (?, ?)',
           [input.missionId, userId]
@@ -116,11 +132,16 @@ export const walletRouter = router({
           'UPDATE missions SET completions_count = completions_count + 1 WHERE id = ?',
           [input.missionId]
         );
-        await conn.execute(
+        const [updateResult] = await conn.execute(
           `UPDATE civic_wallets SET available_balance = available_balance + ?,
            total_earned = total_earned + ? WHERE user_id = ?`,
           [rewardAmount, rewardAmount, userId]
-        );
+        ) as any[];
+        if ((updateResult as any).affectedRows !== 1) {
+          // Filet de sécurité : ne devrait jamais se produire vu l'INSERT juste au-dessus,
+          // mais on refuse catégoriquement de committer un crédit non appliqué.
+          throw new Error('wallet_update_failed');
+        }
         await conn.execute(
           `INSERT INTO civic_transactions (user_id, type, amount, label, mission_id)
            VALUES (?, 'earned', ?, 'Mission validée', ?)`,
