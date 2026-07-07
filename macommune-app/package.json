@@ -37,5 +37,9 @@
     "build:web": "expo export --platform web && node scripts/fix-web-assets.js",
     "deploy:web": "npm run build:web && wrangler pages deploy dist --project-name=villeconnect --branch=main --commit-dirty=true"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "postcss": "^8.5.10",
+    "uuid": "^11.1.1"
+  }
 }
