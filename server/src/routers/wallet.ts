@@ -1,28 +1,15 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { TRPCError } from '@trpc/server';
+import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { db } from '../db';
-
-// Résout (ou crée) l'utilisateur numérique lié à un identifiant client (openId),
-// car civic_wallets.user_id / civic_transactions.user_id sont des clés INT (FK vers users.id)
-// alors que le client mobile/web ne connaît qu'un identifiant anonyme (UUID) stocké localement.
-async function getOrCreateUserId(openId: string, postalCode?: string): Promise<number> {
-  const [rows] = await db.execute('SELECT id FROM users WHERE openId = ?', [openId]) as any[];
-  const arr = rows as any[];
-  if (arr.length > 0) return arr[0].id;
-  await db.execute(
-    `INSERT INTO users (openId, loginMethod, role, postalCode) VALUES (?, 'anonymous', 'user', ?)`,
-    [openId, postalCode || null]
-  );
-  const [created] = await db.execute('SELECT id FROM users WHERE openId = ?', [openId]) as any[];
-  return (created as any[])[0].id;
-}
+import { getOrCreateUserId } from '../lib/users';
 
 export const walletRouter = router({
   getWallet: publicProcedure
     .input(z.object({ openId: z.string(), postalCode: z.string().optional() }))
     .query(async ({ input }) => {
-      const userId = await getOrCreateUserId(input.openId, input.postalCode);
+      const { id: userId } = await getOrCreateUserId(input.openId, input.postalCode);
       const [rows] = await db.execute(
         'SELECT * FROM civic_wallets WHERE user_id = ?',
         [userId]
@@ -48,7 +35,7 @@ export const walletRouter = router({
   getTransactions: publicProcedure
     .input(z.object({ openId: z.string(), limit: z.number().default(20) }))
     .query(async ({ input }) => {
-      const userId = await getOrCreateUserId(input.openId);
+      const { id: userId } = await getOrCreateUserId(input.openId);
       const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(input.limit) || 20)));
       const [rows] = await db.execute(
         `SELECT * FROM civic_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT ${safeLimit}`,
@@ -82,24 +69,72 @@ export const walletRouter = router({
       return rows;
     }),
 
-  completeMission: publicProcedure
-    .input(z.object({ openId: z.string(), missionId: z.number(), credits: z.number() }))
-    .mutation(async ({ input }) => {
-      const userId = await getOrCreateUserId(input.openId);
-      await db.execute(
-        `INSERT INTO mission_completions (mission_id, user_id) VALUES (?, ?)`,
-        [input.missionId, userId]
-      );
-      await db.execute(
-        `UPDATE civic_wallets SET available_balance = available_balance + ?,
-         total_earned = total_earned + ? WHERE user_id = ?`,
-        [input.credits, input.credits, userId]
-      );
-      await db.execute(
-        `INSERT INTO civic_transactions (user_id, type, amount, label, mission_id)
-         VALUES (?, 'earned', ?, 'Mission validée', ?)`,
-        [userId, input.credits, input.missionId]
-      );
-      return { success: true };
+  // Protégée : nécessite un token émis par auth.deviceLogin. Le montant crédité vient
+  // TOUJOURS de la mission en base (reward_amount), jamais d'un champ envoyé par le
+  // client. Anti double-validation via contrainte UNIQUE(mission_id, user_id) + verrou
+  // transactionnel (FOR UPDATE) pour éviter toute course/double-clic.
+  completeMission: protectedProcedure
+    .input(z.object({ missionId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id;
+      const conn = await db.getConnection();
+      try {
+        await conn.beginTransaction();
+
+        const [missionRows] = await conn.execute(
+          `SELECT id, reward_amount, is_active, max_completions, completions_count
+           FROM missions WHERE id = ? FOR UPDATE`,
+          [input.missionId]
+        ) as any[];
+        const mission = (missionRows as any[])[0];
+
+        if (!mission || !mission.is_active) {
+          await conn.rollback();
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Mission introuvable ou inactive' });
+        }
+        if (mission.max_completions && mission.completions_count >= mission.max_completions) {
+          await conn.rollback();
+          throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Mission déjà complétée au maximum de participants' });
+        }
+
+        const [already] = await conn.execute(
+          'SELECT id FROM mission_completions WHERE mission_id = ? AND user_id = ?',
+          [input.missionId, userId]
+        ) as any[];
+        if ((already as any[]).length > 0) {
+          await conn.rollback();
+          throw new TRPCError({ code: 'CONFLICT', message: 'Mission déjà validée pour ce compte' });
+        }
+
+        const rewardAmount = Number(mission.reward_amount);
+
+        await conn.execute(
+          'INSERT INTO mission_completions (mission_id, user_id) VALUES (?, ?)',
+          [input.missionId, userId]
+        );
+        await conn.execute(
+          'UPDATE missions SET completions_count = completions_count + 1 WHERE id = ?',
+          [input.missionId]
+        );
+        await conn.execute(
+          `UPDATE civic_wallets SET available_balance = available_balance + ?,
+           total_earned = total_earned + ? WHERE user_id = ?`,
+          [rewardAmount, rewardAmount, userId]
+        );
+        await conn.execute(
+          `INSERT INTO civic_transactions (user_id, type, amount, label, mission_id)
+           VALUES (?, 'earned', ?, 'Mission validée', ?)`,
+          [userId, rewardAmount, input.missionId]
+        );
+
+        await conn.commit();
+        console.log(`[wallet] mission ${input.missionId} validée — user ${userId} — +${rewardAmount} CL`);
+        return { success: true, credited: rewardAmount };
+      } catch (e) {
+        try { await conn.rollback(); } catch { /* déjà rollback */ }
+        throw e;
+      } finally {
+        conn.release();
+      }
     }),
 });

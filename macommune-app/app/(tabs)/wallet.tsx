@@ -74,7 +74,11 @@ export default function WalletScreen() {
   const completeMission = async (missionId: string, points: number) => {
     if (!openId || isMock) return;
     setCompletingId(missionId);
-    const { error } = await trpcMutation('wallet.completeMission', { openId, missionId: Number(missionId), credits: points });
+    const { error } = await trpcMutation(
+      'wallet.completeMission',
+      { missionId: Number(missionId) },
+      { authenticated: true }
+    );
     if (!error) {
       setDoneIds(prev => [...prev, missionId]);
       await load(true);

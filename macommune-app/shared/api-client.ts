@@ -48,12 +48,25 @@ export async function trpcQuery<T = any>(path: string, input: Record<string, any
   }
 }
 
-/** Appelle une mutation tRPC (POST). Pas de retry automatique (évite les doublons). */
-export async function trpcMutation<T = any>(path: string, input: Record<string, any>): Promise<{ data: T | null; error: string | null }> {
+/**
+ * Appelle une mutation tRPC (POST). Pas de retry automatique (évite les doublons).
+ * Si `authenticated` est vrai, attache le token d'identité du device (voir getDeviceToken)
+ * en en-tête Authorization — requis pour les routes protégées côté serveur (ex: wallet.completeMission).
+ */
+export async function trpcMutation<T = any>(
+  path: string,
+  input: Record<string, any>,
+  options?: { authenticated?: boolean }
+): Promise<{ data: T | null; error: string | null }> {
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (options?.authenticated) {
+      const token = await getDeviceToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+    }
     const res = await fetch(`${TRPC_BASE}/${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(input),
     });
     const json = await res.json();
@@ -67,6 +80,7 @@ export async function trpcMutation<T = any>(path: string, input: Record<string, 
 }
 
 const OPEN_ID_KEY = 'macommune_open_id';
+const DEVICE_TOKEN_KEY = 'macommune_device_token';
 
 /** Identifiant citoyen anonyme persistant (device-based), utilisé pour le CivicWallet. */
 export async function getOpenId(): Promise<string> {
@@ -79,5 +93,33 @@ export async function getOpenId(): Promise<string> {
   } catch {
     // fallback si AsyncStorage indisponible (ex: SSR) — ID de session non persistant
     return `guest-session-${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+
+/**
+ * Récupère (ou obtient auprès du serveur) le token signé prouvant l'identité anonyme
+ * du device — nécessaire pour appeler les routes protégées (ex: valider une mission).
+ * Mis en cache localement ; redemandé automatiquement s'il est absent ou expiré.
+ */
+export async function getDeviceToken(): Promise<string | null> {
+  try {
+    const cached = await AsyncStorage.getItem(DEVICE_TOKEN_KEY);
+    if (cached) return cached;
+  } catch { /* ignore */ }
+
+  try {
+    const openId = await getOpenId();
+    const res = await fetch(`${TRPC_BASE}/auth.deviceLogin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ openId }),
+    });
+    const json = await res.json();
+    const token = json?.result?.data?.token;
+    if (!token) return null;
+    try { await AsyncStorage.setItem(DEVICE_TOKEN_KEY, token); } catch { /* ignore */ }
+    return token;
+  } catch {
+    return null;
   }
 }

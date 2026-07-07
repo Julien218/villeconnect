@@ -10,6 +10,8 @@ import { eventsRouter } from './routers/events';
 import { fuelRouter } from './routers/fuel';
 import { walletRouter } from './routers/wallet';
 import { alertsRouter } from './routers/alerts';
+import { authRouter } from './routers/auth';
+import { db } from './db';
 
 // ─── App Router ───────────────────────────────────────────
 export const appRouter = router({
@@ -18,6 +20,7 @@ export const appRouter = router({
   fuel: fuelRouter,
   wallet: walletRouter,
   alerts: alertsRouter,
+  auth: authRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -31,7 +34,7 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'VilleConnect API', version: '2.0.0', ts: new Date().toISOString() });
+  res.json({ ok: true, service: 'VilleConnect API', version: '2.0.1', ts: new Date().toISOString() });
 });
 
 // tRPC handler
@@ -47,7 +50,7 @@ app.use(
 app.get('/', (_req, res) => {
   res.json({
     name: 'VilleConnect OS API',
-    version: '2.0.0',
+    version: '2.0.1',
     endpoints: {
       health: '/health',
       trpc: '/api/trpc',
@@ -56,18 +59,21 @@ app.get('/', (_req, res) => {
   });
 });
 
+// DEBUG — schema inspector : STRICTEMENT réservé au développement local.
+// Ne JAMAIS enregistrer cette route quand NODE_ENV=production (Railway le définit
+// automatiquement) — évite toute exposition publique du schéma de la base.
+if (process.env.NODE_ENV === 'development') {
+  app.get('/api/schema/:table', async (req, res) => {
+    try {
+      const [rows] = await db.execute(`DESCRIBE \`${req.params.table}\``);
+      res.json(rows);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`🏙️  VilleConnect API running on port ${PORT}`);
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
-});
-
-// DEBUG — schema inspector (temporary)
-app.get('/api/schema/:table', async (req, res) => {
-  try {
-    const { db: dbPool } = require('./db');
-    const [rows] = await dbPool.execute(`DESCRIBE \`${req.params.table}\``);
-    res.json(rows);
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
 });
