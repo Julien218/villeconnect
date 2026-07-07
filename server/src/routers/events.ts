@@ -1,6 +1,6 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { z } from 'zod';
-import { router, publicProcedure, adminProcedure } from '../trpc';
+import { router, publicProcedure, cityAdminProcedure } from '../trpc';
 import { db } from '../db';
 
 export const eventsRouter = router({
@@ -64,9 +64,9 @@ export const eventsRouter = router({
       return { success: true, id: (result as any).insertId, reference: ref };
     }),
 
-  // Réservée admin/commune (modération) — auparavant publique, n'importe qui pouvait
-  // approuver un événement en connaissant juste son id.
-  approve: adminProcedure
+  // Réservée city_admin/admin/super_admin (modération) — auparavant publique, n'importe qui
+  // pouvait approuver un événement en connaissant juste son id.
+  approve: cityAdminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       await db.execute(`UPDATE events SET status='approved' WHERE id=?`, [input.id]);

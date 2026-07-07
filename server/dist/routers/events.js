@@ -60,10 +60,13 @@ exports.eventsRouter = (0, trpc_1.router)({
         const ref = `VC-2026-${String(result.insertId).padStart(5, '0')}`;
         return { success: true, id: result.insertId, reference: ref };
     }),
-    approve: trpc_1.publicProcedure
+    // Réservée city_admin/admin/super_admin (modération) — auparavant publique, n'importe qui
+    // pouvait approuver un événement en connaissant juste son id.
+    approve: trpc_1.cityAdminProcedure
         .input(zod_1.z.object({ id: zod_1.z.number() }))
         .mutation(async ({ input }) => {
         await db_1.db.execute(`UPDATE events SET status='approved' WHERE id=?`, [input.id]);
+        console.log(`[events] event ${input.id} approuvé`);
         return { success: true };
     }),
     stats: trpc_1.publicProcedure

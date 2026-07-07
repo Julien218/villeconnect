@@ -49,6 +49,8 @@ const events_1 = require("./routers/events");
 const fuel_1 = require("./routers/fuel");
 const wallet_1 = require("./routers/wallet");
 const alerts_1 = require("./routers/alerts");
+const auth_1 = require("./routers/auth");
+const db_1 = require("./db");
 // ─── App Router ───────────────────────────────────────────
 exports.appRouter = (0, trpc_1.router)({
     shops: shops_1.shopsRouter,
@@ -56,6 +58,7 @@ exports.appRouter = (0, trpc_1.router)({
     fuel: fuel_1.fuelRouter,
     wallet: wallet_1.walletRouter,
     alerts: alerts_1.alertsRouter,
+    auth: auth_1.authRouter,
 });
 // ─── Express ──────────────────────────────────────────────
 const app = (0, express_1.default)();
@@ -64,7 +67,7 @@ app.use((0, cors_1.default)({ origin: '*' }));
 app.use(express_1.default.json());
 // Health check
 app.get('/health', (_req, res) => {
-    res.json({ ok: true, service: 'VilleConnect API', version: '2.0.0', ts: new Date().toISOString() });
+    res.json({ ok: true, service: 'VilleConnect API', version: '2.0.1', ts: new Date().toISOString() });
 });
 // tRPC handler
 app.use('/api/trpc', trpcExpress.createExpressMiddleware({
@@ -75,7 +78,7 @@ app.use('/api/trpc', trpcExpress.createExpressMiddleware({
 app.get('/', (_req, res) => {
     res.json({
         name: 'VilleConnect OS API',
-        version: '2.0.0',
+        version: '2.0.1',
         endpoints: {
             health: '/health',
             trpc: '/api/trpc',
@@ -83,18 +86,21 @@ app.get('/', (_req, res) => {
         },
     });
 });
+// DEBUG — schema inspector : STRICTEMENT réservé au développement local.
+// Ne JAMAIS enregistrer cette route quand NODE_ENV=production (Railway le définit
+// automatiquement) — évite toute exposition publique du schéma de la base.
+if (process.env.NODE_ENV === 'development') {
+    app.get('/api/schema/:table', async (req, res) => {
+        try {
+            const [rows] = await db_1.db.execute(`DESCRIBE \`${req.params.table}\``);
+            res.json(rows);
+        }
+        catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+}
 app.listen(PORT, () => {
     console.log(`🏙️  VilleConnect API running on port ${PORT}`);
     console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
-});
-// DEBUG — schema inspector (temporary)
-app.get('/api/schema/:table', async (req, res) => {
-    try {
-        const { db: dbPool } = require('./db');
-        const [rows] = await dbPool.execute(`DESCRIBE \`${req.params.table}\``);
-        res.json(rows);
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
 });
