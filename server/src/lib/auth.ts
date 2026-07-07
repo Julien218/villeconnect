@@ -211,7 +211,7 @@ setInterval(() => {
 }, 10 * 60 * 1000).unref();
 
 // ── Email transactionnel (Resend) ────────────────────────────────────────────
-const RESEND_FROM = 'VilleConnect OS <onboarding@resend.dev>';
+const RESEND_FROM = 'VilleConnect OS <noreply@villeconnectos.com>';
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
