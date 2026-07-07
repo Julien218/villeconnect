@@ -52,7 +52,7 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
 
       {/* ── Header ville ── */}
       <ImageBackground
@@ -195,7 +195,7 @@ export default function HomeScreen() {
 const s = StyleSheet.create({
   screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
 
-  header:      { height: 260, paddingTop: 54, paddingHorizontal: theme.spacing.md, justifyContent: 'space-between', overflow: 'hidden' },
+  header:      { height: 280, paddingTop: 54, paddingBottom: 52, paddingHorizontal: theme.spacing.md, justifyContent: 'space-between', overflow: 'hidden' },
   headerTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brandRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo:        { width: 40, height: 40, resizeMode: 'contain' },
@@ -212,7 +212,7 @@ const s = StyleSheet.create({
   weatherTemp: { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
   weatherLabel:{ color: theme.colors.textMuted, fontSize: 9 },
 
-  walletCard:  { marginHorizontal: theme.spacing.md, marginTop: -36, borderRadius: theme.radius.xl, padding: theme.spacing.lg, ...theme.shadow.glow },
+  walletCard:  { marginHorizontal: theme.spacing.md, marginTop: -28, borderRadius: theme.radius.xl, padding: theme.spacing.lg, ...theme.shadow.glow },
   walletLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
   walletRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   walletBalance:{ color: '#fff', fontSize: 40, fontWeight: '900' },
