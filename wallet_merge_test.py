@@ -159,3 +159,60 @@ print(f"{passed} PASS / {failed} FAIL sur {len(results)} verifications")
 for s, l, d in results:
     if s == "FAIL":
         print(f"  ECHEC: {l} -> {d}")
+
+# ============================================================
+# TEST 8 : getMyTransactions protégé + mode invité non connecté
+# ============================================================
+print("\n=== TEST 8: getMyTransactions protégé + endpoints invité toujours actifs ===")
+tx, err = call("GET", "wallet.getMyTransactions", {"limit": 10}, token=token2_c)
+check("T8 getMyTransactions (connecté) retourne l'historique", tx is not None and len(tx) > 0, str(tx)[:200] if tx else str(err))
+labels = [t.get("label","") for t in (tx or [])]
+check("T8 historique contient la trace de fusion", any("Fusion" in l for l in labels), str(labels))
+
+tx_noauth, err_noauth = call("GET", "wallet.getMyTransactions", {"limit": 5})
+check("T8 getMyTransactions SANS token -> refusé (UNAUTHORIZED)", tx_noauth is None and err_noauth is not None, str(err_noauth))
+
+open_guest, err = call("GET", "wallet.getWallet", {"openId": f"test-guest-{TS}", "postalCode": "7370"})
+check("T8 endpoint invité wallet.getWallet toujours fonctionnel", open_guest is not None, str(open_guest))
+tx_guest, err = call("GET", "wallet.getTransactions", {"openId": f"test-guest-{TS}", "limit": 5})
+check("T8 endpoint invité wallet.getTransactions toujours fonctionnel", tx_guest is not None, str(tx_guest))
+
+# ============================================================
+# TEST 9 : jamais de fusion entre deux vrais comptes
+# ============================================================
+print("\n=== TEST 9: aucune fusion entre deux vrais comptes ===")
+email3 = f"walletcheck3-{TS}@mailinator.com"
+password3 = "WalletTest2026!"
+reg3, err = call("POST", "auth.register", {"email": email3, "password": password3})
+check("T9 compte 3 créé", reg3 is not None, str(err))
+login3, err = call("POST", "auth.login", {"email": email3, "password": password3, "platform": "test"})
+token3 = login3["accessToken"] if login3 else None
+mw3_before, _ = call("GET", "wallet.getMyWallet", {}, token=token3)
+
+# On récupère l'openId RÉEL du compte 3 (celui stocké en base, retourné via me)
+# puis on tente de logguer sur le compte 2 en prétendant que ce openId est le device courant.
+me3, err = call("GET", "auth.me", {}, token=token3)
+# openId du compte3 n'est pas exposé par auth.me -> on simule autrement : on relance login
+# compte3 avec deviceOpenId = openId connu du compte 2 (obtenu plus haut : open_c a été
+# rattaché au compte2, donc son openId réel EST open_c désormais si jamais reclaimé -
+# on utilise plutôt open_b, qui appartient définitivement (avant fusion) à un flux invité,
+# mais qui est maintenant merged_into_user_id=compte2. Un donor déjà fusionné doit rester no-op.
+login_cross, err = call("POST", "auth.login", {"email": email3, "password": password3, "deviceOpenId": open_b, "platform": "test"})
+check("T9 login compte3 avec openId déjà fusionné (compte2) -> no-op, pas de crash", login_cross is not None, str(err))
+mw3_after, _ = call("GET", "wallet.getMyWallet", {}, token=login_cross["accessToken"] if login_cross else None)
+check("T9 wallet compte3 INCHANGÉ (aucune fusion croisée vers un autre vrai compte)",
+      mw3_before and mw3_after and mw3_before["available_balance"] == mw3_after["available_balance"],
+      f"before={mw3_before}, after={mw3_after}")
+mw2_untouched, _ = call("GET", "wallet.getMyWallet", {}, token=token2_c)
+check("T9 wallet compte2 INTACT (pas pollué par la tentative croisée)",
+      mw2_untouched and mw2_untouched["available_balance"] == 160, str(mw2_untouched))
+
+print("\n\n=== RESUME FINAL ===")
+passed = sum(1 for s, _, _ in results if s == "PASS")
+failed = sum(1 for s, _, _ in results if s == "FAIL")
+print(f"{passed} PASS / {failed} FAIL sur {len(results)} verifications")
+for s, l, d in results:
+    if s == "FAIL":
+        print(f"  ECHEC: {l} -> {d}")
+
+print("\nOPEN_IDS_FOR_DB_CHECK", json.dumps({"open_a": open_a, "open_b": open_b, "open_c": open_c}))
