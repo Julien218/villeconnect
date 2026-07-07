@@ -4,7 +4,8 @@ import jwt from 'jsonwebtoken';
 import { TRPCError } from '@trpc/server';
 import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { db } from '../db';
-import { getOrCreateUserId } from '../lib/users';
+import { getOrCreateUserId, upsertUserDevice } from '../lib/users';
+import { mergeGuestDeviceIntoAccount } from '../lib/walletMerge';
 import {
   hashPassword,
   verifyPassword,
@@ -118,6 +119,11 @@ export const authRouter = router({
         userId = (result as any).insertId;
       }
 
+      if (input.deviceOpenId) {
+        try { await upsertUserDevice(userId, input.deviceOpenId); }
+        catch (e) { console.error('[register] échec upsert user_devices (non bloquant):', (e as Error).message); }
+      }
+
       const verificationToken = await createEmailVerificationToken(userId);
       const emailSent = await sendVerificationEmail(input.email, verificationToken);
       await logAudit(userId, 'register', 'user', String(userId), { email: input.email, emailSent }, ctx.ip);
@@ -126,7 +132,15 @@ export const authRouter = router({
     }),
 
   login: publicProcedure
-    .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(1),
+      // OpenId de l'appareil courant + plateforme — permet (a) de fusionner un
+      // éventuel wallet invité accumulé sur CET appareil dans le compte qu'on
+      // vient d'authentifier, et (b) de renseigner user_devices pour l'audit.
+      deviceOpenId: z.string().min(8).max(128).optional(),
+      platform: z.string().max(32).optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const rateKey = `login:${ctx.ip || 'unknown'}:${input.email}`;
       if (!checkRateLimit(rateKey, 8, 15 * 60 * 1000)) {
@@ -154,7 +168,27 @@ export const authRouter = router({
       const [userRow] = await db.execute('SELECT openId FROM users WHERE id = ?', [user.id]) as any[];
       const openId = (userRow as any[])[0].openId;
 
+      // Réconciliation wallet multi-appareil : si ce device avait un wallet invité
+      // (openId différent, jamais lié à un vrai compte), on le fusionne dans CE
+      // compte qui vient d'être authentifié. Sûr, idempotent, jamais bloquant pour
+      // le login lui-même même en cas d'échec inattendu.
+      if (input.deviceOpenId && input.deviceOpenId !== openId) {
+        try {
+          const mergeResult = await mergeGuestDeviceIntoAccount(input.deviceOpenId, user.id, ctx.ip);
+          if (mergeResult.merged) {
+            console.log(`[login] wallet fusionné pour user ${user.id}: +${mergeResult.creditsTransferred} CL, ${mergeResult.missionsReattached} mission(s) ré-attachée(s), ${mergeResult.missionsDeduped} doublon(s) ignoré(s)`);
+          }
+        } catch (e) {
+          console.error('[login] échec fusion wallet (non bloquant):', (e as Error).message);
+        }
+      }
+
       await db.execute('UPDATE users SET lastSignedIn = NOW() WHERE id = ?', [user.id]);
+
+      if (input.deviceOpenId) {
+        try { await upsertUserDevice(user.id, input.deviceOpenId, input.platform); }
+        catch (e) { console.error('[login] échec upsert user_devices (non bloquant):', (e as Error).message); }
+      }
 
       const accessToken = issueAccessToken({
         id: user.id, openId, role: user.role, email_verified: Boolean(user.email_verified_at),
@@ -195,7 +229,14 @@ export const authRouter = router({
     }),
 
   refresh: publicProcedure
-    .input(z.object({ refreshToken: z.string() }))
+    .input(z.object({
+      refreshToken: z.string(),
+      // Optionnels — permet de rafraîchir user_devices.last_seen_at à chaque
+      // refresh silencieux, sans jamais déclencher de fusion (la fusion n'a lieu
+      // qu'à un login explicite email/mot de passe, jamais en tâche de fond).
+      deviceOpenId: z.string().min(8).max(128).optional(),
+      platform: z.string().max(32).optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const result = await rotateRefreshToken(input.refreshToken, { userAgent: ctx.userAgent, ip: ctx.ip });
       if (!result) {
@@ -205,6 +246,12 @@ export const authRouter = router({
         'SELECT openId, role, email_verified_at FROM users WHERE id = ?', [result.userId]
       ) as any[];
       const u = (rows as any[])[0];
+
+      if (input.deviceOpenId) {
+        try { await upsertUserDevice(result.userId, input.deviceOpenId, input.platform); }
+        catch (e) { console.error('[refresh] échec upsert user_devices (non bloquant):', (e as Error).message); }
+      }
+
       const accessToken = issueAccessToken({
         id: result.userId, openId: u.openId, role: u.role, email_verified: Boolean(u.email_verified_at),
       });

@@ -44,6 +44,51 @@ export const walletRouter = router({
       return rows;
     }),
 
+  // --- Variantes AUTHENTIFIÉES ------------------------------------------------
+  // Une fois connecté, le wallet doit TOUJOURS être lu via ctx.user.id (identité
+  // du compte réel, extraite du token JWT côté serveur) — JAMAIS via un openId
+  // fourni par le client. C'est ce qui garantit qu'un même compte voit le même
+  // wallet sur tous ses appareils, sans dépendre d'un identifiant local qui
+  // change d'un device à l'autre. Les endpoints publics ci-dessus restent
+  // réservés au mode invité (jamais utilisés côté client une fois loggé).
+  getMyWallet: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user!.id;
+    const [rows] = await db.execute(
+      'SELECT * FROM civic_wallets WHERE user_id = ?',
+      [userId]
+    ) as any[];
+    const arr = rows as any[];
+    if (arr.length > 0) return arr[0];
+    // Un compte réel peut ne jamais avoir eu de wallet (ex: créé sans jamais
+    // avoir joué en invité) — même bonus de bienvenue que le flux public.
+    await db.execute(
+      `INSERT INTO civic_wallets (user_id, available_balance, total_earned, trust_score)
+       VALUES (?, 50, 50, 42)`,
+      [userId]
+    );
+    await db.execute(
+      `INSERT INTO civic_transactions (user_id, type, amount, label)
+       VALUES (?, 'bonus', 50, '👋 Bonus bienvenue — Inscription DourConnect')`,
+      [userId]
+    );
+    const [created] = await db.execute(
+      'SELECT * FROM civic_wallets WHERE user_id = ?', [userId]
+    ) as any[];
+    return (created as any[])[0];
+  }),
+
+  getMyTransactions: protectedProcedure
+    .input(z.object({ limit: z.number().default(20) }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.user!.id;
+      const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(input.limit) || 20)));
+      const [rows] = await db.execute(
+        `SELECT * FROM civic_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT ${safeLimit}`,
+        [userId]
+      ) as any[];
+      return rows;
+    }),
+
   getMissions: publicProcedure
     .input(z.object({ postalCode: z.string().default('7370') }))
     .query(async ({ input }) => {

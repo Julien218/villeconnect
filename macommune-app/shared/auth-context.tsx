@@ -3,6 +3,7 @@
 // refresh silencieux périodique, et actions register/login/logout/updateProfile.
 // Ne journalise et n'affiche JAMAIS les tokens (uniquement en mémoire + AsyncStorage).
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpcMutation, trpcQuery, setAccessToken, getOpenId } from './api-client';
 
@@ -69,9 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistTokens]);
 
   const doRefresh = useCallback(async (refresh: string) => {
+    const deviceOpenId = await getOpenId();
     const { data } = await trpcMutation<{ accessToken: string; refreshToken: string }>(
       'auth.refresh',
-      { refreshToken: refresh }
+      { refreshToken: refresh, deviceOpenId, platform: Platform.OS }
     );
     if (!data) {
       await clearSession();
@@ -112,10 +114,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, doRefresh]);
 
   const login = useCallback(async (email: string, password: string) => {
+    // Transmet l'openId de CET appareil : si un wallet invité y était attaché,
+    // le serveur le fusionne automatiquement dans le compte qu'on authentifie ici.
+    const deviceOpenId = await getOpenId();
     const { data, error } = await trpcMutation<{
       accessToken: string; refreshToken: string;
       user: { id: number; email: string; role: string; emailVerified: boolean };
-    }>('auth.login', { email, password });
+    }>('auth.login', { email, password, deviceOpenId, platform: Platform.OS });
     if (error || !data) return { ok: false, error: error || 'Erreur inconnue' };
 
     await persistTokens(data.accessToken, data.refreshToken);

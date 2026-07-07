@@ -23,3 +23,18 @@ export async function getOrCreateUserId(openId: string, postalCode?: string): Pr
   const [created] = await db.execute('SELECT id, role FROM users WHERE openId = ?', [openId]) as any[];
   return { id: (created as any[])[0].id, role: (created as any[])[0].role };
 }
+
+/**
+ * Enregistre/rafraîchit le lien entre un compte réel et un appareil (table
+ * user_devices). Best-effort — ne doit jamais faire échouer login/refresh si ça
+ * rate (table de confort pour audit + future fonctionnalité "déconnecter mes
+ * autres appareils"), donc toujours enveloppé en try/catch par l'appelant.
+ */
+export async function upsertUserDevice(userId: number, openId: string, platform?: string): Promise<void> {
+  await db.execute(
+    `INSERT INTO user_devices (user_id, open_id, platform, last_seen_at)
+     VALUES (?, ?, ?, NOW())
+     ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), platform = COALESCE(VALUES(platform), platform), last_seen_at = NOW()`,
+    [userId, openId, platform || null]
+  );
+}

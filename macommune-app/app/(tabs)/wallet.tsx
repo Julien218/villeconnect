@@ -24,6 +24,7 @@ function normalizeReward(r: any) {
 }
 
 function WalletScreenContent() {
+  const { isLoggedIn } = useAuth();
   const [tab, setTab] = useState<'missions'|'rewards'|'history'>('missions');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,11 +45,19 @@ function WalletScreenContent() {
     const id = await getOpenId();
     setOpenId(id);
 
+    // Connecté : TOUJOURS lire le wallet via le compte réel (ctx.user.id côté
+    // serveur, jamais l'openId local de l'appareil) — garantit le même wallet
+    // CivicLoop sur tous les appareils d'un même compte. Invité : endpoints
+    // publics historiques, basés sur l'openId local.
     const [walletRes, missionsRes, rewardsRes, historyRes] = await Promise.all([
-      trpcQuery<any>('wallet.getWallet', { openId: id, postalCode: '7370' }),
+      isLoggedIn
+        ? trpcQuery<any>('wallet.getMyWallet', {}, { authenticated: true })
+        : trpcQuery<any>('wallet.getWallet', { openId: id, postalCode: '7370' }),
       trpcQuery<any[]>('wallet.getMissions', { postalCode: '7370' }),
       trpcQuery<any[]>('wallet.getRewards', { postalCode: '7370' }),
-      trpcQuery<any[]>('wallet.getTransactions', { openId: id, limit: 20 }),
+      isLoggedIn
+        ? trpcQuery<any[]>('wallet.getMyTransactions', { limit: 20 }, { authenticated: true })
+        : trpcQuery<any[]>('wallet.getTransactions', { openId: id, limit: 20 }),
     ]);
 
     let mock = false;

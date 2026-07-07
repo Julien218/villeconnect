@@ -8,6 +8,7 @@ import { trpcQuery, getOpenId } from '@/shared/api-client';
 import { theme } from '@/shared/theme';
 import { getBranding } from '@/shared/branding';
 import { GlassCard } from '@/components/glass-card';
+import { useAuth } from '@/shared/auth-context';
 
 const { width } = Dimensions.get('window');
 const brand = getBranding('7370');
@@ -27,6 +28,7 @@ const MODULES = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { isLoggedIn } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
   const [missions, setMissions] = useState<any[]>([]);
   const [shopPromo, setShopPromo] = useState<any | null>(null);
@@ -34,9 +36,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     (async () => {
+      // Connecté : wallet du VRAI compte (ctx.user.id), identique sur tous les
+      // appareils. Invité : wallet local basé sur l'openId de l'appareil.
       const openId = await getOpenId();
       const [wallet, missionsRes, shops, events] = await Promise.all([
-        trpcQuery<any>('wallet.getWallet', { openId, postalCode: brand.postalCode }),
+        isLoggedIn
+          ? trpcQuery<any>('wallet.getMyWallet', {}, { authenticated: true })
+          : trpcQuery<any>('wallet.getWallet', { openId, postalCode: brand.postalCode }),
         trpcQuery<any[]>('wallet.getMissions', { postalCode: brand.postalCode }),
         trpcQuery<any[]>('shops.list', { postalCode: brand.postalCode, limit: 50 }),
         trpcQuery<any[]>('events.list', { postalCode: brand.postalCode, limit: 5 }),
@@ -49,7 +55,7 @@ export default function HomeScreen() {
       }
       if (events.data && events.data.length > 0) setLatestEvent(events.data[0]);
     })();
-  }, []);
+  }, [isLoggedIn]);
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
