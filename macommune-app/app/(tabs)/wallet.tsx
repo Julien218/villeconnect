@@ -5,6 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { trpcQuery, trpcMutation, getOpenId } from '@/shared/api-client';
 import { theme } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
+import { AuthGate } from '@/components/auth-gate';
+import { useAuth } from '@/shared/auth-context';
 
 // Fallback utilisé UNIQUEMENT si l'API est injoignable.
 const MOCK_MISSIONS = [
@@ -21,7 +23,7 @@ function normalizeReward(r: any) {
   return { id: String(r.id), name: r.title, shop: r.merchant_name || 'Partenaire VilleConnect', cost: r.cost_credits, emoji: r.icon || '🎁' };
 }
 
-export default function WalletScreen() {
+function WalletScreenContent() {
   const [tab, setTab] = useState<'missions'|'rewards'|'history'>('missions');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -225,3 +227,21 @@ const s = StyleSheet.create({
   doBtnText:     { color: '#04222b', fontSize: 12, fontWeight: '800' },
   emptyText:     { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center', marginTop: 30 },
 });
+
+export default function WalletScreen() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.bgDeep }}>
+        <ActivityIndicator color={theme.colors.cyan} size="large" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return <AuthGate message="Ton portefeuille CivicLoop (missions, récompenses, historique) est réservé aux citoyens connectés." />;
+  }
+
+  return <WalletScreenContent />;
+}

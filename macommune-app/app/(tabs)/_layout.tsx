@@ -20,6 +20,7 @@ export default function TabLayout() {
       <Tabs.Screen name="wallet" options={{ headerShown: true, headerTitle: '💎 Wallet CivicLoop' }} />
       <Tabs.Screen name="shops" options={{ headerShown: true, headerTitle: '🏪 Commerces locaux' }} />
       <Tabs.Screen name="fuel" options={{ headerShown: true, headerTitle: '⛽ Prix carburant' }} />
+      <Tabs.Screen name="profile" options={{ headerShown: true, headerTitle: '👤 Mon profil' }} />
     </Tabs>
   );
 }
