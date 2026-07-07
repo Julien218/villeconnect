@@ -17,7 +17,7 @@ export async function getOrCreateUserId(openId: string, postalCode?: string): Pr
   const arr = rows as any[];
   if (arr.length > 0) return { id: arr[0].id, role: arr[0].role };
   await db.execute(
-    `INSERT INTO users (openId, loginMethod, role, postalCode) VALUES (?, 'anonymous', 'user', ?)`,
+    `INSERT INTO users (openId, loginMethod, role, postalCode) VALUES (?, 'anonymous', 'citizen', ?)`,
     [openId, postalCode || null]
   );
   const [created] = await db.execute('SELECT id, role FROM users WHERE openId = ?', [openId]) as any[];
