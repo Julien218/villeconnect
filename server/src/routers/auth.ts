@@ -254,4 +254,28 @@ export const authRouter = router({
       await logAudit(userId, 'password_reset_completed', 'user', String(userId), undefined, ctx.ip);
       return { success: true, message: 'Mot de passe mis à jour, reconnectez-vous.' };
     }),
+  // Mise à jour du profil citoyen (nom, code postal, ville) — nécessite une session active.
+  updateProfile: protectedProcedure
+    .input(z.object({
+      name: z.string().max(128).optional(),
+      postalCode: z.string().max(4).optional(),
+      city: z.string().max(128).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const fields: string[] = [];
+      const values: any[] = [];
+      if (input.name !== undefined) { fields.push('name = ?'); values.push(input.name); }
+      if (input.postalCode !== undefined) { fields.push('postalCode = ?'); values.push(input.postalCode); }
+      if (input.city !== undefined) { fields.push('city = ?'); values.push(input.city); }
+
+      if (fields.length === 0) {
+        return { success: true, message: 'Aucune modification' };
+      }
+
+      values.push(ctx.user!.id);
+      await db.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+      await logAudit(ctx.user!.id, 'profile_updated', 'user', String(ctx.user!.id), { fields: Object.keys(input) }, ctx.ip);
+      return { success: true, message: 'Profil mis à jour' };
+    }),
 });
+
