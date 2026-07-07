@@ -5,7 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { trpcQuery, getOpenId } from '@/shared/api-client';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { getBranding } from '@/shared/branding';
 import { GlassCard } from '@/components/glass-card';
 import { useAuth } from '@/shared/auth-context';
@@ -29,6 +30,8 @@ const MODULES = [
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
   const [balance, setBalance] = useState<number | null>(null);
   const [missions, setMissions] = useState<any[]>([]);
   const [shopPromo, setShopPromo] = useState<any | null>(null);
@@ -64,10 +67,14 @@ export default function HomeScreen() {
       <ImageBackground
         source={require('@/assets/city-skyline-header.png')}
         style={s.header}
-        imageStyle={{ opacity: 0.55 }}
+        imageStyle={{ opacity: theme.mode === 'dark' ? 0.55 : 0.18 }}
       >
         <LinearGradient
-          colors={['rgba(6,11,24,0.4)', 'rgba(6,11,24,0.75)', theme.colors.bgDeep]}
+          colors={
+            theme.mode === 'dark'
+              ? ['rgba(6,11,24,0.4)', 'rgba(6,11,24,0.75)', theme.colors.bgDeep]
+              : ['rgba(245,247,250,0.3)', 'rgba(245,247,250,0.8)', theme.colors.bgDeep]
+          }
           style={StyleSheet.absoluteFillObject}
         />
         <View style={s.headerTop}>
@@ -198,57 +205,61 @@ export default function HomeScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
+function makeStyles(theme: ThemeTokens) {
+  const isDark = theme.mode === 'dark';
+  const glassBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(10,45,94,0.06)';
+  return StyleSheet.create({
+    screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
 
-  header:      { height: 280, paddingTop: 54, paddingBottom: 52, paddingHorizontal: theme.spacing.md, justifyContent: 'space-between', overflow: 'hidden' },
-  headerTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brandRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logo:        { width: 40, height: 40, resizeMode: 'contain' },
-  brandName:   { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
-  brandSub:    { color: theme.colors.cyan, fontSize: 10, fontWeight: '700', letterSpacing: 1 },
-  headerIcons: { flexDirection: 'row', gap: 8 },
-  iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  dot:         { position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: theme.colors.cyan },
+    header:      { height: 280, paddingTop: 54, paddingBottom: 52, paddingHorizontal: theme.spacing.md, justifyContent: 'space-between', overflow: 'hidden' },
+    headerTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    brandRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    logo:        { width: 40, height: 40, resizeMode: 'contain' },
+    brandName:   { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '900', letterSpacing: 0.3, fontFamily: theme.fonts.bold },
+    brandSub:    { color: theme.colors.cyan, fontSize: 10, fontWeight: '700', letterSpacing: 1, fontFamily: theme.fonts.semibold },
+    headerIcons: { flexDirection: 'row', gap: 8 },
+    iconBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: glassBg, alignItems: 'center', justifyContent: 'center' },
+    dot:         { position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: theme.colors.cyan },
 
-  greetRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 },
-  greet:       { color: theme.colors.textPrimary, fontSize: 24, fontWeight: '900' },
-  greetSub:    { color: theme.colors.textSecondary, fontSize: 12.5, marginTop: 2, maxWidth: width * 0.62 },
-  weather:     { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: theme.radius.md, paddingHorizontal: 12, paddingVertical: 8, gap: 1 },
-  weatherTemp: { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
-  weatherLabel:{ color: theme.colors.textMuted, fontSize: 9 },
+    greetRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 },
+    greet:       { color: theme.colors.textPrimary, fontSize: 24, fontWeight: '900', fontFamily: theme.fonts.bold },
+    greetSub:    { color: theme.colors.textSecondary, fontSize: 12.5, marginTop: 2, maxWidth: width * 0.62, fontFamily: theme.fonts.regular },
+    weather:     { alignItems: 'center', backgroundColor: glassBg, borderRadius: theme.radius.md, paddingHorizontal: 12, paddingVertical: 8, gap: 1 },
+    weatherTemp: { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '800', fontFamily: theme.fonts.semibold },
+    weatherLabel:{ color: theme.colors.textMuted, fontSize: 9 },
 
-  walletCard:  { marginHorizontal: theme.spacing.md, marginTop: -28, borderRadius: theme.radius.xl, padding: theme.spacing.lg, ...theme.shadow.glow },
-  walletLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
-  walletRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  walletBalance:{ color: '#fff', fontSize: 40, fontWeight: '900' },
-  walletUnit:  { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  walletBadge: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
-  walletBadgeText: { color: '#fff', fontWeight: '900', fontSize: 15 },
-  walletEuro:  { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
-  walletFooter:{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 16 },
-  walletCta:   { color: '#fff', fontSize: 12.5, fontWeight: '700' },
+    walletCard:  { marginHorizontal: theme.spacing.md, marginTop: -28, borderRadius: theme.radius.xl, padding: theme.spacing.lg, ...theme.shadow.glow },
+    walletLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
+    walletRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+    walletBalance:{ color: '#fff', fontSize: 40, fontWeight: '900', fontFamily: theme.fonts.bold },
+    walletUnit:  { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '700', marginBottom: 8 },
+    walletBadge: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
+    walletBadgeText: { color: '#fff', fontWeight: '900', fontSize: 15 },
+    walletEuro:  { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
+    walletFooter:{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 16 },
+    walletCta:   { color: '#fff', fontSize: 12.5, fontWeight: '700' },
 
-  grid:        { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: theme.spacing.md, marginTop: theme.spacing.xl, rowGap: 18 },
-  moduleItem:  { width: (width - theme.spacing.md * 2) / 5, alignItems: 'center', gap: 6 },
-  moduleIcon:  { width: 46, height: 46, borderRadius: theme.radius.md, alignItems: 'center', justifyContent: 'center' },
-  moduleLabel: { color: theme.colors.textSecondary, fontSize: 10, fontWeight: '600', textAlign: 'center' },
+    grid:        { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: theme.spacing.md, marginTop: theme.spacing.xl, rowGap: 18 },
+    moduleItem:  { width: (width - theme.spacing.md * 2) / 5, alignItems: 'center', gap: 6 },
+    moduleIcon:  { width: 46, height: 46, borderRadius: theme.radius.md, alignItems: 'center', justifyContent: 'center' },
+    moduleLabel: { color: theme.colors.textSecondary, fontSize: 10, fontWeight: '600', textAlign: 'center' },
 
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: theme.spacing.md, marginTop: theme.spacing.xl, marginBottom: 10 },
-  sectionTitle:{ color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  sectionLink: { color: theme.colors.cyan, fontSize: 12, fontWeight: '700' },
+    sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: theme.spacing.md, marginTop: theme.spacing.xl, marginBottom: 10 },
+    sectionTitle:{ color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+    sectionLink: { color: theme.colors.cyan, fontSize: 12, fontWeight: '700' },
 
-  missionCard: { width: 132, padding: 14, gap: 8, alignItems: 'flex-start' },
-  missionTitle:{ color: theme.colors.textPrimary, fontSize: 12.5, fontWeight: '700', lineHeight: 16, minHeight: 32 },
-  missionPts:  { color: theme.colors.success, fontSize: 12, fontWeight: '800' },
+    missionCard: { width: 132, padding: 14, gap: 8, alignItems: 'flex-start' },
+    missionTitle:{ color: theme.colors.textPrimary, fontSize: 12.5, fontWeight: '700', lineHeight: 16, minHeight: 32 },
+    missionPts:  { color: theme.colors.success, fontSize: 12, fontWeight: '800' },
 
-  offerIcon:   { width: 44, height: 44, borderRadius: theme.radius.md, backgroundColor: theme.colors.cyanSoft, alignItems: 'center', justifyContent: 'center' },
-  offerTitle:  { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700' },
-  offerSub:    { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
+    offerIcon:   { width: 44, height: 44, borderRadius: theme.radius.md, backgroundColor: theme.colors.cyanSoft, alignItems: 'center', justifyContent: 'center' },
+    offerTitle:  { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700' },
+    offerSub:    { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
 
-  newsDate:    { color: theme.colors.textMuted, fontSize: 10.5, fontWeight: '700' },
-  newsTitle:   { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginTop: 4 },
-  newsSub:     { color: theme.colors.textSecondary, fontSize: 13 },
+    newsDate:    { color: theme.colors.textMuted, fontSize: 10.5, fontWeight: '700' },
+    newsTitle:   { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginTop: 4 },
+    newsSub:     { color: theme.colors.textSecondary, fontSize: 13 },
 
-  version:     { color: theme.colors.textMuted, fontSize: 10.5, textAlign: 'center', marginTop: 28 },
-});
+    version:     { color: theme.colors.textMuted, fontSize: 10.5, textAlign: 'center', marginTop: 28 },
+  });
+}

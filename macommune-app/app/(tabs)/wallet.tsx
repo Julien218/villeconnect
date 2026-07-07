@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { trpcQuery, trpcMutation, getOpenId } from '@/shared/api-client';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 import { AuthGate } from '@/components/auth-gate';
 import { useAuth } from '@/shared/auth-context';
@@ -25,6 +26,8 @@ function normalizeReward(r: any) {
 
 function WalletScreenContent() {
   const { isLoggedIn } = useAuth();
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
   const [tab, setTab] = useState<'missions'|'rewards'|'history'>('missions');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -205,40 +208,43 @@ function WalletScreenContent() {
   );
 }
 
-const s = StyleSheet.create({
-  screen:        { flex: 1, backgroundColor: theme.colors.bgDeep },
-  hero:          { margin: 16, borderRadius: theme.radius.xl, padding: 20, ...theme.shadow.glow },
-  heroLabel:     { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
-  heroBalance:   { color: '#fff', fontSize: 44, fontWeight: '900', marginBottom: 8, marginTop: 4 },
-  mockBadge:     { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginBottom: 8 },
-  heroRow:       { flexDirection: 'row', marginBottom: 16, marginTop: 8 },
-  heroStat:      { flex: 1, alignItems: 'center' },
-  heroStatNum:   { color: '#fff', fontSize: 20, fontWeight: '900' },
-  heroStatLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  heroStatDiv:   { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
-  trustBar:      { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 },
-  trustFill:     { height: '100%', backgroundColor: '#fff', borderRadius: 3 },
-  trustLabel:    { color: 'rgba(255,255,255,0.7)', fontSize: 11 },
-  tabs:          { flexDirection: 'row', marginHorizontal: 16, gap: 6, marginBottom: 8 },
-  tab:           { flex: 1, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.sm, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 9, alignItems: 'center' },
-  tabActive:     { backgroundColor: theme.colors.cyanSoft, borderColor: theme.colors.borderCyan },
-  tabText:       { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700' },
-  tabTextActive: { color: theme.colors.cyan },
-  card:          { marginHorizontal: 16, marginBottom: 10, padding: 16, flexDirection: 'row', gap: 12, alignItems: 'center' },
-  cardDone:      { opacity: 0.6 },
-  cardTitle:     { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 3 },
-  cardDesc:      { color: theme.colors.textSecondary, fontSize: 12 },
-  cardPoints:    { color: theme.colors.warning, fontSize: 14, fontWeight: '800' },
-  doneBadge:     { backgroundColor: 'rgba(52,211,153,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  doneText:      { color: theme.colors.success, fontSize: 11, fontWeight: '700' },
-  doBtn:         { backgroundColor: theme.colors.cyan, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  doBtnDisabled: { backgroundColor: '#374151' },
-  doBtnText:     { color: '#04222b', fontSize: 12, fontWeight: '800' },
-  emptyText:     { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center', marginTop: 30 },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    screen:        { flex: 1, backgroundColor: theme.colors.bgDeep },
+    hero:          { margin: 16, borderRadius: theme.radius.xl, padding: 20, ...theme.shadow.glow },
+    heroLabel:     { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+    heroBalance:   { color: '#fff', fontSize: 44, fontWeight: '900', marginBottom: 8, marginTop: 4, fontFamily: theme.fonts.bold },
+    mockBadge:     { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginBottom: 8 },
+    heroRow:       { flexDirection: 'row', marginBottom: 16, marginTop: 8 },
+    heroStat:      { flex: 1, alignItems: 'center' },
+    heroStatNum:   { color: '#fff', fontSize: 20, fontWeight: '900' },
+    heroStatLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '600', marginTop: 2 },
+    heroStatDiv:   { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+    trustBar:      { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 },
+    trustFill:     { height: '100%', backgroundColor: '#fff', borderRadius: 3 },
+    trustLabel:    { color: 'rgba(255,255,255,0.7)', fontSize: 11 },
+    tabs:          { flexDirection: 'row', marginHorizontal: 16, gap: 6, marginBottom: 8 },
+    tab:           { flex: 1, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.sm, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 9, alignItems: 'center' },
+    tabActive:     { backgroundColor: theme.colors.cyanSoft, borderColor: theme.colors.borderCyan },
+    tabText:       { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700' },
+    tabTextActive: { color: theme.colors.cyan },
+    card:          { marginHorizontal: 16, marginBottom: 10, padding: 16, flexDirection: 'row', gap: 12, alignItems: 'center' },
+    cardDone:      { opacity: 0.6 },
+    cardTitle:     { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 3 },
+    cardDesc:      { color: theme.colors.textSecondary, fontSize: 12 },
+    cardPoints:    { color: theme.colors.warning, fontSize: 14, fontWeight: '800' },
+    doneBadge:     { backgroundColor: theme.colors.badges.nouveau.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    doneText:      { color: theme.colors.success, fontSize: 11, fontWeight: '700' },
+    doBtn:         { backgroundColor: theme.colors.cyan, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+    doBtnDisabled: { backgroundColor: theme.colors.textMuted },
+    doBtnText:     { color: theme.mode === 'dark' ? '#04222b' : '#fff', fontSize: 12, fontWeight: '800' },
+    emptyText:     { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center', marginTop: 30 },
+  });
+}
 
 export default function WalletScreen() {
   const { user, isLoading } = useAuth();
+  const { theme } = useTheme();
 
   if (isLoading) {
     return (

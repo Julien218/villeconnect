@@ -3,11 +3,13 @@
 // Le bouton central "C" est l'onglet Accueil lui-même (mis en avant visuellement) — il reste
 // donc toujours une vraie route active, jamais une position fixe qui pourrait masquer un autre
 // onglet public (commerces, événements...) si le nombre d'onglets change.
+// S'adapte automatiquement au thème actif (clair / sombre / automatique).
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 
 const ICONS: Record<string, any> = {
   index: 'home',
@@ -28,6 +30,8 @@ const LABELS: Record<string, string> = {
 };
 
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
+  const { theme, scheme } = useTheme();
+  const s = makeStyles(theme);
   const routes = state.routes;
 
   return (
@@ -77,22 +81,26 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-const s = StyleSheet.create({
-  wrap:        { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
-  bar:         {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    width: '94%', marginBottom: 18, paddingHorizontal: 6, height: 68,
-    backgroundColor: 'rgba(16,24,48,0.92)', borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: theme.colors.border,
-    ...theme.shadow.card,
-  },
-  tabItem:     { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  tabLabel:    { fontSize: 8.7, fontWeight: '700', color: theme.colors.textMuted },
-  badge:       { position: 'absolute', top: -2, right: '22%', backgroundColor: theme.colors.danger, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
-  badgeText:   { color: '#fff', fontSize: 9, fontWeight: '800' },
-  centerSlot:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  centerBtn:   { marginTop: -32 },
-  centerGrad:  { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.bgDeep, ...theme.shadow.glow },
-  centerGradFocused: { borderColor: theme.colors.cyan },
-  centerLetter:{ color: '#fff', fontSize: 20, fontWeight: '900' },
-});
+function makeStyles(theme: ThemeTokens) {
+  const isDark = theme.mode === 'dark';
+  return StyleSheet.create({
+    wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
+    bar: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      width: '94%', marginBottom: 18, paddingHorizontal: 6, height: 68,
+      backgroundColor: isDark ? 'rgba(16,24,48,0.92)' : 'rgba(255,255,255,0.92)',
+      borderRadius: theme.radius.xl,
+      borderWidth: 1, borderColor: theme.colors.border,
+      ...theme.shadow.card,
+    },
+    tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
+    tabLabel: { fontSize: 8.7, fontWeight: '700', color: theme.colors.textMuted, fontFamily: theme.fonts.semibold },
+    badge: { position: 'absolute', top: -2, right: '22%', backgroundColor: theme.colors.danger, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+    badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+    centerSlot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    centerBtn: { marginTop: -32 },
+    centerGrad: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.bgDeep, ...theme.shadow.glow },
+    centerGradFocused: { borderColor: theme.colors.cyan },
+    centerLetter: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  });
+}

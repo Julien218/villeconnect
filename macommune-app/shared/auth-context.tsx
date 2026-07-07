@@ -20,6 +20,7 @@ export interface AuthUser {
   postalCode?: string | null;
   city?: string | null;
   emailVerified: boolean;
+  themePreference?: 'light' | 'dark' | 'auto';
 }
 
 interface RegisterInput {
@@ -28,6 +29,7 @@ interface RegisterInput {
   postalCode?: string;
   city?: string;
   name?: string;
+  themePreference?: 'light' | 'dark' | 'auto';
 }
 
 interface AuthContextValue {
@@ -38,7 +40,7 @@ interface AuthContextValue {
   register: (input: RegisterInput) => Promise<{ ok: boolean; error?: string; message?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  updateProfile: (fields: { name?: string; postalCode?: string; city?: string }) => Promise<{ ok: boolean; error?: string }>;
+  updateProfile: (fields: { name?: string; postalCode?: string; city?: string; themePreference?: 'light' | 'dark' | 'auto' }) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -152,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchMe();
   }, [fetchMe]);
 
-  const updateProfile = useCallback(async (fields: { name?: string; postalCode?: string; city?: string }) => {
+  const updateProfile = useCallback(async (fields: { name?: string; postalCode?: string; city?: string; themePreference?: 'light' | 'dark' | 'auto' }) => {
     const { data, error } = await trpcMutation<{ success: boolean }>(
       'auth.updateProfile', fields, { authenticated: true }
     );

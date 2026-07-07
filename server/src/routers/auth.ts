@@ -67,6 +67,7 @@ export const authRouter = router({
       city: z.string().max(128).optional(),
       name: z.string().max(128).optional(),
       deviceOpenId: z.string().min(8).max(128).optional(),
+      themePreference: z.enum(['light', 'dark', 'auto']).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const rateKey = `register:${ctx.ip || 'unknown'}`;
@@ -96,25 +97,26 @@ export const authRouter = router({
           // Claim en place : le wallet CivicLoop existant reste attaché (même user_id).
           await db.execute(
             `UPDATE users SET email = ?, password_hash = ?, role = 'citizen', loginMethod = 'password',
-             name = COALESCE(?, name), postalCode = COALESCE(?, postalCode), city = COALESCE(?, city)
+             name = COALESCE(?, name), postalCode = COALESCE(?, postalCode), city = COALESCE(?, city),
+             theme_preference = COALESCE(?, theme_preference)
              WHERE id = ?`,
-            [input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null, deviceUser.id]
+            [input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null, input.themePreference || null, deviceUser.id]
           );
           userId = deviceUser.id;
         } else {
           const [result] = await db.execute(
-            `INSERT INTO users (openId, email, password_hash, name, role, loginMethod, postalCode, city)
-             VALUES (?, ?, ?, ?, 'citizen', 'password', ?, ?)`,
-            [input.deviceOpenId, input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null]
+            `INSERT INTO users (openId, email, password_hash, name, role, loginMethod, postalCode, city, theme_preference)
+             VALUES (?, ?, ?, ?, 'citizen', 'password', ?, ?, ?)`,
+            [input.deviceOpenId, input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null, input.themePreference || 'auto']
           ) as any[];
           userId = (result as any).insertId;
         }
       } else {
         const generatedOpenId = `acct-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
         const [result] = await db.execute(
-          `INSERT INTO users (openId, email, password_hash, name, role, loginMethod, postalCode, city)
-           VALUES (?, ?, ?, ?, 'citizen', 'password', ?, ?)`,
-          [generatedOpenId, input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null]
+          `INSERT INTO users (openId, email, password_hash, name, role, loginMethod, postalCode, city, theme_preference)
+           VALUES (?, ?, ?, ?, 'citizen', 'password', ?, ?, ?)`,
+          [generatedOpenId, input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null, input.themePreference || 'auto']
         ) as any[];
         userId = (result as any).insertId;
       }
@@ -221,7 +223,7 @@ export const authRouter = router({
 
   me: protectedProcedure.query(async ({ ctx }) => {
     const [rows] = await db.execute(
-      'SELECT id, email, name, role, postalCode, city, email_verified_at FROM users WHERE id = ?',
+      'SELECT id, email, name, role, postalCode, city, email_verified_at, theme_preference FROM users WHERE id = ?',
       [ctx.user!.id]
     ) as any[];
     const user = (rows as any[])[0];
@@ -230,6 +232,7 @@ export const authRouter = router({
       id: user.id, email: user.email, name: user.name, role: user.role,
       postalCode: user.postalCode, city: user.city,
       emailVerified: Boolean(user.email_verified_at),
+      themePreference: user.theme_preference || 'auto',
     };
   }),
 
@@ -319,6 +322,7 @@ export const authRouter = router({
       name: z.string().max(128).optional(),
       postalCode: z.string().max(4).optional(),
       city: z.string().max(128).optional(),
+      themePreference: z.enum(['light', 'dark', 'auto']).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const fields: string[] = [];
@@ -326,6 +330,7 @@ export const authRouter = router({
       if (input.name !== undefined) { fields.push('name = ?'); values.push(input.name); }
       if (input.postalCode !== undefined) { fields.push('postalCode = ?'); values.push(input.postalCode); }
       if (input.city !== undefined) { fields.push('city = ?'); values.push(input.city); }
+      if (input.themePreference !== undefined) { fields.push('theme_preference = ?'); values.push(input.themePreference); }
 
       if (fields.length === 0) {
         return { success: true, message: 'Aucune modification' };

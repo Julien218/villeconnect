@@ -3,24 +3,29 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
 import { AuthProvider } from '@/shared/auth-context';
+import { ThemeProvider, useTheme } from '@/shared/theme-context';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
-
+function ThemedStack() {
+  const { theme } = useTheme();
   return (
-    <AuthProvider>
-      <StatusBar style="light" backgroundColor="#0A0F1E" />
+    <>
+      <StatusBar style={theme.statusBarStyle} backgroundColor={theme.colors.bgDeep} />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: '#0A0F1E' },
-          headerTintColor: '#F9FAFB',
-          headerTitleStyle: { fontWeight: '800' },
-          contentStyle: { backgroundColor: '#0A0F1E' },
+          headerStyle: { backgroundColor: theme.colors.bgDeep },
+          headerTintColor: theme.colors.textPrimary,
+          headerTitleStyle: { fontWeight: '800', fontFamily: theme.fonts.semibold },
+          contentStyle: { backgroundColor: theme.colors.bgDeep },
           animation: 'slide_from_right',
         }}
       >
@@ -33,6 +38,29 @@ export default function RootLayout() {
         <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" options={{ title: 'Page introuvable' }} />
       </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <ThemedStack />
+      </ThemeProvider>
     </AuthProvider>
   );
 }
