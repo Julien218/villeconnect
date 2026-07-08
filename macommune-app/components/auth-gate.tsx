@@ -14,7 +14,7 @@ export function AuthGate({ message }: { message?: string }) {
   const s = makeStyles(theme);
   return (
     <View style={s.wrap}>
-      <Image source={require('../assets/logo-official.png')} style={s.logo} resizeMode="contain" />
+      <Image source={require('../assets/logo-official-small.png')} style={s.logo} resizeMode="contain" />
       <GlassCard style={s.card}>
         <Text style={s.title}>Connexion requise</Text>
         <Text style={s.desc}>

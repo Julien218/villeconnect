@@ -79,7 +79,7 @@ export default function HomeScreen() {
         />
         <View style={s.headerTop}>
           <View style={s.brandRow}>
-            <Image source={require('@/assets/logo-official.png')} style={s.logo} />
+            <Image source={require('@/assets/logo-official-small.png')} style={s.logo} />
             <View>
               <Text style={s.brandName}>{brand.appName.toUpperCase()}</Text>
               <Text style={s.brandSub}>{brand.platformName}</Text>

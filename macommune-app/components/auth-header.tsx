@@ -13,7 +13,7 @@ export function AuthHeader({ title, subtitle }: { title: string; subtitle?: stri
       <TouchableOpacity style={s.back} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
         <Ionicons name="chevron-back" size={22} color={theme.colors.textPrimary} />
       </TouchableOpacity>
-      <Image source={require('../assets/logo-official.png')} style={s.logo} resizeMode="contain" />
+      <Image source={require('../assets/logo-official-small.png')} style={s.logo} resizeMode="contain" />
       <Text style={[s.title, { color: theme.colors.textPrimary, fontFamily: theme.fonts.bold }]}>{title}</Text>
       {subtitle ? <Text style={[s.subtitle, { color: theme.colors.textSecondary, fontFamily: theme.fonts.regular }]}>{subtitle}</Text> : null}
     </View>
