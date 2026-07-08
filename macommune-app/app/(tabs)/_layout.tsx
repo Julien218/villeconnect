@@ -1,9 +1,10 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { Tabs } from 'expo-router';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
 import { FloatingTabBar } from '@/components/floating-tab-bar';
 
 export default function TabLayout() {
+  const { theme } = useTheme();
   return (
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}

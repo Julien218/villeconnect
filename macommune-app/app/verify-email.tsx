@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 import { AuthHeader } from '@/components/auth-header';
 import { trpcMutation } from '@/shared/api-client';
 
 export default function VerifyEmailScreen() {
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
   const { token } = useLocalSearchParams<{ token?: string }>();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -70,12 +73,14 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, alignItems: 'center', backgroundColor: theme.colors.bgDeep },
-  card: { width: '90%', maxWidth: 400, padding: theme.spacing.lg, marginTop: 20, alignItems: 'center' },
-  emoji: { fontSize: 40, marginBottom: 10 },
-  title: { color: theme.colors.textPrimary, fontSize: 17, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
-  text: { color: theme.colors.textSecondary, fontSize: 13.5, textAlign: 'center', marginTop: 8, lineHeight: 19 },
-  primaryBtn: { borderRadius: theme.radius.pill, paddingVertical: 14, alignItems: 'center' },
-  primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    wrap: { flex: 1, alignItems: 'center', backgroundColor: theme.colors.bgDeep },
+    card: { width: '90%', maxWidth: 400, padding: theme.spacing.lg, marginTop: 20, alignItems: 'center' },
+    emoji: { fontSize: 40, marginBottom: 10 },
+    title: { color: theme.colors.textPrimary, fontSize: 17, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
+    text: { color: theme.colors.textSecondary, fontSize: 13.5, textAlign: 'center', marginTop: 8, lineHeight: 19 },
+    primaryBtn: { borderRadius: theme.radius.pill, paddingVertical: 14, alignItems: 'center' },
+    primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  });
+}

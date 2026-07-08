@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { trpcQuery } from '@/shared/api-client';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 
 // Fallback utilisé UNIQUEMENT si l'API est injoignable (jamais affiché si des données réelles existent).
@@ -31,6 +32,8 @@ function normalizeApiShop(sh: any) {
 }
 
 export default function ShopsScreen() {
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
   const [search, setSearch]   = useState('');
   const [shops, setShops]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,9 +57,9 @@ export default function ShopsScreen() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = shops.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.category.toLowerCase().includes(search.toLowerCase())
+  const filtered = shops.filter(sh =>
+    sh.name.toLowerCase().includes(search.toLowerCase()) ||
+    sh.category.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -103,17 +106,19 @@ export default function ShopsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
-  searchWrap:  { margin: theme.spacing.md, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10 },
-  searchInput: { flex: 1, color: theme.colors.textPrimary, fontSize: 14, paddingVertical: 13 },
-  count:       { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600', marginHorizontal: 16, marginBottom: 4 },
-  mockBadge:   { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
-  card:        { marginHorizontal: 16, marginBottom: 10, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' },
-  shopIcon:    { width: 50, height: 50, borderRadius: theme.radius.md, backgroundColor: theme.colors.cyanSoft, alignItems: 'center', justifyContent: 'center' },
-  shopName:    { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  shopCat:     { color: theme.colors.textSecondary, fontSize: 12, marginTop: 3 },
-  shopAddr:    { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
-  promoBadge:  { borderRadius: 6, borderWidth: 1, borderColor: theme.colors.warning + '44', backgroundColor: theme.colors.warning + '22', paddingHorizontal: 7, paddingVertical: 2 },
-  promoText:   { fontSize: 10, fontWeight: '700', color: theme.colors.warning },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
+    searchWrap:  { margin: theme.spacing.md, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10 },
+    searchInput: { flex: 1, color: theme.colors.textPrimary, fontSize: 14, paddingVertical: 13 },
+    count:       { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600', marginHorizontal: 16, marginBottom: 4 },
+    mockBadge:   { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
+    card:        { marginHorizontal: 16, marginBottom: 10, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' },
+    shopIcon:    { width: 50, height: 50, borderRadius: theme.radius.md, backgroundColor: theme.colors.cyanSoft, alignItems: 'center', justifyContent: 'center' },
+    shopName:    { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
+    shopCat:     { color: theme.colors.textSecondary, fontSize: 12, marginTop: 3 },
+    shopAddr:    { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+    promoBadge:  { borderRadius: 6, borderWidth: 1, borderColor: theme.colors.warning + '44', backgroundColor: theme.colors.warning + '22', paddingHorizontal: 7, paddingVertical: 2 },
+    promoText:   { fontSize: 10, fontWeight: '700', color: theme.colors.warning },
+  });
+}

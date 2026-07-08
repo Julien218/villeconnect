@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 import { AuthHeader } from '@/components/auth-header';
 import { trpcMutation } from '@/shared/api-client';
@@ -14,6 +15,8 @@ function isValidPassword(pw: string) {
 }
 
 export default function ResetPasswordScreen() {
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
   const { token } = useLocalSearchParams<{ token?: string }>();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -79,17 +82,19 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  wrap: { flex: 1, alignItems: 'center', backgroundColor: theme.colors.bgDeep },
-  card: { width: '90%', maxWidth: 400, padding: theme.spacing.lg, marginTop: 10, alignItems: 'center' },
-  label: { alignSelf: 'flex-start', color: theme.colors.textSecondary, fontSize: 12.5, fontWeight: '700', marginTop: 10, marginBottom: 6 },
-  input: {
-    width: '100%', backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border,
-    color: theme.colors.textPrimary, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14.5,
-  },
-  primaryBtn: { borderRadius: theme.radius.pill, paddingVertical: 14, alignItems: 'center' },
-  primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  error: { color: theme.colors.danger, fontSize: 13, marginBottom: 8, textAlign: 'center' },
-  emoji: { fontSize: 36, marginBottom: 10 },
-  text: { color: theme.colors.textSecondary, fontSize: 13.5, textAlign: 'center', lineHeight: 19 },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    wrap: { flex: 1, alignItems: 'center', backgroundColor: theme.colors.bgDeep },
+    card: { width: '90%', maxWidth: 400, padding: theme.spacing.lg, marginTop: 10, alignItems: 'center' },
+    label: { alignSelf: 'flex-start', color: theme.colors.textSecondary, fontSize: 12.5, fontWeight: '700', marginTop: 10, marginBottom: 6 },
+    input: {
+      width: '100%', backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border,
+      color: theme.colors.textPrimary, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14.5,
+    },
+    primaryBtn: { borderRadius: theme.radius.pill, paddingVertical: 14, alignItems: 'center' },
+    primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+    error: { color: theme.colors.danger, fontSize: 13, marginBottom: 8, textAlign: 'center' },
+    emoji: { fontSize: 36, marginBottom: 10 },
+    text: { color: theme.colors.textSecondary, fontSize: 13.5, textAlign: 'center', lineHeight: 19 },
+  });
+}

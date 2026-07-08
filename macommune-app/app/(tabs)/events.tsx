@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { trpcQuery } from '@/shared/api-client';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 
 // Fallback utilisé UNIQUEMENT si l'API est injoignable (jamais affiché si des données réelles existent).
@@ -14,11 +15,6 @@ const MOCK_EVENTS = [
 const CAT_EMOJI: Record<string, string> = {
   Culture: '🎵', Sport: '🏆', Marché: '🛒', Jeunesse: '🎪',
   Environnement: '🌱', Communal: '📢', Autre: '📅',
-};
-
-const CAT_COLORS: Record<string, string> = {
-  Marché: theme.colors.success, Culture: theme.colors.electric, Sport: theme.colors.warning,
-  Jeunesse: '#C084FC', Environnement: '#4ADE80', Communal: theme.colors.danger, default: theme.colors.cyan,
 };
 
 function normalizeApiEvent(ev: any) {
@@ -34,6 +30,12 @@ function normalizeApiEvent(ev: any) {
 }
 
 export default function EventsScreen() {
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
+  const CAT_COLORS: Record<string, string> = {
+    Marché: theme.colors.success, Culture: theme.colors.electric, Sport: theme.colors.warning,
+    Jeunesse: '#A855F7', Environnement: '#22C55E', Communal: theme.colors.danger, default: theme.colors.cyan,
+  };
   const [events, setEvents]     = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -95,18 +97,20 @@ export default function EventsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
-  header:      { padding: 16, paddingBottom: 8 },
-  headerSub:   { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
-  mockBadge:   { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginTop: 4 },
-  card:        { marginHorizontal: 16, marginBottom: 12, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
-  dateBox:     { width: 52, borderRadius: theme.radius.sm, borderWidth: 1, alignItems: 'center', paddingVertical: 8 },
-  dateDay:     { fontSize: 22, fontWeight: '900' },
-  dateMon:     { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
-  eventEmoji:  { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  eventTitle:  { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  eventMeta:   { color: theme.colors.textSecondary, fontSize: 12, marginBottom: 8 },
-  catBadge:    { alignSelf: 'flex-start', borderRadius: theme.radius.sm, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  catText:     { fontSize: 11, fontWeight: '700' },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    screen:      { flex: 1, backgroundColor: theme.colors.bgDeep },
+    header:      { padding: 16, paddingBottom: 8 },
+    headerSub:   { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
+    mockBadge:   { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginTop: 4 },
+    card:        { marginHorizontal: 16, marginBottom: 12, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+    dateBox:     { width: 52, borderRadius: theme.radius.sm, borderWidth: 1, alignItems: 'center', paddingVertical: 8 },
+    dateDay:     { fontSize: 22, fontWeight: '900' },
+    dateMon:     { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+    eventEmoji:  { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 4 },
+    eventTitle:  { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
+    eventMeta:   { color: theme.colors.textSecondary, fontSize: 12, marginBottom: 8 },
+    catBadge:    { alignSelf: 'flex-start', borderRadius: theme.radius.sm, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    catText:     { fontSize: 11, fontWeight: '700' },
+  });
+}

@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { trpcQuery } from '@/shared/api-client';
-import { theme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme-context';
+import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 
 interface FuelStation {
@@ -31,6 +32,8 @@ function normalize(st: any): FuelStation {
 }
 
 export default function FuelScreen() {
+  const { theme } = useTheme();
+  const s = makeStyles(theme);
   const [stations, setStations] = useState<FuelStation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -128,32 +131,35 @@ export default function FuelScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  screen:         { flex: 1, backgroundColor: theme.colors.bgDeep },
-  mockBadge:      { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginTop: 12 },
-  hero:           { margin: 16, borderRadius: theme.radius.xl, padding: 20, ...theme.shadow.glow },
-  heroLabel:      { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
-  heroStation:    { color: '#fff', fontSize: 18, fontWeight: '900', marginBottom: 4 },
-  heroPrice:      { color: '#fff', fontSize: 36, fontWeight: '900', marginBottom: 4 },
-  heroAddr:       { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginBottom: 8 },
-  heroEcoWrap:    { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: theme.radius.sm, padding: 8, marginTop: 4 },
-  heroEco:        { color: '#fff', fontSize: 12, fontWeight: '600' },
-  tabs:           { flexDirection: 'row', marginHorizontal: 16, gap: 8, marginBottom: 8 },
-  tab:            { flex: 1, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.sm, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, alignItems: 'center' },
-  tabActive:      { backgroundColor: theme.colors.cyanSoft, borderColor: theme.colors.borderCyan },
-  tabText:        { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
-  tabTextActive:  { color: theme.colors.cyan },
-  sectionTitle:   { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
-  card:           { marginHorizontal: 16, marginBottom: 10, padding: 16 },
-  cardBest:       { borderColor: 'rgba(52,211,153,0.3)' },
-  bestBadge:      { alignSelf: 'flex-start', backgroundColor: 'rgba(52,211,153,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 8 },
-  bestText:       { color: theme.colors.success, fontSize: 11, fontWeight: '700' },
-  stName:         { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 3 },
-  stAddr:         { color: theme.colors.textSecondary, fontSize: 12 },
-  stPrice:        { color: theme.colors.cyan, fontSize: 24, fontWeight: '900' },
-  priceRow:       { flexDirection: 'row', gap: 8, marginTop: 12 },
-  priceTag:       { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: theme.radius.sm, padding: 8, alignItems: 'center' },
-  priceTagLabel:  { color: theme.colors.textMuted, fontSize: 10, fontWeight: '600' },
-  priceTagVal:    { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700', marginTop: 2 },
-  source:         { color: theme.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 16, marginHorizontal: 16 },
-});
+function makeStyles(theme: ThemeTokens) {
+  const isDark = theme.mode === 'dark';
+  return StyleSheet.create({
+    screen:         { flex: 1, backgroundColor: theme.colors.bgDeep },
+    mockBadge:      { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginTop: 12 },
+    hero:           { margin: 16, borderRadius: theme.radius.xl, padding: 20, ...theme.shadow.glow },
+    heroLabel:      { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
+    heroStation:    { color: '#fff', fontSize: 18, fontWeight: '900', marginBottom: 4 },
+    heroPrice:      { color: '#fff', fontSize: 36, fontWeight: '900', marginBottom: 4 },
+    heroAddr:       { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginBottom: 8 },
+    heroEcoWrap:    { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: theme.radius.sm, padding: 8, marginTop: 4 },
+    heroEco:        { color: '#fff', fontSize: 12, fontWeight: '600' },
+    tabs:           { flexDirection: 'row', marginHorizontal: 16, gap: 8, marginBottom: 8 },
+    tab:            { flex: 1, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.sm, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, alignItems: 'center' },
+    tabActive:      { backgroundColor: theme.colors.cyanSoft, borderColor: theme.colors.borderCyan },
+    tabText:        { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
+    tabTextActive:  { color: theme.colors.cyan },
+    sectionTitle:   { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
+    card:           { marginHorizontal: 16, marginBottom: 10, padding: 16 },
+    cardBest:       { borderColor: theme.colors.success + '4D' },
+    bestBadge:      { alignSelf: 'flex-start', backgroundColor: theme.colors.badges.nouveau.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 8 },
+    bestText:       { color: theme.colors.success, fontSize: 11, fontWeight: '700' },
+    stName:         { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 3 },
+    stAddr:         { color: theme.colors.textSecondary, fontSize: 12 },
+    stPrice:        { color: theme.colors.cyan, fontSize: 24, fontWeight: '900' },
+    priceRow:       { flexDirection: 'row', gap: 8, marginTop: 12 },
+    priceTag:       { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(10,45,94,0.04)', borderRadius: theme.radius.sm, padding: 8, alignItems: 'center' },
+    priceTagLabel:  { color: theme.colors.textMuted, fontSize: 10, fontWeight: '600' },
+    priceTagVal:    { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700', marginTop: 2 },
+    source:         { color: theme.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 16, marginHorizontal: 16 },
+  });
+}
