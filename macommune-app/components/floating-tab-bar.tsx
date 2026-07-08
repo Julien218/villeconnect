@@ -1,15 +1,20 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-// Bottom navigation flottante arrondie avec bouton central VilleConnect — direction "Smart City Premium".
-// Le bouton central "C" est l'onglet Accueil lui-même (mis en avant visuellement) — il reste
-// donc toujours une vraie route active, jamais une position fixe qui pourrait masquer un autre
-// onglet public (commerces, événements...) si le nombre d'onglets change.
-// S'adapte automatiquement au thème actif (clair / sombre / automatique).
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+// Bottom navigation flottante — le "C" vivant flotte au-dessus de la barre, entre les onglets,
+// cœur du Centre de Contrôle VilleConnect OS : appui simple = Centre de Contrôle immersif,
+// appui long (500ms) = menu radial premium. Les onglets classiques (dont Accueil) restent
+// une navigation discrète en dessous, comme prévu par la maquette officielle.
+import { useRef, useState } from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
+import { LivingC } from './control-center/living-c';
+import { ControlCenterModal } from './control-center/control-center-modal';
+import { RadialQuickMenu } from './control-center/radial-quick-menu';
+import { RadialAction } from '@/shared/control-center-types';
 
 const ICONS: Record<string, any> = {
   index: 'home',
@@ -30,53 +35,87 @@ const LABELS: Record<string, string> = {
 };
 
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
-  const { theme, scheme } = useTheme();
+  const { theme } = useTheme();
+  const router = useRouter();
   const s = makeStyles(theme);
   const routes = state.routes;
+  const mid = Math.ceil(routes.length / 2);
+
+  const [controlCenterOpen, setControlCenterOpen] = useState(false);
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const [cOrigin, setCOrigin] = useState({ x: 0, y: 0 });
+  const centerRef = useRef<View>(null);
+
+  function measureAndOpenQuickMenu() {
+    centerRef.current?.measureInWindow((x, y, w, h) => {
+      setCOrigin({ x: x + w / 2, y: y + h / 2 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setQuickMenuOpen(true);
+    });
+  }
+
+  function handleRadialAction(action: RadialAction) {
+    switch (action.key) {
+      case 'add-event': router.push('/(tabs)/events' as any); break;
+      case 'search-shop': router.push('/(tabs)/shops' as any); break;
+      case 'settings': router.push('/(tabs)/profile' as any); break;
+      case 'favorites': setControlCenterOpen(true); break;
+      case 'ia': Alert.alert('Assistant IA', 'Votre compagnon VilleConnect arrive très bientôt ici.'); break;
+      case 'report': Alert.alert('Signalement', 'Le formulaire de signalement arrive très bientôt ici.'); break;
+      case 'scan': Alert.alert('Scanner', 'Le scanner QR Code arrive très bientôt ici.'); break;
+    }
+  }
+
+  function renderTab(route: BottomTabBarProps['state']['routes'][number]) {
+    const routeIndex = state.routes.findIndex(r => r.key === route.key);
+    const focused = state.index === routeIndex;
+    const label = LABELS[route.name] ?? route.name;
+    return (
+      <TouchableOpacity
+        key={route.key}
+        style={s.tabItem}
+        activeOpacity={0.7}
+        onPress={() => navigation.navigate(route.name as never)}
+      >
+        <Ionicons name={ICONS[route.name] ?? 'ellipse'} size={19} color={focused ? theme.colors.cyan : theme.colors.textMuted} />
+        <Text style={[s.tabLabel, focused && { color: theme.colors.cyan }]}>{label}</Text>
+        {route.name === 'wallet' && (
+          <View style={s.badge}><Text style={s.badgeText}>3</Text></View>
+        )}
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <View style={s.wrap} pointerEvents="box-none">
       <View style={s.bar}>
-        {routes.map((route, i) => {
-          const focused = state.index === i;
-          const label = LABELS[route.name] ?? route.name;
-
-          if (route.name === 'index') {
-            return (
-              <View key={route.key} style={s.centerSlot}>
-                <TouchableOpacity
-                  style={s.centerBtn}
-                  activeOpacity={0.85}
-                  onPress={() => navigation.navigate(route.name as never)}
-                >
-                  <LinearGradient
-                    colors={[theme.colors.electric, theme.colors.cyan]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={[s.centerGrad, focused && s.centerGradFocused]}
-                  >
-                    <Text style={s.centerLetter}>C</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            );
-          }
-
-          return (
-            <TouchableOpacity
-              key={route.key}
-              style={s.tabItem}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate(route.name as never)}
-            >
-              <Ionicons name={ICONS[route.name] ?? 'ellipse'} size={20} color={focused ? theme.colors.cyan : theme.colors.textMuted} />
-              <Text style={[s.tabLabel, focused && { color: theme.colors.cyan }]}>{label}</Text>
-              {route.name === 'wallet' && (
-                <View style={s.badge}><Text style={s.badgeText}>3</Text></View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
+        {routes.slice(0, mid).map(renderTab)}
+        <View style={s.centerGap} />
+        {routes.slice(mid).map(renderTab)}
       </View>
+
+      {/* Le C flotte au-dessus de la barre, toujours visible, jamais un onglet comme les autres */}
+      <View style={s.centerFloating} pointerEvents="box-none">
+        <View ref={centerRef} collapsable={false}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            delayLongPress={500}
+            onPress={() => setControlCenterOpen(true)}
+            onLongPress={measureAndOpenQuickMenu}
+          >
+            <LivingC size={46} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ControlCenterModal visible={controlCenterOpen} onClose={() => setControlCenterOpen(false)} />
+      <RadialQuickMenu
+        visible={quickMenuOpen}
+        originX={cOrigin.x}
+        originY={cOrigin.y}
+        onClose={() => setQuickMenuOpen(false)}
+        onSelect={handleRadialAction}
+      />
     </View>
   );
 }
@@ -94,13 +133,10 @@ function makeStyles(theme: ThemeTokens) {
       ...theme.shadow.card,
     },
     tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-    tabLabel: { fontSize: 8.7, fontWeight: '700', color: theme.colors.textMuted, fontFamily: theme.fonts.semibold },
+    centerGap: { width: 46 },
+    tabLabel: { fontSize: 8.3, fontWeight: '700', color: theme.colors.textMuted, fontFamily: theme.fonts.semibold },
     badge: { position: 'absolute', top: -2, right: '22%', backgroundColor: theme.colors.danger, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
     badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
-    centerSlot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    centerBtn: { marginTop: -32 },
-    centerGrad: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.bgDeep, ...theme.shadow.glow },
-    centerGradFocused: { borderColor: theme.colors.cyan },
-    centerLetter: { color: '#fff', fontSize: 20, fontWeight: '900' },
+    centerFloating: { position: 'absolute', bottom: 46, alignSelf: 'center' },
   });
 }
