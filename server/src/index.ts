@@ -11,6 +11,7 @@ import { fuelRouter } from './routers/fuel';
 import { walletRouter } from './routers/wallet';
 import { alertsRouter } from './routers/alerts';
 import { authRouter } from './routers/auth';
+import { waitlistRouter } from './routers/waitlist';
 import { db } from './db';
 
 // ─── App Router ───────────────────────────────────────────
@@ -21,6 +22,7 @@ export const appRouter = router({
   wallet: walletRouter,
   alerts: alertsRouter,
   auth: authRouter,
+  waitlist: waitlistRouter,
 });
 
 export type AppRouter = typeof appRouter;
