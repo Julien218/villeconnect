@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés. -->
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VilleConnect OS — Le moteur intelligent de vos villes</title>
+<meta name="description" content="VilleConnect OS est la plateforme territoriale intelligente qui réunit citoyens, commerces et communes. Démarrage avec DourConnect comme ville pilote." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://villeconnectos.com/" />
+
+<!-- Favicons / icônes -->
+<link rel="icon" type="image/png" sizes="16x16" href="/brand/favicon-16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/brand/apple-touch-icon-180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/brand/icon-192.png" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7FA" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#060B18" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="VilleConnect OS" />
+<meta property="og:title" content="VilleConnect OS — Le moteur intelligent de vos villes" />
+<meta property="og:description" content="Une plateforme territoriale intelligente pour citoyens, commerces et communes. Ville pilote : DourConnect." />
+<meta property="og:image" content="https://villeconnectos.com/brand/og-image.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://villeconnectos.com/" />
+<meta property="og:locale" content="fr_BE" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="VilleConnect OS — Le moteur intelligent de vos villes" />
+<meta name="twitter:description" content="Une plateforme territoriale intelligente pour citoyens, commerces et communes. Ville pilote : DourConnect." />
+<meta name="twitter:image" content="https://villeconnectos.com/brand/og-image.jpg" />
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "VilleConnect OS",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "Web, Android, iOS",
+  "description": "Plateforme territoriale intelligente réunissant citoyens, commerces et communes. Ville pilote : DourConnect.",
+  "url": "https://villeconnectos.com/",
+  "image": "https://villeconnectos.com/brand/og-image.jpg",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Js-Innov.IA",
+    "url": "https://villeconnectos.com/"
+  }
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --navy:#0A2D5E; --blue:#0047FF; --cyan:#00E5FF; --teal:#00BFA5; --gray:#AEB6C1;
+    --bg:#F5F7FA; --bg-header:#FFFFFF; --surface:rgba(10,45,94,0.045); --surface-solid:#FFFFFF;
+    --border:rgba(10,45,94,0.10); --text:#0A2D5E; --text-secondary:#4B5A72; --text-muted:#AEB6C1;
+    --radius-lg:22px; --radius-md:16px; --radius-pill:999px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#060B18; --bg-header:#0B1330; --surface:rgba(255,255,255,0.055); --surface-solid:#101935;
+      --border:rgba(255,255,255,0.09); --text:#FFFFFF; --text-secondary:#AEB6C1; --text-muted:#5B6884;
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; overflow-x:hidden; transition:background .2s ease,color .2s ease;
+  }
+  a{color:inherit; text-decoration:none;}
+  img{display:block; max-width:100%;}
+  .wrap{width:100%; max-width:1120px; margin:0 auto; padding:0 24px;}
+  section{padding:72px 0;}
+
+  /* NAV */
+  header.nav{
+    position:sticky; top:0; z-index:50; backdrop-filter:blur(14px);
+    background:color-mix(in srgb, var(--bg-header) 82%, transparent);
+    border-bottom:1px solid var(--border);
+  }
+  .nav-inner{display:flex; align-items:center; justify-content:space-between; padding:14px 24px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand img{width:36px; height:36px; border-radius:10px;}
+  .brand-name{font-weight:800; font-size:16px; line-height:1.1;}
+  .brand-sub{font-size:10.5px; color:var(--text-secondary); font-weight:600; letter-spacing:.04em;}
+  .nav-links{display:none; gap:28px; align-items:center;}
+  .nav-links a{font-size:14px; font-weight:600; color:var(--text-secondary);}
+  .nav-cta{
+    background:linear-gradient(135deg,var(--blue),var(--cyan)); color:#fff!important; font-weight:700;
+    padding:10px 20px; border-radius:var(--radius-pill); font-size:13.5px; white-space:nowrap;
+  }
+  @media(min-width:860px){ .nav-links{display:flex;} }
+
+  /* HERO */
+  .hero{padding:64px 0 40px;}
+  .badge{
+    display:inline-flex; align-items:center; gap:8px; padding:7px 14px; border-radius:var(--radius-pill);
+    background:var(--surface); border:1px solid var(--border); font-size:12.5px; font-weight:700; color:var(--text-secondary);
+    margin-bottom:22px;
+  }
+  .badge-dot{width:7px; height:7px; border-radius:50%; background:var(--teal); box-shadow:0 0 0 4px rgba(0,191,165,0.18);}
+  h1{font-size:clamp(32px,5.2vw,52px); font-weight:800; line-height:1.08; letter-spacing:-0.01em; max-width:720px;}
+  h1 span{background:linear-gradient(135deg,var(--blue),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero-desc{font-size:17px; color:var(--text-secondary); max-width:600px; margin-top:18px; line-height:1.6;}
+  .cta-row{display:flex; flex-wrap:wrap; gap:14px; margin-top:30px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; padding:14px 24px; border-radius:var(--radius-pill);
+    font-weight:700; font-size:14.5px; border:1px solid var(--border); cursor:pointer;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--blue),var(--cyan)); color:#fff; border:none; box-shadow:0 10px 28px rgba(0,71,255,0.28);}
+  .btn-outline{background:var(--surface-solid); color:var(--text);}
+  .hero-visual{
+    margin-top:52px; border-radius:var(--radius-lg); border:1px solid var(--border);
+    background:var(--surface); padding:40px; text-align:center;
+  }
+  .hero-visual img{width:120px; margin:0 auto 14px;}
+  .hero-visual p{color:var(--text-secondary); font-size:13.5px; font-weight:600;}
+
+  /* SECTION LABELS */
+  .sec-label{color:var(--teal); font-weight:800; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:10px;}
+  .sec-title{font-size:clamp(24px,3.4vw,34px); font-weight:800; letter-spacing:-0.01em; max-width:640px; margin-bottom:14px;}
+  .sec-desc{color:var(--text-secondary); font-size:15.5px; max-width:620px; line-height:1.65; margin-bottom:40px;}
+
+  /* GRID CARDS */
+  .grid{display:grid; gap:18px; grid-template-columns:1fr;}
+  @media(min-width:700px){ .grid.cols-2{grid-template-columns:1fr 1fr;} .grid.cols-4{grid-template-columns:repeat(2,1fr);} .grid.cols-3{grid-template-columns:repeat(3,1fr);} }
+  @media(min-width:980px){ .grid.cols-4{grid-template-columns:repeat(4,1fr);} }
+  .card{
+    background:var(--surface-solid); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:26px; box-shadow:0 8px 24px rgba(10,45,94,0.05);
+  }
+  .card-icon{
+    width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,71,255,0.12); color:var(--blue); font-size:20px; margin-bottom:16px;
+  }
+  .card h3{font-size:16.5px; font-weight:700; margin-bottom:8px;}
+  .card p{font-size:14px; color:var(--text-secondary); line-height:1.6;}
+
+  /* STEPS */
+  .steps{counter-reset:step;}
+  .step{display:flex; gap:18px; padding:22px 0; border-bottom:1px solid var(--border);}
+  .step:last-child{border-bottom:none;}
+  .step-num{
+    counter-increment:step; flex:none; width:38px; height:38px; border-radius:50%;
+    background:linear-gradient(135deg,var(--blue),var(--cyan)); color:#fff; font-weight:800; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step-num::before{content:counter(step);}
+  .step h4{font-size:16px; font-weight:700; margin-bottom:4px;}
+  .step p{font-size:14px; color:var(--text-secondary); line-height:1.55;}
+
+  /* PILOT CITY */
+  .pilot{
+    border-radius:var(--radius-lg); border:1px solid var(--border); background:var(--surface);
+    padding:40px; display:flex; flex-wrap:wrap; gap:32px; align-items:center;
+  }
+  .pilot-left{flex:1; min-width:260px;}
+  .pilot-badge{
+    display:inline-block; padding:5px 12px; border-radius:var(--radius-pill); background:rgba(0,191,165,0.14);
+    color:var(--teal); font-weight:800; font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:14px;
+  }
+  .pilot h3{font-size:24px; font-weight:800; margin-bottom:10px;}
+  .pilot p{color:var(--text-secondary); font-size:14.5px; line-height:1.65; margin-bottom:18px;}
+  .pilot-stats{display:flex; gap:28px; flex-wrap:wrap;}
+  .pilot-stat b{display:block; font-size:22px; font-weight:800;}
+  .pilot-stat span{font-size:12px; color:var(--text-secondary); font-weight:600;}
+
+  /* FORM CARD */
+  .form-card{
+    background:var(--surface-solid); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:32px; max-width:480px;
+  }
+  .form-row{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+  .form-row label{font-size:12.5px; font-weight:700; color:var(--text-secondary);}
+  .form-row input,.form-row select{
+    padding:12px 14px; border-radius:var(--radius-md); border:1px solid var(--border);
+    background:var(--bg); color:var(--text); font-family:'Poppins',sans-serif; font-size:14px;
+  }
+  .form-msg{font-size:13.5px; margin-top:12px; font-weight:600;}
+  .form-msg.ok{color:var(--teal);}
+  .form-msg.err{color:#E11D48;}
+
+  /* FAQ */
+  .faq-item{border-bottom:1px solid var(--border); padding:18px 0;}
+  .faq-q{
+    display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+    font-weight:700; font-size:15px;
+  }
+  .faq-q .chev{transition:transform .2s ease; color:var(--text-secondary); font-size:13px;}
+  .faq-item.open .faq-q .chev{transform:rotate(180deg);}
+  .faq-a{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+  .faq-item.open .faq-a{max-height:220px;}
+  .faq-a p{padding-top:12px; color:var(--text-secondary); font-size:14px; line-height:1.65;}
+
+  /* FOOTER */
+  footer{border-top:1px solid var(--border); padding:48px 0 32px;}
+  .footer-grid{display:flex; flex-wrap:wrap; gap:32px; justify-content:space-between; margin-bottom:32px;}
+  .footer-brand{display:flex; align-items:center; gap:10px;}
+  .footer-brand img{width:30px; height:30px; border-radius:8px;}
+  .footer-links{display:flex; gap:24px; flex-wrap:wrap;}
+  .footer-links a{font-size:13.5px; color:var(--text-secondary); font-weight:600;}
+  .footer-legal{font-size:12px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:20px; line-height:1.7;}
+
+  .double-cta{display:flex; flex-wrap:wrap; gap:14px; margin-top:24px;}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner wrap" style="padding-left:0;padding-right:0;">
+    <div class="brand">
+      <img src="/brand/logo-256.png" alt="Logo VilleConnect OS" width="36" height="36" />
+      <div>
+        <div class="brand-name">VilleConnect OS</div>
+        <div class="brand-sub">Le moteur intelligent de vos villes</div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="#piliers">Piliers</a>
+      <a href="#comment-ca-marche">Comment ça marche</a>
+      <a href="#dourconnect">DourConnect</a>
+      <a href="#commune-partenaire">Communes</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="nav-cta" href="https://app.villeconnectos.com" target="_blank" rel="noopener">Ouvrir l'application</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="badge"><span class="badge-dot"></span> VilleConnect OS — plateforme en déploiement</div>
+      <h1>Un seul système,<br><span>toutes les villes.</span></h1>
+      <p class="hero-desc">
+        VilleConnect OS est le moteur territorial intelligent qui réunit citoyens, commerces et
+        communes dans une seule plateforme. Il démarre avec <strong>DourConnect</strong> comme
+        ville pilote, avec une architecture pensée pour être déployée dans d'autres communes.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://app.villeconnectos.com" target="_blank" rel="noopener">Ouvrir l'application</a>
+        <a class="btn btn-outline" href="#dourconnect">Découvrir DourConnect</a>
+        <a class="btn btn-outline" href="#etre-prevenu">Être prévenu quand ma ville arrive</a>
+      </div>
+      <div class="hero-visual">
+        <img src="/brand/logo-256.png" alt="VilleConnect OS" width="120" height="120" />
+        <p>Citoyens · Commerces · Communes · IA — une seule plateforme territoriale</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROPOSITION DE VALEUR -->
+  <section>
+    <div class="wrap">
+      <div class="sec-label">Proposition de valeur</div>
+      <h2 class="sec-title">Une plateforme, pas une simple application</h2>
+      <p class="sec-desc">
+        Plutôt que de construire une app par ville, VilleConnect OS est conçu comme un système
+        capable d'activer, ville par ville, les mêmes modules : identité citoyenne, commerces locaux,
+        services communaux et intelligence artificielle — avec un branding et des données propres
+        à chaque commune.
+      </p>
+      <div class="grid cols-3">
+        <div class="card">
+          <div class="card-icon">🧩</div>
+          <h3>Modulaire</h3>
+          <p>Chaque commune active les modules dont elle a besoin, à son rythme.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏙️</div>
+          <h3>Multi-villes</h3>
+          <p>Une seule infrastructure technique, déclinée en identités locales distinctes.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">✨</div>
+          <h3>IA native</h3>
+          <p>Recommandations, automatisations et contenus générés pour chaque territoire.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 PILIERS -->
+  <section id="piliers">
+    <div class="wrap">
+      <div class="sec-label">Les 4 piliers</div>
+      <h2 class="sec-title">Ce que couvre VilleConnect OS</h2>
+      <p class="sec-desc">Quatre grands blocs fonctionnels, pensés pour s'enrichir mutuellement.</p>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="card-icon">👥</div>
+          <h3>Citoyen</h3>
+          <p>Wallet civique, missions, entraide, signalements et démarches communales.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛍️</div>
+          <h3>Commerçant</h3>
+          <p>Vitrine locale, promotions, fidélité et visibilité auprès des habitants.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌆</div>
+          <h3>Smart City</h3>
+          <p>Carburant en temps réel, alertes locales et informations utiles au quotidien.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🤖</div>
+          <h3>IA & données</h3>
+          <p>Automatisation de contenus, scoring et recommandations territoriales.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMENT CA MARCHE -->
+  <section id="comment-ca-marche">
+    <div class="wrap">
+      <div class="sec-label">Comment ça marche</div>
+      <h2 class="sec-title">De l'activation à l'usage quotidien</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num"></div>
+          <div>
+            <h4>Une ville rejoint VilleConnect OS</h4>
+            <p>La commune ou un porteur de projet local active la plateforme pour son territoire.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div>
+            <h4>Les modules s'activent progressivement</h4>
+            <p>Citoyen, commerces, smart city et IA sont déployés selon les priorités locales.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div>
+            <h4>Citoyens et commerces se connectent</h4>
+            <p>L'application devient l'espace commun de la vie locale, avec son identité propre.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VILLE PILOTE DOURCONNECT -->
+  <section id="dourconnect">
+    <div class="wrap">
+      <div class="sec-label">Ville pilote</div>
+      <h2 class="sec-title">DourConnect, la première instance en conditions réelles</h2>
+      <div class="pilot">
+        <div class="pilot-left">
+          <span class="pilot-badge">Ville pilote active</span>
+          <h3>DourConnect</h3>
+          <p>
+            DourConnect est la première ville à utiliser VilleConnect OS. C'est là que la
+            plateforme est testée, affinée et validée en conditions réelles avant tout futur
+            déploiement vers d'autres communes.
+          </p>
+          <div class="pilot-stats">
+            <div class="pilot-stat"><b>7370</b><span>Code postal pilote</span></div>
+            <div class="pilot-stat"><b>1</b><span>ville active aujourd'hui</span></div>
+            <div class="pilot-stat"><b>OS</b><span>architecture multi-villes prête</span></div>
+          </div>
+          <div class="double-cta">
+            <a class="btn btn-primary" href="https://app.villeconnectos.com" target="_blank" rel="noopener">Découvrir DourConnect</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMUNE PARTENAIRE -->
+  <section id="commune-partenaire">
+    <div class="wrap">
+      <div class="sec-label">Communes</div>
+      <h2 class="sec-title">Vous représentez une commune ?</h2>
+      <p class="sec-desc">
+        VilleConnect OS est pensé pour être déployé dans d'autres villes après DourConnect.
+        Si vous représentez une commune intéressée, contactez-nous — nous étudions chaque
+        demande avant tout déploiement.
+      </p>
+      <a class="btn btn-outline" href="mailto:contact@villeconnectos.com?subject=Devenir%20ville%20partenaire%20VilleConnect%20OS">Devenir ville partenaire</a>
+    </div>
+  </section>
+
+  <!-- VISIBILITE LOCALE & REVENUS -->
+  <section id="visibilite-locale">
+    <div class="wrap">
+      <div class="sec-label">Commerçants</div>
+      <h2 class="sec-title">Visibilité locale &amp; revenus</h2>
+      <p class="sec-desc">
+        Les commerces locaux peuvent gagner en visibilité directement auprès des citoyens
+        connectés à leur ville.
+      </p>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="card-icon">📌</div>
+          <h3>Commerces sponsorisés</h3>
+          <p>Mise en avant renforcée dans l'annuaire local.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <h3>Événements mis en avant</h3>
+          <p>Meilleure visibilité pour vos événements auprès des habitants.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏷️</div>
+          <h3>Promotions locales</h3>
+          <p>Vos offres affichées directement aux citoyens de votre commune.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🤝</div>
+          <h3>Futures offres partenaires</h3>
+          <p>Des formules dédiées aux commerçants seront proposées au fil du déploiement.</p>
+        </div>
+      </div>
+      <div class="double-cta">
+        <a class="btn btn-outline" href="mailto:contact@villeconnectos.com?subject=Inscrire%20mon%20commerce%20VilleConnect%20OS">Inscrire mon commerce</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ETRE PREVENU / WAITLIST -->
+  <section id="etre-prevenu">
+    <div class="wrap">
+      <div class="sec-label">Bientôt dans votre ville ?</div>
+      <h2 class="sec-title">Soyez prévenu quand votre commune arrive sur VilleConnect OS</h2>
+      <p class="sec-desc">Laissez votre email et votre code postal, nous vous préviendrons dès que votre ville est disponible.</p>
+      <div class="form-card">
+        <form id="waitlist-form">
+          <div class="form-row">
+            <label for="wl-email">Email</label>
+            <input type="email" id="wl-email" name="email" placeholder="vous@exemple.com" required />
+          </div>
+          <div class="form-row">
+            <label for="wl-postal">Code postal</label>
+            <input type="text" id="wl-postal" name="postal_code" placeholder="7370" maxlength="4" />
+          </div>
+          <div class="form-row">
+            <label for="wl-city">Ville</label>
+            <input type="text" id="wl-city" name="city" placeholder="Dour" />
+          </div>
+          <div class="form-row">
+            <label for="wl-role">Vous êtes</label>
+            <select id="wl-role" name="role">
+              <option value="citoyen">Citoyen</option>
+              <option value="commerçant">Commerçant</option>
+              <option value="organisateur">Organisateur d'événements</option>
+              <option value="commune">Représentant de commune</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Être prévenu</button>
+          <div id="wl-msg" class="form-msg"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-label">FAQ</div>
+      <h2 class="sec-title">Questions fréquentes</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">VilleConnect OS est-il déjà disponible partout ? <span class="chev">▾</span></div>
+          <div class="faq-a"><p>Non. VilleConnect OS démarre avec DourConnect comme ville pilote. D'autres communes rejoindront la plateforme progressivement.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Comment ma commune peut-elle rejoindre VilleConnect OS ? <span class="chev">▾</span></div>
+          <div class="faq-a"><p>Contactez-nous via le formulaire "Devenir ville partenaire". Chaque demande est étudiée avant tout déploiement.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">L'application est-elle gratuite pour les citoyens ? <span class="chev">▾</span></div>
+          <div class="faq-a"><p>Oui, l'usage citoyen de base est gratuit. Des offres dédiées existent pour les commerçants et les communes partenaires.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Comment un commerce peut-il apparaître sur l'application ? <span class="chev">▾</span></div>
+          <div class="faq-a"><p>Via le formulaire "Inscrire mon commerce" — nous revenons vers vous pour la mise en place.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/brand/logo-256.png" alt="VilleConnect OS" width="30" height="30" />
+        <div>
+          <div class="brand-name">VilleConnect OS</div>
+          <div class="brand-sub">Un seul système. Toutes les villes.</div>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="https://app.villeconnectos.com" target="_blank" rel="noopener">Application</a>
+        <a href="#dourconnect">DourConnect</a>
+        <a href="#commune-partenaire">Communes</a>
+        <a href="mailto:contact@villeconnectos.com">Contact</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés. VilleConnect OS et son logo sont des marques
+      de Js-Innov.IA. Toute reproduction sans autorisation est interdite.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // FAQ accordéon
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    item.querySelector('.faq-q').addEventListener('click', function(){
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(i){ i.classList.remove('open'); });
+      if(!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // Formulaire waitlist -> fonction backend joinWaitlist déjà en prod
+  var form = document.getElementById('waitlist-form');
+  var msg = document.getElementById('wl-msg');
+  var ENDPOINT = 'https://v-illec-onnect-e76ee0de.base44.app/api/functions/joinWaitlist';
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    msg.textContent = '';
+    msg.className = 'form-msg';
+    var payload = {
+      email: document.getElementById('wl-email').value.trim(),
+      postal_code: document.getElementById('wl-postal').value.trim(),
+      city: document.getElementById('wl-city').value.trim(),
+      role: document.getElementById('wl-role').value,
+      source: 'landing-villeconnectos'
+    };
+    var submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      submitBtn.disabled = false;
+      if (data && data.success) {
+        msg.textContent = data.message || 'Merci ! Vous êtes inscrit.';
+        msg.className = 'form-msg ok';
+        form.reset();
+      } else {
+        throw new Error((data && data.error) || 'Erreur');
+      }
+    })
+    .catch(function(){
+      submitBtn.disabled = false;
+      msg.textContent = "Une erreur est survenue. Vous pouvez aussi écrire à contact@villeconnectos.com";
+      msg.className = 'form-msg err';
+    });
+  });
+</script>
+
+</body>
+</html>
