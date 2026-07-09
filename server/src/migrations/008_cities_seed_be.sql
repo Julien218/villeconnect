@@ -20,7 +20,6 @@ INSERT IGNORE INTO cities (postal_code, name, region, country, status) VALUES
 ('7331', 'Baudour',       'wallonie', 'BE', 'pending_validation'),
 ('7340', 'Quaregnon',     'wallonie', 'BE', 'pending_validation'),
 ('7350', 'Hensies',       'wallonie', 'BE', 'pending_validation'),
-('7370', 'Dour',          'wallonie', 'BE', 'pending_validation'),
 ('7380', 'Quiévrain',     'wallonie', 'BE', 'pending_validation'),
 ('7387', 'Honnelles',     'wallonie', 'BE', 'pending_validation'),
 ('7390', 'Quaregnon',     'wallonie', 'BE', 'pending_validation'),
