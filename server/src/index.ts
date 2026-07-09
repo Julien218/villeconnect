@@ -12,6 +12,7 @@ import { walletRouter } from './routers/wallet';
 import { alertsRouter } from './routers/alerts';
 import { authRouter } from './routers/auth';
 import { waitlistRouter } from './routers/waitlist';
+import { cityRouter } from './routers/city';
 import { db } from './db';
 
 // ─── App Router ───────────────────────────────────────────
@@ -23,6 +24,7 @@ export const appRouter = router({
   alerts: alertsRouter,
   auth: authRouter,
   waitlist: waitlistRouter,
+  city: cityRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -36,7 +38,7 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'VilleConnect API', version: '2.0.1', ts: new Date().toISOString() });
+  res.json({ ok: true, service: 'VilleConnect API', version: '2.1.0', ts: new Date().toISOString() });
 });
 
 // tRPC handler
@@ -52,7 +54,7 @@ app.use(
 app.get('/', (_req, res) => {
   res.json({
     name: 'VilleConnect OS API',
-    version: '2.0.1',
+    version: '2.1.0',
     endpoints: {
       health: '/health',
       trpc: '/api/trpc',
@@ -78,4 +80,5 @@ if (process.env.NODE_ENV === 'development') {
 app.listen(PORT, () => {
   console.log(`🏙️  VilleConnect API running on port ${PORT}`);
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
+  console.log(`🏘️  City system: /api/trpc/city.*`);
 });
