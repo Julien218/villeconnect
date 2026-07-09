@@ -3,7 +3,11 @@
 // Jamais une grille — les modules gravitent en cercle autour du C, reliés par un réseau
 // lumineux animé. Appui simple sur une appli -> navigation. Appui long -> mode personnalisation
 // (glisser-déposer, ajout/suppression), à la iOS "jiggle mode".
-import { useMemo, useState } from 'react';
+//
+// Instrumentation [CC] : logs légers sur chaque transition d'état (ouverture/fermeture,
+// édition, drag & drop, favoris) pour permettre un diagnostic en direct via les logs Metro
+// pendant les tests réels, sans dépendre uniquement du ressenti visuel.
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,6 +36,10 @@ const STATE_PULSE_COLOR: Record<string, string> = {
   notification: '#00E5FF', new: '#00E5FF', urgent: '#F59E0B', error: '#F87171',
 };
 
+function logCC(msg: string, extra?: Record<string, unknown>) {
+  console.log(`[CC] ${msg}`, extra ?? '');
+}
+
 function slotPosition(index: number, total: number) {
   const angle = (2 * Math.PI * index) / total - Math.PI / 2;
   const x = CENTER_X + RING_RADIUS * Math.cos(angle) - HEX_SIZE / 2;
@@ -53,6 +61,12 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
   const [editMode, setEditMode] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // [CC] Trace d'ouverture/fermeture réelle de la modale (source de vérité : la prop `visible`,
+  // pas juste l'intention de l'appelant).
+  useEffect(() => {
+    logCC(visible ? 'OPEN' : 'CLOSE', { favoritesCount: favorites.length });
+  }, [visible]);
+
   const total = favorites.length + (editMode ? 1 : 0);
   const points = useMemo(
     () => favorites.map((f, i) => {
@@ -65,8 +79,10 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
     }),
     [favorites, total],
   );
+  const hubPulsing = points.some(p => p.pulsing);
 
   function handleClose() {
+    logCC('close requested (X / backdrop / navigate)');
     setEditMode(false);
     setPickerOpen(false);
     onClose();
@@ -74,13 +90,20 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
 
   function handlePress(mod: ModuleDef) {
     if (editMode) return;
+    logCC('module press', { key: mod.key, route: mod.route });
     handleClose();
     router.push(mod.route as any);
   }
 
   function enterEditMode() {
+    logCC('long-press -> edit mode ON');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setEditMode(true);
+  }
+
+  function exitEditMode() {
+    logCC('edit mode OFF (Terminé)');
+    setEditMode(false);
   }
 
   function handleDropAt(fromIndex: number, absX: number, absY: number) {
@@ -91,7 +114,33 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
     if (angle < 0) angle += 2 * Math.PI;
     const raw = (angle / (2 * Math.PI)) * favorites.length;
     const nearest = Math.round(raw) % favorites.length;
-    if (nearest !== fromIndex) reorder(fromIndex, nearest);
+    if (nearest !== fromIndex) {
+      logCC('drag & drop -> reorder', { from: fromIndex, to: nearest });
+      reorder(fromIndex, nearest);
+    } else {
+      logCC('drag & drop -> dropped on same slot (no-op)', { slot: fromIndex });
+    }
+  }
+
+  function handleAddFavorite(key: string) {
+    logCC('favorite added', { key });
+    addFavorite(key);
+    setPickerOpen(false);
+  }
+
+  function handleRemoveFavorite(key: string) {
+    logCC('favorite removed', { key });
+    removeFavorite(key);
+  }
+
+  function openPicker() {
+    logCC('picker OPEN (add module sheet)');
+    setPickerOpen(true);
+  }
+
+  function closePicker() {
+    logCC('picker CLOSE');
+    setPickerOpen(false);
   }
 
   return (
@@ -99,7 +148,7 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
       <BlurView intensity={40} tint={theme.mode === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFillObject}>
         <LinearGradient
           colors={theme.mode === 'dark'
-            ? ['rgba(6,11,24,0.55)', 'rgba(6,11,24,0.94)']
+            ? ['rgba(6,11,24,0.6)', 'rgba(6,11,24,0.96)']
             : ['rgba(245,247,250,0.6)', 'rgba(245,247,250,0.96)']}
           style={StyleSheet.absoluteFillObject}
         />
@@ -110,7 +159,7 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
           </TouchableOpacity>
           <Text style={s.title}>Centre de Contrôle</Text>
           {editMode ? (
-            <TouchableOpacity onPress={() => setEditMode(false)}>
+            <TouchableOpacity onPress={exitEditMode}>
               <Text style={s.doneLabel}>Terminé</Text>
             </TouchableOpacity>
           ) : <View style={{ width: 40 }} />}
@@ -120,9 +169,9 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
 
         <NetworkLines width={SCREEN_W} height={SCREEN_H} cx={CENTER_X} cy={CENTER_Y} points={points} />
 
-        {/* Le C, toujours au centre */}
+        {/* Le C, toujours au centre — cœur visuel de l'interface */}
         <View style={[s.centerHub, { left: CENTER_X - 60, top: CENTER_Y - 60 }]}>
-          <LivingC size={64} pulsing={points.some(p => p.pulsing)} />
+          <LivingC size={64} pulsing={hubPulsing} />
         </View>
 
         {favorites.map((fav, i) => {
@@ -145,7 +194,7 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
                   editMode={editMode}
                   onPress={() => handlePress(fav)}
                   onLongPress={enterEditMode}
-                  onRemove={() => removeFavorite(fav.key)}
+                  onRemove={() => handleRemoveFavorite(fav.key)}
                 />
               </MotiView>
             </DraggableHex>
@@ -161,7 +210,7 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', delay: favorites.length * 70, damping: 12 }}
             >
-              <TouchableOpacity style={s.addHex} onPress={() => setPickerOpen(true)}>
+              <TouchableOpacity style={s.addHex} onPress={openPicker}>
                 <Ionicons name="add" size={26} color={theme.colors.cyan} />
               </TouchableOpacity>
               <Text style={s.addLabel}>Ajouter</Text>
@@ -179,7 +228,7 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
           <View style={s.pickerSheet}>
             <View style={s.pickerHeader}>
               <Text style={s.pickerTitle}>Ajouter un module</Text>
-              <TouchableOpacity onPress={() => setPickerOpen(false)} hitSlop={10}>
+              <TouchableOpacity onPress={closePicker} hitSlop={10}>
                 <Ionicons name="close" size={20} color={theme.colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -190,7 +239,7 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
                   <TouchableOpacity
                     key={m.key}
                     style={s.pickerItem}
-                    onPress={() => { addFavorite(m.key); setPickerOpen(false); }}
+                    onPress={() => handleAddFavorite(m.key)}
                   >
                     <View style={[s.pickerIcon, { backgroundColor: c.bg }]}>
                       <Ionicons name={m.icon} size={20} color={c.fg} />

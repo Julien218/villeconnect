@@ -2,6 +2,8 @@
 // VilleConnect OS — Le "C" vivant : cœur du Centre de Contrôle. Jamais statique :
 // respiration, halo lumineux, rotation très lente, particules, impulsions de notification.
 // Réutilisé à deux échelles : petit (barre de navigation) et grand (Centre de Contrôle).
+// Rendu "cockpit smart city" : halo radial multi-couches (GlowOrb) + anneau de particules
+// façon réseau de points connectés, dans l'ADN officiel (navy/bleu/cyan/teal).
 import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
@@ -11,6 +13,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
+import { GlowOrb } from './glow-orb';
 
 interface Props {
   size?: number;
@@ -52,9 +55,15 @@ export function LivingC({ size = 56, pulsing = false }: Props) {
     }
   }, [pulsing]);
 
+  const ambientStyle = useAnimatedStyle(() => {
+    const scale = interpolate(breathe.value, [0, 1], [0.94, 1.08]) * (1 + pulse.value * 0.14);
+    const opacity = interpolate(breathe.value, [0, 1], [0.5, 0.85]) + pulse.value * 0.15;
+    return { transform: [{ scale }], opacity };
+  });
+
   const haloStyle = useAnimatedStyle(() => {
     const scale = interpolate(breathe.value, [0, 1], [1, 1.12]) * (1 + pulse.value * 0.1);
-    const opacity = interpolate(breathe.value, [0, 1], [0.35, 0.65]) + pulse.value * 0.25;
+    const opacity = interpolate(breathe.value, [0, 1], [0.55, 0.9]) + pulse.value * 0.2;
     return { transform: [{ scale }], opacity };
   });
 
@@ -67,11 +76,20 @@ export function LivingC({ size = 56, pulsing = false }: Props) {
     return { transform: [{ scale }] };
   });
 
+  const ambientSize = size * 3.2;
+  const haloSize = size * 2.1;
+
   return (
-    <View style={[s.wrap, { width: size * 2.1, height: size * 2.1 }]} pointerEvents="none">
-      {/* Halo lumineux respirant */}
-      <Animated.View style={[s.halo, haloStyle]} />
-      {/* Anneau tournant très lent (réseau) */}
+    <View style={[s.wrap, { width: ambientSize, height: ambientSize }]} pointerEvents="none">
+      {/* Ambiance cockpit : large halo radial très diffus, façon lueur de smart city */}
+      <Animated.View style={ambientStyle}>
+        <GlowOrb size={ambientSize} color={theme.colors.electric} opacity={0.28} centerOpacity={0.22} />
+      </Animated.View>
+      {/* Halo resserré, plus intense, respire avec le C */}
+      <Animated.View style={haloStyle}>
+        <GlowOrb size={haloSize} color={theme.colors.cyan} opacity={0.55} centerOpacity={0.5} />
+      </Animated.View>
+      {/* Anneau tournant très lent (réseau de points connectés) */}
       <Animated.View style={[s.ring, ringStyle]}>
         {[0, 1, 2, 3, 4, 5].map(i => (
           <View
@@ -105,14 +123,10 @@ export function LivingC({ size = 56, pulsing = false }: Props) {
 function makeStyles(theme: ThemeTokens, size: number) {
   return StyleSheet.create({
     wrap: { alignItems: 'center', justifyContent: 'center' },
-    halo: {
-      position: 'absolute', width: size * 1.9, height: size * 1.9, borderRadius: size,
-      backgroundColor: theme.colors.cyan, opacity: 0.4,
-    },
     ring: { position: 'absolute', width: 1, height: 1, alignItems: 'center', justifyContent: 'center' },
     particle: {
-      position: 'absolute', width: 4, height: 4, borderRadius: 2, backgroundColor: theme.colors.cyan,
-      shadowColor: theme.colors.cyan, shadowOpacity: 0.9, shadowRadius: 4, shadowOffset: { width: 0, height: 0 },
+      position: 'absolute', width: 4.5, height: 4.5, borderRadius: 2.5, backgroundColor: theme.colors.cyan,
+      shadowColor: theme.colors.cyan, shadowOpacity: 1, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
     },
     core: {
       alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: theme.colors.bgDeep,

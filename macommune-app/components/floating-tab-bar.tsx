@@ -3,6 +3,10 @@
 // cœur du Centre de Contrôle VilleConnect OS : appui simple = Centre de Contrôle immersif,
 // appui long (500ms) = menu radial premium. Les onglets classiques (dont Accueil) restent
 // une navigation discrète en dessous, comme prévu par la maquette officielle.
+//
+// Instrumentation [CC] : logs sur ouverture/fermeture des deux overlays + garde défensive
+// pour ne jamais avoir Control Center et Quick Menu visibles en même temps (edge case
+// double-tap rapide).
 import { useRef, useState } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -12,6 +16,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
 import { LivingC } from './control-center/living-c';
+import { GlowOrb } from './control-center/glow-orb';
 import { ControlCenterModal } from './control-center/control-center-modal';
 import { RadialQuickMenu } from './control-center/radial-quick-menu';
 import { RadialAction } from '@/shared/control-center-types';
@@ -34,6 +39,10 @@ const LABELS: Record<string, string> = {
   profile: 'Profil',
 };
 
+function logCC(msg: string, extra?: Record<string, unknown>) {
+  console.log(`[CC] ${msg}`, extra ?? '');
+}
+
 export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const { theme } = useTheme();
   const router = useRouter();
@@ -46,15 +55,36 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const [cOrigin, setCOrigin] = useState({ x: 0, y: 0 });
   const centerRef = useRef<View>(null);
 
+  function openControlCenter() {
+    logCC('C tap -> open Control Center');
+    // Garde défensive : jamais les deux overlays visibles en même temps.
+    setQuickMenuOpen(false);
+    setControlCenterOpen(true);
+  }
+
+  function closeControlCenter() {
+    logCC('Control Center -> closed by tab bar');
+    setControlCenterOpen(false);
+  }
+
   function measureAndOpenQuickMenu() {
+    logCC('C long-press -> open Quick Menu');
     centerRef.current?.measureInWindow((x, y, w, h) => {
       setCOrigin({ x: x + w / 2, y: y + h / 2 });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // Garde défensive symétrique.
+      setControlCenterOpen(false);
       setQuickMenuOpen(true);
     });
   }
 
+  function closeQuickMenu() {
+    logCC('Quick Menu -> closed');
+    setQuickMenuOpen(false);
+  }
+
   function handleRadialAction(action: RadialAction) {
+    logCC('Quick Menu action selected', { key: action.key });
     switch (action.key) {
       case 'add-event': router.push('/(tabs)/events' as any); break;
       case 'search-shop': router.push('/(tabs)/shops' as any); break;
@@ -94,13 +124,15 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         {routes.slice(mid).map(renderTab)}
       </View>
 
-      {/* Le C flotte au-dessus de la barre, toujours visible, jamais un onglet comme les autres */}
+      {/* Le C flotte au-dessus de la barre, toujours visible, jamais un onglet comme les autres.
+          Halo radial renforcé (GlowOrb) pour un rendu "cockpit smart city" premium. */}
       <View style={s.centerFloating} pointerEvents="box-none">
-        <View ref={centerRef} collapsable={false}>
+        <GlowOrb size={128} color={theme.colors.cyan} opacity={0.6} centerOpacity={0.45} style={s.centerGlow} />
+        <View ref={centerRef} collapsable={false} style={s.centerButtonRing}>
           <TouchableOpacity
             activeOpacity={0.85}
             delayLongPress={500}
-            onPress={() => setControlCenterOpen(true)}
+            onPress={openControlCenter}
             onLongPress={measureAndOpenQuickMenu}
           >
             <LivingC size={46} />
@@ -108,12 +140,12 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         </View>
       </View>
 
-      <ControlCenterModal visible={controlCenterOpen} onClose={() => setControlCenterOpen(false)} />
+      <ControlCenterModal visible={controlCenterOpen} onClose={closeControlCenter} />
       <RadialQuickMenu
         visible={quickMenuOpen}
         originX={cOrigin.x}
         originY={cOrigin.y}
-        onClose={() => setQuickMenuOpen(false)}
+        onClose={closeQuickMenu}
         onSelect={handleRadialAction}
       />
     </View>
@@ -137,6 +169,11 @@ function makeStyles(theme: ThemeTokens) {
     tabLabel: { fontSize: 8.3, fontWeight: '700', color: theme.colors.textMuted, fontFamily: theme.fonts.semibold },
     badge: { position: 'absolute', top: -2, right: '22%', backgroundColor: theme.colors.danger, borderRadius: 8, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
     badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
-    centerFloating: { position: 'absolute', bottom: 46, alignSelf: 'center' },
+    centerFloating: { position: 'absolute', bottom: 46, alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
+    centerGlow: { left: -64 + 23, top: -64 + 23 },
+    centerButtonRing: {
+      borderRadius: 999, borderWidth: 1.4, borderColor: theme.colors.borderCyan,
+      ...theme.shadow.glow,
+    },
   });
 }

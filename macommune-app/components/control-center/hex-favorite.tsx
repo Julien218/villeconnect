@@ -1,8 +1,11 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 // VilleConnect OS — Raccourci hexagonal du Centre de Contrôle, avec ses 7 états visuels
-// officiels : normal / notification / nouveau contenu / urgence / erreur / synchronisation / favori.
+// officiels : normal / notification / nouveau contenu / urgence / erreur / synchronisation /
+// favori. Rendu glassmorphism (flou + bordure lumineuse + reflet) façon cockpit smart city.
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { useTheme } from '@/shared/theme-context';
@@ -65,6 +68,19 @@ export function HexFavorite({ item, size = 68, editMode = false, onPress, onLong
         delayLongPress={450}
         style={[s.wrap, { width: size, height: size }]}
       >
+        {/* Glassmorphism : flou + reflet supérieur, dans le même conteneur arrondi */}
+        <BlurView
+          intensity={theme.mode === 'dark' ? 34 : 50}
+          tint={theme.mode === 'dark' ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <LinearGradient
+          colors={theme.mode === 'dark'
+            ? ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0)']
+            : ['rgba(255,255,255,0.55)', 'rgba(255,255,255,0)']}
+          style={s.sheen}
+        />
+
         {haloColor && (
           <View style={[StyleSheet.absoluteFillObject, s.halo, { shadowColor: haloColor, borderColor: haloColor }]} />
         )}
@@ -95,7 +111,13 @@ function makeStyles(theme: ThemeTokens, size: number) {
   return StyleSheet.create({
     wrap: {
       alignItems: 'center', justifyContent: 'center', borderRadius: size * 0.32,
-      backgroundColor: theme.colors.surfaceSolid, borderWidth: 1.4, borderColor: theme.colors.borderCyan,
+      backgroundColor: theme.mode === 'dark' ? 'rgba(16,25,53,0.4)' : 'rgba(255,255,255,0.35)',
+      borderWidth: 1.4, borderColor: theme.colors.borderCyan, overflow: 'hidden',
+      ...theme.shadow.card,
+    },
+    sheen: {
+      position: 'absolute', top: 0, left: 0, right: 0, height: '55%',
+      borderTopLeftRadius: size * 0.32, borderTopRightRadius: size * 0.32,
     },
     halo: {
       borderRadius: size * 0.32, borderWidth: 1.6, shadowOpacity: 0.9, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },

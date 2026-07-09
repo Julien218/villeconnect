@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 // VilleConnect OS — Wrapper glisser-déposer pour un hexagone du Centre de Contrôle.
 // Actif uniquement en mode personnalisation (editMode) — sinon transparent, aucun coût perf.
+// Instrumentation [CC] : logs sur début/fin de geste (runOnJS, le geste tourne sur le thread UI).
 import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
@@ -15,6 +16,13 @@ interface Props {
   children: React.ReactNode;
 }
 
+function logDragStart() {
+  console.log('[CC] drag START');
+}
+function logDragEnd(x: number, y: number) {
+  console.log('[CC] drag END', { x: Math.round(x), y: Math.round(y) });
+}
+
 export function DraggableHex({ x, y, size, editMode, onDropAt, children }: Props) {
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -25,6 +33,7 @@ export function DraggableHex({ x, y, size, editMode, onDropAt, children }: Props
     .onStart(() => {
       scale.value = withSpring(1.14);
       runOnJS(Haptics.selectionAsync)();
+      runOnJS(logDragStart)();
     })
     .onUpdate(e => {
       tx.value = e.translationX;
@@ -33,6 +42,7 @@ export function DraggableHex({ x, y, size, editMode, onDropAt, children }: Props
     .onEnd(() => {
       const finalX = x + size / 2 + tx.value;
       const finalY = y + size / 2 + ty.value;
+      runOnJS(logDragEnd)(finalX, finalY);
       runOnJS(onDropAt)(finalX, finalY);
       tx.value = withSpring(0);
       ty.value = withSpring(0);
