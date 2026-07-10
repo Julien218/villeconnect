@@ -132,6 +132,9 @@ export const cityRouter = router({
         [city.id]
       ) as any[];
 
+      // Disclaimer supprimé pour les communes officiellement vérifiées
+      const showDisclaimer = city.status !== 'verified';
+
       return {
         links: (linkRows as any[]).map((l: any) => ({
           id: l.id,
@@ -141,7 +144,7 @@ export const cityRouter = router({
           verified_by_commune: !!l.verified_by_commune,
           verification_status: l.verification_status,
         })),
-        disclaimer: DISCLAIMER_TEXT,
+        disclaimer: showDisclaimer ? DISCLAIMER_TEXT : null,
         city_status: city.status,
       };
     }),
