@@ -36,7 +36,7 @@ export interface CityStatusBannerProps {
   status: CityStatus;
   citizenCount?: number;
   links?: ServiceLink[];
-  disclaimer?: string;
+  disclaimer?: string | null;
   onInvite?: () => void;
   /** Afficher les liens publics même non validés */
   showPublicLinks?: boolean;

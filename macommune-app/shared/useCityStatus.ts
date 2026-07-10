@@ -15,7 +15,8 @@ interface CityStatusState {
   status: CityStatus;
   citizenCount: number;
   links: ServiceLink[];
-  disclaimer: string;
+  /** null pour les communes verified (aucun disclaimer à afficher) */
+  disclaimer: string | null;
 }
 
 const DISCLAIMER_DEFAULT =
@@ -33,7 +34,7 @@ export function useCityStatus(postalCode?: string): CityStatusState & {
     status: 'unknown',
     citizenCount: 0,
     links: [],
-    disclaimer: DISCLAIMER_DEFAULT,
+    disclaimer: null,
   });
 
   const load = useCallback(async () => {
@@ -48,6 +49,13 @@ export function useCityStatus(postalCode?: string): CityStatusState & {
       const cityData = statusRes.data ?? {};
       const linksData = linksRes.data ?? {};
 
+      // disclaimer : null si verified, sinon string API ou fallback
+      const rawDisclaimer: string | null = linksData.disclaimer ?? null;
+      const resolvedDisclaimer: string | null =
+        cityData.status === 'verified'
+          ? null
+          : rawDisclaimer ?? DISCLAIMER_DEFAULT;
+
       setState({
         loading: false,
         error: null,
@@ -57,7 +65,7 @@ export function useCityStatus(postalCode?: string): CityStatusState & {
         status: (cityData.status as CityStatus) ?? 'unknown',
         citizenCount: cityData.citizen_count ?? 0,
         links: linksData.links ?? [],
-        disclaimer: linksData.disclaimer ?? DISCLAIMER_DEFAULT,
+        disclaimer: resolvedDisclaimer,
       });
     } catch (e: any) {
       setState(s => ({
