@@ -60,6 +60,7 @@ const modules = {
   carburant: { bg: 'rgba(249,115,22,0.14)', fg: '#F97316' },
   entraide: { bg: 'rgba(20,184,166,0.14)', fg: '#0D9488' },
   commune: { bg: 'rgba(99,102,241,0.14)', fg: '#6366F1' },
+  services: { bg: 'rgba(0,229,255,0.10)', fg: '#00BFA5' },
   plus: { bg: 'rgba(174,182,193,0.18)', fg: '#7C8798' },
 };
 

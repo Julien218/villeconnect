@@ -37,7 +37,7 @@ const MODULES = [
   { key: 'promotions',  icon: 'pricetag',            label: 'Promotions',  route: '/(tabs)/shops'  },
   { key: 'carburant',   icon: 'flame',               label: 'Carburant',   route: '/(tabs)/fuel'   },
   { key: 'entraide',    icon: 'people',              label: 'Entraide',    route: '/(tabs)/index'  },
-  { key: 'commune',     icon: 'location',            label: 'Ma commune',  route: '/(tabs)/index'  },
+  { key: 'services',    icon: 'grid-outline',        label: 'Services',    route: '/services'      },
   { key: 'plus',        icon: 'ellipsis-horizontal', label: 'Plus',        route: '/(tabs)/index'  },
 ] as const;
 
