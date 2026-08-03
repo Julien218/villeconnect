@@ -10,6 +10,7 @@ Ce lot transforme le Wallet en carte de fidélité CivicLoop et ajoute un flux s
 - réservation idempotente d’une récompense ;
 - débit transactionnel des crédits ;
 - jeton temporaire signé, valable dix minutes ;
+- QR Model 2 généré localement dans l’application, sans service tiers ;
 - annulation avec remboursement transactionnel ;
 - confirmation réservée au commerçant autorisé pour la boutique ;
 - historique paginé par curseur ;
@@ -29,7 +30,7 @@ Ajouter dans l’environnement Railway du service API :
 - `WALLET_QR_SECRET` : secret aléatoire dédié d’au moins 32 octets ;
 - `JWT_SECRET` : doit rester défini, mais ne doit servir de repli que temporairement.
 
-Le secret QR doit être différent entre staging et production. Ne jamais l’exposer dans le client Expo, les logs ou les réponses API.
+Le secret QR doit être différent entre staging et production. Ne jamais l’exposer dans le client Expo, les logs ou les réponses API autres que le pass temporaire destiné à l’utilisateur authentifié.
 
 ## Migration SQL
 
@@ -52,8 +53,10 @@ La migration est idempotente grâce à `CREATE TABLE IF NOT EXISTS`, mais son ap
 3. Réserver une récompense dont le coût est inférieur au solde.
 4. Vérifier qu’un seul débit apparaît dans `civic_transactions`.
 5. Répéter la même requête avec la même clé d’idempotence et confirmer qu’aucun second débit n’est créé.
-6. Annuler la réservation et vérifier le remboursement intégral.
-7. Réserver à nouveau et laisser expirer le pass ; vérifier le remboursement lors de l’annulation automatique côté client ou lors de la tentative de validation.
+6. Scanner le QR affiché avec deux appareils différents et vérifier que les deux récupèrent exactement le jeton `vc1...` attendu.
+7. Tester le QR en thème clair, sombre, sur web et sur mobile, avec une luminosité normale et réduite.
+8. Annuler la réservation et vérifier le remboursement intégral.
+9. Réserver à nouveau et laisser expirer le pass ; vérifier le remboursement lors de l’annulation automatique côté client ou lors de la tentative de validation.
 
 ### Commerçant
 
@@ -63,6 +66,7 @@ La migration est idempotente grâce à `CREATE TABLE IF NOT EXISTS`, mais son ap
 4. Rejouer la confirmation et vérifier l’idempotence.
 5. Essayer depuis une boutique non autorisée et vérifier le refus.
 6. Essayer avec un jeton modifié ou expiré et vérifier le refus.
+7. Vérifier que le scanner n’envoie jamais le jeton à une API QR tierce.
 
 ### Régression
 
@@ -81,22 +85,27 @@ La migration est idempotente grâce à `CREATE TABLE IF NOT EXISTS`, mais son ap
 - compte commerçant de test correctement lié ;
 - CORS staging limité aux domaines nécessaires avant ouverture publique ;
 - sauvegarde ou point de restauration MySQL disponible ;
+- QR décodé avec succès sur les navigateurs et appareils ciblés ;
 - validation fonctionnelle du pass temporaire sur web et mobile.
 
-## Limite connue du lot
+## Génération QR locale
 
-Le pass citoyen affiche actuellement un code sécurisé sélectionnable et une empreinte visuelle locale. L’intégration d’un composant QR réellement scannable doit être réalisée sans transmettre le jeton à un service QR tiers. La solution recommandée est un générateur QR local compatible React Native Web, audité et verrouillé dans le `package-lock.json`.
+Le composant `macommune-app/components/secure-qr.tsx` génère localement un QR Model 2 version 6, niveau de correction L, adapté au format ASCII des jetons CivicLoop. Il s’appuie uniquement sur `react-native-svg`, déjà présent et verrouillé dans le projet.
+
+Aucune valeur n’est envoyée à un service de génération externe. Le QR contient uniquement le jeton temporaire signé `vc1...` ; il ne contient ni nom, ni adresse e-mail, ni solde, ni identifiant utilisateur directement exploitable.
 
 ## Déploiement recommandé
 
 1. Déployer l’API sur Railway staging.
 2. Appliquer la migration 010 sur MySQL staging.
-3. Déployer l’application web en preview/staging.
-4. Exécuter la recette complète.
-5. Fusionner la Pull Request uniquement après validation.
-6. Déployer l’API production et appliquer la migration.
-7. Déployer le frontend production.
-8. Surveiller erreurs API, débits, annulations et confirmations pendant les premières heures.
+3. Configurer un `WALLET_QR_SECRET` dédié sur staging.
+4. Déployer l’application web en preview/staging.
+5. Exécuter la recette complète, dont le scan réel du QR.
+6. Fusionner la Pull Request uniquement après validation.
+7. Déployer l’API production et appliquer la migration.
+8. Configurer un autre `WALLET_QR_SECRET` en production.
+9. Déployer le frontend production.
+10. Surveiller erreurs API, débits, annulations et confirmations pendant les premières heures.
 
 ## Rollback
 
