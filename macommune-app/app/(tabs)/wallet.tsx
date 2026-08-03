@@ -1,6 +1,6 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { Alert, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { trpcQuery, trpcMutation, getOpenId } from '@/shared/api-client';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
@@ -8,20 +8,29 @@ import { GlassCard } from '@/components/glass-card';
 import { AuthGate } from '@/components/auth-gate';
 import { useAuth } from '@/shared/auth-context';
 import { LoyaltyCard } from '@/components/loyalty-card';
+import { ActiveRedemption, RewardPass } from '@/components/reward-pass';
 
 // Fallback utilisé UNIQUEMENT si l'API est injoignable.
 const MOCK_MISSIONS = [
   { id: '1', title: 'Bienvenue dans Ma Commune !', desc: 'Complétez votre profil citoyen', points: 50, emoji: '👋' },
 ];
 const MOCK_REWARDS = [
-  { id: '1', name: 'Café offert', shop: 'Partenaire local', cost: 30, emoji: '☕' },
+  { id: '1', name: 'Café offert', shop: 'Partenaire local', shopId: null, cost: 30, emoji: '☕' },
 ];
 
 function normalizeMission(m: any) {
-  return { id: String(m.id), title: m.title, desc: m.description, points: m.credits, emoji: m.icon || '🎯' };
+  return { id: String(m.id), title: m.title, desc: m.description, points: Number(m.credits || 0), emoji: m.icon || '🎯' };
 }
+
 function normalizeReward(r: any) {
-  return { id: String(r.id), name: r.title, shop: r.merchant_name || 'Partenaire VilleConnect', cost: r.cost_credits, emoji: r.icon || '🎁' };
+  return {
+    id: String(r.id),
+    name: r.title,
+    shop: r.merchant_name || 'Partenaire VilleConnect',
+    shopId: r.shop_id == null ? null : Number(r.shop_id),
+    cost: Number(r.cost_credits || 0),
+    emoji: r.icon || '🎁',
+  };
 }
 
 function WalletScreenContent() {
@@ -44,16 +53,17 @@ function WalletScreenContent() {
   const [missions, setMissions] = useState<any[]>([]);
   const [rewards, setRewards] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
+  const [activeRedemption, setActiveRedemption] = useState<ActiveRedemption | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [reservingId, setReservingId] = useState<string | null>(null);
+  const [cancellingRedemption, setCancellingRedemption] = useState(false);
   const [doneIds, setDoneIds] = useState<string[]>([]);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     const openId = await getOpenId();
 
-    // Connecté : wallet du compte réel (ctx.user.id), identique sur tous les appareils.
-    // Le code postal est celui du profil actif et n'est plus figé à Dour.
-    const [walletRes, missionsRes, rewardsRes, historyRes] = await Promise.all([
+    const [walletRes, missionsRes, rewardsRes, historyRes, redemptionsRes] = await Promise.all([
       isLoggedIn
         ? trpcQuery<any>('wallet.getMyWallet', {}, { authenticated: true })
         : trpcQuery<any>('wallet.getWallet', { openId, postalCode }),
@@ -62,6 +72,9 @@ function WalletScreenContent() {
       isLoggedIn
         ? trpcQuery<any[]>('wallet.getMyTransactions', { limit: 20 }, { authenticated: true })
         : trpcQuery<any[]>('wallet.getTransactions', { openId, limit: 20 }),
+      isLoggedIn
+        ? trpcQuery<ActiveRedemption[]>('wallet.getMyRedemptions', { limit: 20 }, { authenticated: true })
+        : Promise.resolve({ data: [] as ActiveRedemption[], error: null }),
     ]);
 
     let mock = false;
@@ -89,6 +102,9 @@ function WalletScreenContent() {
     if (historyRes.data) setHistory(historyRes.data);
     else { setHistory([]); mock = true; }
 
+    const pending = redemptionsRes.data?.find(item => item.status === 'pending') || null;
+    setActiveRedemption(pending);
+
     setIsMock(mock);
     setLoading(false);
     setRefreshing(false);
@@ -107,9 +123,71 @@ function WalletScreenContent() {
     if (!error) {
       setDoneIds(prev => [...prev, missionId]);
       await load(true);
+    } else {
+      Alert.alert('Mission non validée', String(error));
     }
     setCompletingId(null);
   };
+
+  const reserveReward = async (reward: any) => {
+    if (isMock || activeRedemption) return;
+    if (!user?.emailVerified) {
+      Alert.alert('Adresse e-mail à vérifier', 'Vérifiez votre adresse e-mail avant d’utiliser une récompense CivicLoop.');
+      return;
+    }
+    if (balance < reward.cost) {
+      Alert.alert('Solde insuffisant', `Cette récompense coûte ${reward.cost} CL. Votre solde actuel est de ${balance} CL.`);
+      return;
+    }
+
+    setReservingId(reward.id);
+    const idempotencyKey = `reward-${reward.id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    const { data, error } = await trpcMutation<ActiveRedemption>(
+      'wallet.reserveReward',
+      { rewardId: Number(reward.id), idempotencyKey },
+      { authenticated: true }
+    );
+
+    if (data) {
+      setActiveRedemption(data);
+      await load(true);
+    } else {
+      Alert.alert('Réservation impossible', String(error || 'La récompense n’a pas pu être réservée.'));
+    }
+    setReservingId(null);
+  };
+
+  const cancelActiveRedemption = useCallback(async (showConfirmation = true) => {
+    if (!activeRedemption || cancellingRedemption) return;
+
+    const execute = async () => {
+      setCancellingRedemption(true);
+      const { error } = await trpcMutation(
+        'wallet.cancelMyRedemption',
+        { redemptionId: activeRedemption.id },
+        { authenticated: true }
+      );
+      if (error && showConfirmation) {
+        Alert.alert('Annulation impossible', String(error));
+      }
+      await load(true);
+      setCancellingRedemption(false);
+    };
+
+    if (!showConfirmation) {
+      await execute();
+      return;
+    }
+
+    Alert.alert(
+      'Annuler cette récompense ?',
+      `${activeRedemption.creditsSpent} CL seront recrédités immédiatement sur votre carte.`,
+      [
+        { text: 'Conserver', style: 'cancel' },
+        { text: 'Annuler et rembourser', style: 'destructive', onPress: () => { void execute(); } },
+      ]
+    );
+  }, [activeRedemption, cancellingRedemption, load]);
 
   return (
     <ScrollView
@@ -136,6 +214,15 @@ function WalletScreenContent() {
           onOpenRewards={() => setTab('rewards')}
           onOpenHistory={() => setTab('history')}
         />
+
+        {activeRedemption && (
+          <RewardPass
+            redemption={activeRedemption}
+            cancelling={cancellingRedemption}
+            onCancel={() => { void cancelActiveRedemption(true); }}
+            onExpired={() => { void cancelActiveRedemption(false); }}
+          />
+        )}
 
         {/* Tabs métier conservés sous la carte */}
         <View style={s.tabs}>
@@ -187,21 +274,37 @@ function WalletScreenContent() {
         {tab === 'rewards' && (
           rewards.length === 0
             ? <Text style={s.emptyText}>Aucune récompense disponible dans votre ville.</Text>
-            : rewards.map(r => (
-                <GlassCard key={r.id} style={s.card as any}>
-                  <Text style={{ fontSize: 28 }}>{r.emoji}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.cardTitle}>{r.name}</Text>
-                    <Text style={s.cardDesc}>{r.shop}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                    <Text style={[s.cardPoints, { color: theme.colors.cyan }]}>{r.cost} CL</Text>
-                    <TouchableOpacity style={[s.doBtn, s.doBtnDisabled]} disabled>
-                      <Text style={s.doBtnText}>Bientôt</Text>
-                    </TouchableOpacity>
-                  </View>
-                </GlassCard>
-              ))
+            : rewards.map(r => {
+                const insufficient = balance < r.cost;
+                const disabled = isMock || Boolean(activeRedemption) || reservingId === r.id || insufficient;
+                const buttonLabel = activeRedemption
+                  ? 'Pass actif'
+                  : insufficient
+                    ? 'Solde insuffisant'
+                    : reservingId === r.id
+                      ? 'Réservation…'
+                      : 'Utiliser';
+                return (
+                  <GlassCard key={r.id} style={s.card as any}>
+                    <Text style={{ fontSize: 28 }}>{r.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.cardTitle}>{r.name}</Text>
+                      <Text style={s.cardDesc}>{r.shop}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                      <Text style={[s.cardPoints, { color: theme.colors.cyan }]}>{r.cost} CL</Text>
+                      <TouchableOpacity
+                        style={[s.doBtn, disabled && s.doBtnDisabled]}
+                        disabled={disabled}
+                        onPress={() => reserveReward(r)}
+                        accessibilityRole="button"
+                      >
+                        <Text style={s.doBtnText}>{buttonLabel}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </GlassCard>
+                );
+              })
         )}
 
         {/* HISTORY */}
@@ -248,9 +351,9 @@ function makeStyles(theme: ThemeTokens) {
     cardPoints:    { color: theme.colors.warning, fontSize: 14, fontWeight: '800' },
     doneBadge:     { backgroundColor: theme.colors.badges.nouveau.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
     doneText:      { color: theme.colors.success, fontSize: 11, fontWeight: '700' },
-    doBtn:         { backgroundColor: theme.colors.cyan, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-    doBtnDisabled: { backgroundColor: theme.colors.textMuted },
-    doBtnText:     { color: theme.mode === 'dark' ? '#04222b' : '#fff', fontSize: 12, fontWeight: '800' },
+    doBtn:         { backgroundColor: theme.colors.cyan, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
+    doBtnDisabled: { backgroundColor: theme.colors.textMuted, opacity: 0.65 },
+    doBtnText:     { color: theme.mode === 'dark' ? '#04222b' : '#fff', fontSize: 11, fontWeight: '800' },
     historyIcon:   { width: 36, height: 36, borderRadius: 10, backgroundColor: theme.colors.cyanSoft, alignItems: 'center', justifyContent: 'center' },
     emptyText:     { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center', marginTop: 30, marginHorizontal: 24 },
   });
