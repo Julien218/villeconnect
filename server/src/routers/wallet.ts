@@ -5,31 +5,65 @@ import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { db } from '../db';
 import { getOrCreateUserId } from '../lib/users';
 
+/**
+ * Crée le wallet et son bonus de bienvenue de façon atomique et idempotente.
+ *
+ * Deux requêtes concurrentes (double rendu React, refresh rapide, deux appareils)
+ * ne doivent jamais créer deux bonus ni renvoyer une erreur de clé dupliquée.
+ * La contrainte UNIQUE sur civic_wallets.user_id reste la source de vérité :
+ * INSERT IGNORE indique si cette transaction a réellement créé le wallet.
+ */
+async function getOrCreateWalletWithWelcomeBonus(userId: number) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [insertResult] = await conn.execute(
+      `INSERT IGNORE INTO civic_wallets
+         (user_id, available_balance, total_earned, trust_score)
+       VALUES (?, 50, 50, 42)`,
+      [userId]
+    ) as any[];
+
+    const created = Number((insertResult as any).affectedRows || 0) === 1;
+
+    if (created) {
+      await conn.execute(
+        `INSERT INTO civic_transactions (user_id, type, amount, label)
+         VALUES (?, 'bonus', 50, '👋 Bonus bienvenue — Inscription DourConnect')`,
+        [userId]
+      );
+    }
+
+    const [rows] = await conn.execute(
+      'SELECT * FROM civic_wallets WHERE user_id = ? FOR UPDATE',
+      [userId]
+    ) as any[];
+    const wallet = (rows as any[])[0];
+
+    if (!wallet) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Impossible d’initialiser le portefeuille CivicLoop',
+      });
+    }
+
+    await conn.commit();
+    return wallet;
+  } catch (error) {
+    try { await conn.rollback(); } catch { /* transaction déjà terminée */ }
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
 export const walletRouter = router({
   getWallet: publicProcedure
     .input(z.object({ openId: z.string(), postalCode: z.string().optional() }))
     .query(async ({ input }) => {
       const { id: userId } = await getOrCreateUserId(input.openId, input.postalCode);
-      const [rows] = await db.execute(
-        'SELECT * FROM civic_wallets WHERE user_id = ?',
-        [userId]
-      ) as any[];
-      const arr = rows as any[];
-      if (arr.length > 0) return arr[0];
-      await db.execute(
-        `INSERT INTO civic_wallets (user_id, available_balance, total_earned, trust_score)
-         VALUES (?, 50, 50, 42)`,
-        [userId]
-      );
-      await db.execute(
-        `INSERT INTO civic_transactions (user_id, type, amount, label)
-         VALUES (?, 'bonus', 50, '👋 Bonus bienvenue — Inscription DourConnect')`,
-        [userId]
-      );
-      const [created] = await db.execute(
-        'SELECT * FROM civic_wallets WHERE user_id = ?', [userId]
-      ) as any[];
-      return (created as any[])[0];
+      return getOrCreateWalletWithWelcomeBonus(userId);
     }),
 
   getTransactions: publicProcedure
@@ -53,28 +87,7 @@ export const walletRouter = router({
   // réservés au mode invité (jamais utilisés côté client une fois loggé).
   getMyWallet: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user!.id;
-    const [rows] = await db.execute(
-      'SELECT * FROM civic_wallets WHERE user_id = ?',
-      [userId]
-    ) as any[];
-    const arr = rows as any[];
-    if (arr.length > 0) return arr[0];
-    // Un compte réel peut ne jamais avoir eu de wallet (ex: créé sans jamais
-    // avoir joué en invité) — même bonus de bienvenue que le flux public.
-    await db.execute(
-      `INSERT INTO civic_wallets (user_id, available_balance, total_earned, trust_score)
-       VALUES (?, 50, 50, 42)`,
-      [userId]
-    );
-    await db.execute(
-      `INSERT INTO civic_transactions (user_id, type, amount, label)
-       VALUES (?, 'bonus', 50, '👋 Bonus bienvenue — Inscription DourConnect')`,
-      [userId]
-    );
-    const [created] = await db.execute(
-      'SELECT * FROM civic_wallets WHERE user_id = ?', [userId]
-    ) as any[];
-    return (created as any[])[0];
+    return getOrCreateWalletWithWelcomeBonus(userId);
   }),
 
   getMyTransactions: protectedProcedure
