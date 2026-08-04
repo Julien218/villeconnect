@@ -83,6 +83,37 @@ export const commerceRouter = router({
       return rows;
     }),
 
+  upsertFromBackoffice: adminProcedure.input(commerceInput.extend({ id: z.number().int().positive().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const key = dedupeKey(input);
+      const values = [input.name, input.legalName || null, input.category, input.description || null,
+        input.address, input.postalCode, input.city, input.phone || null, input.email || null,
+        input.website || null, input.imageUrl || null];
+      if (input.id) {
+        try {
+          await db.execute(
+            `UPDATE commerce_catalog SET dedupe_key = ?, name = ?, legal_name = ?, category = ?, description = ?,
+             address = ?, postal_code = ?, city = ?, phone = ?, email = ?, website = ?, image_url = ?, source = 'backoffice'
+             WHERE id = ?`,
+            [key, ...values, input.id]
+          );
+        } catch (error: any) {
+          if (error?.code === 'ER_DUP_ENTRY') throw new TRPCError({ code: 'CONFLICT', message: 'Un commerce équivalent existe déjà' });
+          throw error;
+        }
+        return { success: true, id: input.id, created: false };
+      }
+      const [existing] = await db.execute('SELECT id FROM commerce_catalog WHERE dedupe_key = ?', [key]) as any[];
+      if ((existing as any[])[0]) return { success: true, id: (existing as any[])[0].id, created: false, already: true };
+      const [result] = await db.execute(
+        `INSERT INTO commerce_catalog
+          (dedupe_key, name, legal_name, category, description, address, postal_code, city, phone, email, website, image_url, source, submitted_by_user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'backoffice', ?)`,
+        [key, ...values, ctx.user!.id]
+      ) as any[];
+      return { success: true, id: (result as any).insertId, created: true };
+    }),
+
   review: adminProcedure
     .input(z.object({ id: z.number().int().positive(), validationStatus: z.enum(['approved','rejected']), publish: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
