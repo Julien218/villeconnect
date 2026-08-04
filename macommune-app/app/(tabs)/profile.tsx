@@ -91,6 +91,13 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </GlassCard>
 
+      {['admin', 'super_admin'].includes(user.role) ? (
+        <TouchableOpacity onPress={() => router.push('/admin/commerces')} style={s.adminBtn}>
+          <Text style={s.adminTitle}>Administration des commerces</Text>
+          <Text style={s.hint}>Valider, publier ou rejeter les fiches issues de la landing et du back-office.</Text>
+        </TouchableOpacity>
+      ) : null}
+
       {/* ── Apparence ── */}
       <GlassCard style={[s.card, { marginTop: 14 }]}>
         <Text style={s.sectionTitle}>Apparence</Text>
@@ -127,6 +134,8 @@ function makeStyles(theme: ThemeTokens) {
     message: { color: theme.colors.cyan, fontSize: 13, marginBottom: 8, textAlign: 'center' },
     primaryBtn: { borderRadius: theme.radius.pill, paddingVertical: 14, alignItems: 'center' },
     primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+    adminBtn: { width: '100%', maxWidth: 420, marginTop: 14, padding: 18, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.borderCyan, backgroundColor: theme.colors.surface },
+    adminTitle: { color: theme.colors.cyan, fontSize: 15, fontWeight: '800' },
     logoutBtn: { alignItems: 'center', marginTop: 20, paddingVertical: 8 },
     logoutText: { color: theme.colors.danger, fontSize: 13.5, fontWeight: '700' },
   });
