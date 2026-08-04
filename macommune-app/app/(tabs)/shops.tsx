@@ -26,8 +26,8 @@ function normalizeApiShop(sh: any) {
     emoji: CAT_EMOJI[sh.category] || '🏪',
     address: sh.address || sh.city || '',
     rating: Number(sh.rating) || 0,
-    hasPromotion: !!sh.hasPromotion,
-    promotionText: sh.promotionText,
+    hasPromotion: false,
+    promotionText: undefined,
   };
 }
 
@@ -38,19 +38,13 @@ export default function ShopsScreen() {
   const [shops, setShops]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isMock, setIsMock]   = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
-    const { data, error } = await trpcQuery<any[]>('shops.list', { postalCode: '7370', limit: 50 });
-    if (data && data.length > 0) {
-      setShops(data.map(normalizeApiShop));
-      setIsMock(false);
-    } else {
-      setShops(MOCK_SHOPS);
-      setIsMock(true);
-      if (error) console.warn('[shops] API indisponible, fallback mock:', error);
-    }
+    const { data, error } = await trpcQuery<any[]>('commerce.listPublished', { postalCode: '7370', limit: 50 });
+    setShops((data || []).map(normalizeApiShop));
+    setLoadError(error);
     setLoading(false);
     setRefreshing(false);
   };
@@ -80,7 +74,7 @@ export default function ShopsScreen() {
       </View>
 
       <Text style={s.count}>{filtered.length} commerces · Dour 7370</Text>
-      {isMock && <Text style={s.mockBadge}>⚠️ Données hors-ligne (démo)</Text>}
+      {loadError && <Text style={s.errorBadge}>Catalogue momentanément indisponible. Tirez pour réessayer.</Text>}
 
       {loading && <ActivityIndicator color={theme.colors.cyan} style={{ marginTop: 20 }} />}
 
@@ -112,7 +106,7 @@ function makeStyles(theme: ThemeTokens) {
     searchWrap:  { margin: theme.spacing.md, backgroundColor: theme.colors.surfaceSolid, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10 },
     searchInput: { flex: 1, color: theme.colors.textPrimary, fontSize: 14, paddingVertical: 13 },
     count:       { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600', marginHorizontal: 16, marginBottom: 4 },
-    mockBadge:   { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
+    errorBadge:  { color: theme.colors.warning, fontSize: 11, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
     card:        { marginHorizontal: 16, marginBottom: 10, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' },
     shopIcon:    { width: 50, height: 50, borderRadius: theme.radius.md, backgroundColor: theme.colors.cyanSoft, alignItems: 'center', justifyContent: 'center' },
     shopName:    { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
