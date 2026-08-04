@@ -36,6 +36,7 @@ function ThemedStack() {
         <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
         <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         <Stack.Screen name="services" options={{ headerShown: false }} />
+        <Stack.Screen name="admin/commerces" options={{ title: "Commerces · Modération" }} />
         <Stack.Screen name="+not-found" options={{ title: 'Page introuvable' }} />
       </Stack>
     </>
