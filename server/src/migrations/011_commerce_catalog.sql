@@ -1,4 +1,5 @@
 -- Catalogue commerces canonique partagé par landing, back-office et application.
+-- Premières itérations sans FK pour éviter les incompatibilités.
 CREATE TABLE IF NOT EXISTS commerce_catalog (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   dedupe_key CHAR(64) NOT NULL,
@@ -28,33 +29,7 @@ CREATE TABLE IF NOT EXISTS commerce_catalog (
   KEY idx_commerce_catalog_review (validation_status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add foreign keys if users table exists (idempotent approach)
-SET @fk_exists = (
-  SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
-  WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'fk_commerce_submitted_by'
-);
-SET @statement = IF(@fk_exists = 0,
-  'ALTER TABLE commerce_catalog ADD CONSTRAINT fk_commerce_submitted_by FOREIGN KEY (submitted_by_user_id) REFERENCES users(id) ON DELETE SET NULL',
-  'SELECT 1'
-);
-PREPARE stmt FROM @statement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @fk_exists_2 = (
-  SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
-  WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = 'fk_commerce_validated_by'
-);
-SET @statement_2 = IF(@fk_exists_2 = 0,
-  'ALTER TABLE commerce_catalog ADD CONSTRAINT fk_commerce_validated_by FOREIGN KEY (validated_by_user_id) REFERENCES users(id) ON DELETE SET NULL',
-  'SELECT 1'
-);
-PREPARE stmt2 FROM @statement_2;
-EXECUTE stmt2;
-DEALLOCATE PREPARE stmt2;
-
--- Reprise idempotente des commerces historiques. Leur publication reste soumise
--- à validation : aucune donnée ancienne n'est rendue publique automatiquement.
+-- Reprise idempotente des commerces historiques.
 INSERT INTO commerce_catalog (
   dedupe_key, name, category, description, address, postal_code, city,
   phone, email, website, image_url, source, validation_status, publication_status
@@ -67,4 +42,3 @@ SELECT
 FROM shops
 WHERE name IS NOT NULL AND postalCode IS NOT NULL AND city IS NOT NULL
 ON DUPLICATE KEY UPDATE updated_at = updated_at;
-
