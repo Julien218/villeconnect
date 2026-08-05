@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   mobile-web:
-    name: Expo — TypeScript et export web
+    name: Expo — TypeScript, sécurité et export web
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -34,6 +34,9 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      - name: Auditer les dépendances de production
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Vérifier TypeScript
         run: npx tsc --noEmit
 
@@ -41,7 +44,7 @@ jobs:
         run: npm run build:web
 
   backend:
-    name: API tRPC — Build et tests
+    name: API tRPC — Build, tests et sécurité
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -59,6 +62,9 @@ jobs:
 
       - name: Installer les dépendances
         run: npm ci
+
+      - name: Auditer les dépendances de production
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Compiler et tester le backend
         run: npm run validate
