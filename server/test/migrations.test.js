@@ -23,3 +23,13 @@ test('la migration commerce impose modération et déduplication', () => {
   assert.match(sql, /publication_status ENUM\('draft', 'published', 'suspended', 'archived'\)/i);
   assert.match(sql, /ON DUPLICATE KEY UPDATE/i);
 });
+
+test('la migration carburant exige une source et n’insère aucun prix fictif', () => {
+  const sql = readMigration('012_fuel_stations.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS fuel_stations/i);
+  assert.match(sql, /source_name VARCHAR\(120\) NOT NULL/i);
+  assert.match(sql, /source_updated_at DATETIME NOT NULL/i);
+  assert.match(sql, /UNIQUE KEY uq_fuel_external_source/i);
+  assert.doesNotMatch(sql, /INSERT\s+INTO\s+fuel_stations/i);
+  assert.doesNotMatch(sql, /(Colruyt|Carrefour|Statbel)/i);
+});
