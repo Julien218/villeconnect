@@ -33,3 +33,19 @@ test('la migration carburant exige une source et n’insère aucun prix fictif',
   assert.doesNotMatch(sql, /INSERT\s+INTO\s+fuel_stations/i);
   assert.doesNotMatch(sql, /(Colruyt|Carrefour|Statbel)/i);
 });
+
+test('la migration RGPD trace les demandes sans stocker de mot de passe', () => {
+  const sql = readMigration('013_privacy_requests.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS privacy_requests/i);
+  assert.match(sql, /request_type ENUM\('export', 'erasure'\)/i);
+  assert.match(sql, /created_ip_hash CHAR\(64\)/i);
+  assert.doesNotMatch(sql, /password/i);
+});
+
+test('la migration liste d’attente conserve une preuve de consentement versionnée', () => {
+  const sql = readMigration('014_waitlist_consents.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS waitlist_consents/i);
+  assert.match(sql, /policy_version VARCHAR\(40\) NOT NULL/i);
+  assert.match(sql, /UNIQUE KEY uq_waitlist_consent_version/i);
+  assert.match(sql, /ip_hash CHAR\(64\)/i);
+});
