@@ -12,6 +12,7 @@ import { fuelRouter } from './routers/fuel';
 import { walletRouter } from './routers/wallet';
 import { alertsRouter } from './routers/alerts';
 import { authRouter } from './routers/auth';
+import { privacyRouter } from './routers/privacy';
 import { waitlistRouter } from './routers/waitlist';
 import { cityRouter } from './routers/city';
 import { db } from './db';
@@ -25,6 +26,7 @@ export const appRouter = router({
   wallet: walletRouter,
   alerts: alertsRouter,
   auth: authRouter,
+  privacy: privacyRouter,
   waitlist: waitlistRouter,
   city: cityRouter,
 });
@@ -34,7 +36,7 @@ export type AppRouter = typeof appRouter;
 // ─── Express ──────────────────────────────────────────────
 const app = express();
 const PORT = process.env.PORT || 3000;
-const VERSION = '2.2.0';
+const VERSION = '2.3.0';
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -135,4 +137,5 @@ app.listen(PORT, () => {
   console.log(`🏙️  VilleConnect API ${VERSION} running on port ${PORT}`);
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
   console.log(`🏪  Commerce catalog: /api/trpc/commerce.*`);
+  console.log(`🔐  Privacy rights: /api/trpc/privacy.*`);
 });
