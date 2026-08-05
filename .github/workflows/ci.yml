@@ -27,7 +27,7 @@ jobs:
       - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.4
           cache: npm
           cache-dependency-path: macommune-app/package-lock.json
 
@@ -59,7 +59,7 @@ jobs:
       - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.4
           cache: npm
           cache-dependency-path: server/package-lock.json
 
