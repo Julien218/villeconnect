@@ -1,0 +1,52 @@
+name: Refresh mobile lockfile
+
+on:
+  push:
+    branches:
+      - agent/villeconnect-product-finish
+    paths:
+      - macommune-app/package.json
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: macommune-app
+    steps:
+      - name: Récupérer la branche
+        uses: actions/checkout@v6
+        with:
+          ref: agent/villeconnect-product-finish
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.4
+          cache: npm
+          cache-dependency-path: macommune-app/package-lock.json
+
+      - name: Régénérer le lockfile sans scripts
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Appliquer les correctifs d’audit compatibles
+        run: npm audit fix --package-lock-only --ignore-scripts
+
+      - name: Vérifier les vulnérabilités élevées
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Versionner le lockfile
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "Lockfile déjà à jour"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "fix(deps): ajouter le preset Babel Expo"
+          git push origin HEAD:agent/villeconnect-product-finish
