@@ -1,28 +1,21 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-// VilleConnect OS — Écran Services publics communaux
-// Route : /services (stack screen, pas d'onglet)
-// Source de données : city.getServiceLinks (tRPC, route publique — fonctionne invité + connecté)
-// Ne touche pas : auth / wallet / thème / DB / flow token commune
-
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-  Alert,
   ActivityIndicator,
-  Animated,
+  Alert,
+  Linking,
   RefreshControl,
-  Platform,
+  ScrollView,
   StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MotiView } from 'moti';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/shared/auth-context';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
 import { getBranding } from '@/shared/branding';
@@ -30,13 +23,6 @@ import { useCityStatus } from '@/shared/useCityStatus';
 import { groupServiceLinks, SERVICE_TYPE_ICON } from '@/shared/services-types';
 import type { ServiceLink } from '@/components/CityStatusBanner';
 
-// ─── Config branding (postal code Dour par défaut) ──────────
-// L'écran utilise le code postal du branding actif.
-// À remplacer par user.postalCode quand l'auth sera propagée ici.
-const brand = getBranding('7370');
-const POSTAL_CODE = brand.postalCode ?? '7370';
-
-// ─── Statuts affichant un message "commune non connectée" ───
 const UNCONNECTED_STATUSES = new Set([
   'unknown',
   'pending_validation',
@@ -44,12 +30,23 @@ const UNCONNECTED_STATUSES = new Set([
   'interested',
 ]);
 
-// ─── Composant principal ─────────────────────────────────────
+function isSafePublicUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || (url.protocol === 'http:' && url.hostname === 'localhost');
+  } catch {
+    return false;
+  }
+}
+
 export default function ServicesScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { theme } = useTheme();
   const s = makeStyles(theme);
 
+  const postalCode = user?.postalCode?.trim() || '7370';
+  const brand = useMemo(() => getBranding(postalCode), [postalCode]);
   const {
     loading,
     error,
@@ -59,521 +56,334 @@ export default function ServicesScreen() {
     disclaimer,
     refresh,
     registerInterest,
-  } = useCityStatus(POSTAL_CODE);
+  } = useCityStatus(postalCode);
 
-  const groups = groupServiceLinks(links);
+  const groups = useMemo(() => groupServiceLinks(links), [links]);
   const isVerified = status === 'verified';
   const isUnconnected = UNCONNECTED_STATUSES.has(status);
   const hasLinks = links.length > 0;
 
-  // ─── Ouvrir un lien externe ───────────────────────────────
-  const openLink = useCallback((url: string, label: string) => {
-    if (!url || url.trim() === '') return;
-    Linking.openURL(url).catch(() => {
+  const openLink = useCallback(async (url: string, label: string) => {
+    if (!isSafePublicUrl(url)) {
+      Alert.alert('Lien non valide', `Le lien du service « ${label} » n’est pas utilisable.`);
+      return;
+    }
+
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (!supported) throw new Error('unsupported');
+      await Linking.openURL(url);
+    } catch {
       Alert.alert(
         'Lien indisponible',
-        `Le service "${label}" est momentanément inaccessible.\nVeuillez réessayer ultérieurement.`,
-        [{ text: 'OK', style: 'default' }]
+        `Le service « ${label} » est momentanément inaccessible. Réessayez ultérieurement.`
       );
-    });
-  }, []);
-
-  // ─── Animation fade-in ───────────────────────────────────
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!loading) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 320,
-        useNativeDriver: true,
-      }).start();
     }
-  }, [loading]);
+  }, []);
 
   return (
     <View style={s.screen}>
       <StatusBar barStyle={theme.statusBarStyle as any} />
-
-      {/* ── Header ─────────────────────────────────────────── */}
       <LinearGradient
         colors={[theme.colors.navyGrad1, theme.colors.navyGrad2]}
         style={s.header}
       >
-        <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={s.circleButton}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Revenir à l’écran précédent"
+        >
           <Ionicons name="chevron-back" size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-        <View style={s.headerTitle}>
-          <Text style={s.headerCityName}>{cityName ?? brand.appName}</Text>
-          <Text style={s.headerSubtitle}>Services publics</Text>
+        <View style={s.headerCopy}>
+          <Text style={s.eyebrow}>SERVICES PUBLICS</Text>
+          <Text style={s.headerTitle}>{cityName || brand.cityName}</Text>
+          <Text style={s.headerSubtitle}>Code postal {postalCode}</Text>
         </View>
-        <TouchableOpacity style={s.refreshBtn} onPress={refresh} activeOpacity={0.7}>
-          <Ionicons name="refresh-outline" size={20} color={theme.colors.textMuted} />
+        <TouchableOpacity
+          style={s.circleButton}
+          onPress={refresh}
+          accessibilityRole="button"
+          accessibilityLabel="Actualiser les services"
+        >
+          <Ionicons name="refresh-outline" size={20} color={theme.colors.cyan} />
         </TouchableOpacity>
       </LinearGradient>
 
-      {/* ── Contenu ────────────────────────────────────────── */}
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={loading}
+            refreshing={loading && hasLinks}
             onRefresh={refresh}
             tintColor={theme.colors.cyan}
-            colors={[theme.colors.cyan]}
           />
         }
       >
-
-        {/* État : chargement initial */}
-        {loading && links.length === 0 && (
-          <View style={s.center}>
+        {loading && !hasLinks && (
+          <View style={s.stateBox}>
             <ActivityIndicator size="large" color={theme.colors.cyan} />
-            <Text style={s.loadingText}>Chargement des services…</Text>
+            <Text style={s.stateText}>Chargement des services officiels…</Text>
           </View>
         )}
 
-        {/* État : erreur réseau */}
         {!loading && error && (
-          <MotiView
-            from={{ opacity: 0, translateY: 12 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            style={s.errorBox}
-          >
-            <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
-            <Text style={s.errorTitle}>Services indisponibles</Text>
-            <Text style={s.errorSub}>
-              Impossible de charger les services de{' '}
-              {cityName ?? 'votre commune'} pour le moment.
+          <View style={s.stateCard}>
+            <View style={s.stateIcon}>
+              <Ionicons name="cloud-offline-outline" size={30} color={theme.colors.warning} />
+            </View>
+            <Text style={s.stateTitle}>Services indisponibles</Text>
+            <Text style={s.stateText}>
+              Impossible de charger les services de {cityName || brand.cityName}.
             </Text>
-            <TouchableOpacity style={s.retryBtn} onPress={refresh} activeOpacity={0.8}>
-              <Ionicons name="refresh" size={16} color="#fff" />
-              <Text style={s.retryText}>Réessayer</Text>
+            <TouchableOpacity style={s.primaryButton} onPress={refresh} accessibilityRole="button">
+              <Ionicons name="refresh" size={16} color={theme.colors.bgDeep} />
+              <Text style={s.primaryButtonText}>Réessayer</Text>
             </TouchableOpacity>
-          </MotiView>
+          </View>
         )}
 
-        {/* État : commune non connectée (aucun lien) */}
         {!loading && !error && isUnconnected && !hasLinks && (
-          <MotiView
-            from={{ opacity: 0, translateY: 12 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            style={s.emptyBox}
-          >
-            <Ionicons name="time-outline" size={44} color="#F59E0B" style={{ marginBottom: 16 }} />
-            <Text style={s.emptyTitle}>Commune en cours de validation</Text>
-            <Text style={s.emptySub}>
-              {cityName ?? 'Votre commune'} n'est pas encore partenaire de VilleConnect OS.
-              {'\n\n'}
-              Invitez-la pour accélérer le processus : dès que suffisamment de citoyens
-              seront inscrits, nous la contacterons officiellement.
+          <View style={s.stateCard}>
+            <View style={s.stateIcon}>
+              <Ionicons name="time-outline" size={30} color={theme.colors.warning} />
+            </View>
+            <Text style={s.stateTitle}>Commune en cours de validation</Text>
+            <Text style={s.stateText}>
+              {cityName || brand.cityName} n’est pas encore partenaire officiel de VilleConnect OS.
+              Aucun lien n’est présenté comme officiel avant validation.
             </Text>
             <TouchableOpacity
-              style={s.inviteBtn}
+              style={s.primaryButton}
               onPress={registerInterest}
-              activeOpacity={0.85}
+              accessibilityRole="button"
             >
-              <Ionicons name="megaphone-outline" size={16} color="#fff" />
-              <Text style={s.inviteText}>Inviter ma commune</Text>
+              <Ionicons name="megaphone-outline" size={16} color={theme.colors.bgDeep} />
+              <Text style={s.primaryButtonText}>Inviter ma commune</Text>
             </TouchableOpacity>
-          </MotiView>
+          </View>
         )}
 
-        {/* État : liens disponibles */}
         {!loading && !error && hasLinks && (
-          <Animated.View style={{ opacity: fadeAnim }}>
-
-            {/* Disclaimer (uniquement si non-verified) */}
-            {disclaimer && (
-              <MotiView
-                from={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={s.disclaimerBox}
-              >
-                <Ionicons
-                  name="information-circle-outline"
-                  size={16}
-                  color="#F59E0B"
-                  style={{ marginTop: 1 }}
-                />
+          <>
+            {disclaimer ? (
+              <View style={s.disclaimer}>
+                <Ionicons name="information-circle-outline" size={18} color={theme.colors.warning} />
                 <Text style={s.disclaimerText}>{disclaimer}</Text>
-              </MotiView>
-            )}
+              </View>
+            ) : null}
 
-            {/* Badge verified (aucun disclaimer, aucun banner) */}
-            {isVerified && (
-              <View style={s.verifiedBadgeRow}>
-                <Ionicons name="checkmark-circle" size={15} color="#00BFA5" />
-                <Text style={s.verifiedBadgeText}>
-                  Services officiels validés par {cityName ?? 'la commune'}
+            {isVerified ? (
+              <View style={s.verifiedBanner}>
+                <Ionicons name="shield-checkmark" size={18} color={theme.colors.success} />
+                <Text style={s.verifiedText}>
+                  Services validés par {cityName || 'la commune'}
                 </Text>
               </View>
-            )}
+            ) : null}
 
-            {/* Groupes de services */}
-            {groups.map((group, gi) => (
-              <MotiView
-                key={group.key}
-                from={{ opacity: 0, translateY: 10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 280, delay: gi * 60 }}
-                style={s.group}
-              >
-                {/* Titre du groupe */}
+            {groups.map(group => (
+              <View key={group.key} style={s.group}>
                 <View style={s.groupHeader}>
-                  <Ionicons name={group.icon as any} size={16} color={theme.colors.teal} />
-                  <Text style={s.groupLabel}>{group.label.toUpperCase()}</Text>
+                  <View style={s.groupIcon}>
+                    <Ionicons name={group.icon as any} size={18} color={theme.colors.cyan} />
+                  </View>
+                  <Text style={s.groupTitle}>{group.label}</Text>
+                  <Text style={s.groupCount}>{group.links.length}</Text>
                 </View>
 
-                {/* Cartes liens */}
-                <View style={s.groupCards}>
-                  {group.links.map((link, li) => (
-                    <ServiceCard
+                <View style={s.linksCard}>
+                  {group.links.map((link, index) => (
+                    <ServiceRow
                       key={link.id}
                       link={link}
                       theme={theme}
-                      isLast={li === group.links.length - 1}
+                      last={index === group.links.length - 1}
                       onPress={() => openLink(link.url, link.label)}
                     />
                   ))}
                 </View>
-              </MotiView>
+              </View>
             ))}
 
-            {/* Note de bas de page */}
             <Text style={s.footerNote}>
-              {isVerified
-                ? `${links.length} service${links.length > 1 ? 's' : ''} officiel${links.length > 1 ? 's' : ''} — ${cityName ?? 'commune'}`
-                : `${links.length} service${links.length > 1 ? 's' : ''} public${links.length > 1 ? 's' : ''} disponible${links.length > 1 ? 's' : ''}`
-              }
+              {links.length} service{links.length > 1 ? 's' : ''} affiché{links.length > 1 ? 's' : ''} · dernière vérification à l’ouverture
             </Text>
-          </Animated.View>
+          </>
         )}
       </ScrollView>
     </View>
   );
 }
 
-// ─── Composant ServiceCard ───────────────────────────────────
-interface ServiceCardProps {
+function ServiceRow({
+  link,
+  theme,
+  last,
+  onPress,
+}: {
   link: ServiceLink;
   theme: ThemeTokens;
-  isLast: boolean;
+  last: boolean;
   onPress: () => void;
-}
-
-function ServiceCard({ link, theme, isLast, onPress }: ServiceCardProps) {
+}) {
   const s = makeStyles(theme);
-  const icon = SERVICE_TYPE_ICON[link.service_type] ?? 'link-outline';
-  const isDisabled = !link.url || link.url.trim() === '';
+  const safe = isSafePublicUrl(link.url || '');
+  const icon = SERVICE_TYPE_ICON[link.service_type] || 'link-outline';
 
   return (
     <TouchableOpacity
-      style={[
-        s.card,
-        !isLast && s.cardBorder,
-        isDisabled && s.cardDisabled,
-      ]}
+      style={[s.serviceRow, !last && s.serviceBorder, !safe && s.disabled]}
       onPress={onPress}
-      activeOpacity={isDisabled ? 1 : 0.7}
-      disabled={isDisabled}
-      accessible
-      accessibilityRole="button"
+      disabled={!safe}
+      accessibilityRole="link"
       accessibilityLabel={link.label}
-      accessibilityHint={isDisabled ? 'Service non disponible' : 'Ouvre dans le navigateur'}
+      accessibilityHint={safe ? 'Ouvre le site du service' : 'Lien indisponible'}
     >
-      {/* Icône */}
-      <View style={[s.cardIcon, isDisabled && { opacity: 0.35 }]}>
+      <View style={s.serviceIcon}>
         <Ionicons
           name={icon as any}
           size={20}
           color={link.verified_by_commune ? theme.colors.cyan : theme.colors.teal}
         />
       </View>
-
-      {/* Texte */}
-      <View style={s.cardText}>
-        <Text
-          style={[s.cardLabel, isDisabled && { opacity: 0.4 }]}
-          numberOfLines={1}
-        >
-          {link.label}
+      <View style={s.serviceCopy}>
+        <Text style={s.serviceLabel}>{link.label}</Text>
+        <Text style={s.serviceStatus}>
+          {link.verified_by_commune ? 'Validé par la commune' : 'Lien public en attente de validation communale'}
         </Text>
-        {link.verified_by_commune && (
-          <Text style={s.cardVerifiedHint}>Validé par la commune ✓</Text>
-        )}
       </View>
-
-      {/* Chevron / badge */}
-      {isDisabled ? (
-        <Ionicons name="ban-outline" size={16} color={theme.colors.textMuted} style={{ opacity: 0.4 }} />
-      ) : (
-        <Ionicons name="open-outline" size={16} color={theme.colors.textMuted} />
-      )}
+      <Ionicons
+        name={safe ? 'open-outline' : 'ban-outline'}
+        size={17}
+        color={theme.colors.textMuted}
+      />
     </TouchableOpacity>
   );
 }
 
-// ─── Styles ─────────────────────────────────────────────────
 function makeStyles(theme: ThemeTokens) {
-  const HEADER_H = Platform.OS === 'ios' ? 100 : 80;
-
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: theme.colors.bgDeep,
-    },
-
-    // Header
+    screen: { flex: 1, backgroundColor: theme.colors.bgDeep },
     header: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      paddingTop: Platform.OS === 'ios' ? 52 : 28,
-      paddingBottom: 16,
+      paddingTop: 52,
+      paddingBottom: 18,
       paddingHorizontal: 16,
-      minHeight: HEADER_H,
-      gap: 8,
-    },
-    backBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: theme.colors.surface,
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-    },
-    headerTitle: {
-      flex: 1,
-      paddingLeft: 4,
-    },
-    headerCityName: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: theme.colors.textPrimary,
-      fontFamily: theme.fonts.bold,
-      letterSpacing: 0.4,
-    },
-    headerSubtitle: {
-      fontSize: 12,
-      color: theme.colors.textMuted,
-      fontFamily: theme.fonts.regular,
-      marginTop: 1,
-    },
-    refreshBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: theme.colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    // Scroll
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingTop: 12,
-      paddingBottom: 100,
-    },
-
-    // États loading / erreur / vide
-    center: {
-      alignItems: 'center',
-      paddingTop: 80,
-      gap: 16,
-    },
-    loadingText: {
-      fontSize: 14,
-      color: theme.colors.textMuted,
-      fontFamily: theme.fonts.regular,
-    },
-
-    errorBox: {
-      alignItems: 'center',
-      paddingHorizontal: 32,
-      paddingTop: 64,
       gap: 12,
     },
-    errorTitle: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: theme.colors.textPrimary,
-      fontFamily: theme.fonts.bold,
-    },
-    errorSub: {
-      fontSize: 13.5,
-      color: theme.colors.textMuted,
-      textAlign: 'center',
-      lineHeight: 20,
-      fontFamily: theme.fonts.regular,
-    },
-    retryBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: '#0047FF',
-      borderRadius: theme.radius.md,
-      paddingHorizontal: 24,
-      paddingVertical: 11,
-      marginTop: 8,
-    },
-    retryText: {
-      color: '#fff',
-      fontSize: 14,
-      fontWeight: '700',
-      fontFamily: theme.fonts.bold,
-    },
-
-    emptyBox: {
-      alignItems: 'center',
-      paddingHorizontal: 28,
-      paddingTop: 60,
-      gap: 8,
-    },
-    emptyTitle: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: theme.colors.textPrimary,
-      fontFamily: theme.fonts.bold,
-      textAlign: 'center',
-    },
-    emptySub: {
-      fontSize: 13.5,
-      color: theme.colors.textMuted,
-      textAlign: 'center',
-      lineHeight: 21,
-      fontFamily: theme.fonts.regular,
-      marginTop: 4,
-    },
-    inviteBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: '#0047FF',
-      borderRadius: theme.radius.md,
-      paddingHorizontal: 28,
-      paddingVertical: 11,
-      marginTop: 20,
-    },
-    inviteText: {
-      color: '#fff',
-      fontSize: 14,
-      fontWeight: '700',
-      fontFamily: theme.fonts.bold,
-    },
-
-    // Disclaimer
-    disclaimerBox: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 8,
-      marginHorizontal: 16,
-      marginBottom: 8,
-      backgroundColor: '#F59E0B12',
+    circleButton: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
       borderWidth: 1,
-      borderColor: '#F59E0B30',
-      borderRadius: theme.radius.md,
-      padding: 12,
-    },
-    disclaimerText: {
-      flex: 1,
-      fontSize: 12,
-      color: '#F59E0B',
-      lineHeight: 18,
-      fontFamily: theme.fonts.regular,
-    },
-
-    // Badge verified
-    verifiedBadgeRow: {
-      flexDirection: 'row',
+      borderColor: theme.colors.cyan + '44',
+      backgroundColor: theme.colors.surfaceSolid,
       alignItems: 'center',
-      gap: 6,
+      justifyContent: 'center',
+    },
+    headerCopy: { flex: 1 },
+    eyebrow: { color: theme.colors.cyan, fontSize: 9, fontWeight: '900', letterSpacing: 1.3 },
+    headerTitle: { color: theme.colors.textPrimary, fontSize: 21, fontWeight: '900', marginTop: 2 },
+    headerSubtitle: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
+    scroll: { flex: 1 },
+    content: { paddingTop: 14, paddingBottom: 100 },
+    stateBox: { paddingTop: 80, alignItems: 'center', gap: 14 },
+    stateCard: {
       marginHorizontal: 16,
-      marginBottom: 10,
-    },
-    verifiedBadgeText: {
-      fontSize: 12,
-      color: '#00BFA5',
-      fontFamily: theme.fonts.medium,
-      fontWeight: '600',
-    },
-
-    // Groupes
-    group: {
-      marginHorizontal: 16,
-      marginBottom: 20,
-    },
-    groupHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 7,
-      marginBottom: 8,
-    },
-    groupLabel: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: theme.colors.teal,
-      letterSpacing: 1.1,
-      fontFamily: theme.fonts.bold,
-    },
-
-    // Cards groupe
-    groupCards: {
-      borderRadius: theme.radius.lg,
-      overflow: 'hidden',
+      marginTop: 24,
       borderWidth: 1,
       borderColor: theme.colors.border,
       backgroundColor: theme.colors.surfaceSolid,
-    },
-    card: {
-      flexDirection: 'row',
+      borderRadius: 24,
+      padding: 26,
       alignItems: 'center',
-      paddingHorizontal: 14,
-      paddingVertical: 13,
-      gap: 12,
-      backgroundColor: 'transparent',
+      gap: 10,
     },
-    cardBorder: {
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
-    cardDisabled: {
-      opacity: 0.5,
-    },
-    cardIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: theme.colors.surface,
+    stateIcon: {
+      width: 58,
+      height: 58,
+      borderRadius: 20,
+      backgroundColor: theme.colors.cyanSoft,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    cardText: {
-      flex: 1,
+    stateTitle: { color: theme.colors.textPrimary, fontSize: 17, fontWeight: '900', textAlign: 'center' },
+    stateText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 19, textAlign: 'center' },
+    primaryButton: {
+      marginTop: 6,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      backgroundColor: theme.colors.cyan,
+      borderRadius: 12,
+      paddingHorizontal: 17,
+      paddingVertical: 11,
     },
-    cardLabel: {
-      fontSize: 14,
-      fontWeight: '500',
-      color: theme.colors.textPrimary,
-      fontFamily: theme.fonts.medium,
+    primaryButtonText: { color: theme.colors.bgDeep, fontSize: 12, fontWeight: '900' },
+    disclaimer: {
+      marginHorizontal: 16,
+      marginBottom: 12,
+      padding: 13,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.colors.warning + '44',
+      backgroundColor: theme.colors.warning + '10',
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
     },
-    cardVerifiedHint: {
-      fontSize: 11,
-      color: '#00BFA5',
-      fontFamily: theme.fonts.regular,
-      marginTop: 2,
-    },
-
-    // Pied de page
-    footerNote: {
-      textAlign: 'center',
-      fontSize: 11.5,
-      color: theme.colors.textMuted,
-      fontFamily: theme.fonts.regular,
-      marginTop: 4,
+    disclaimerText: { color: theme.colors.textSecondary, fontSize: 11, lineHeight: 17, flex: 1 },
+    verifiedBanner: {
+      marginHorizontal: 16,
       marginBottom: 16,
+      padding: 12,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: theme.colors.success + '44',
+      backgroundColor: theme.colors.success + '10',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
     },
+    verifiedText: { color: theme.colors.success, fontSize: 11, fontWeight: '800', flex: 1 },
+    group: { marginHorizontal: 16, marginBottom: 18 },
+    groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 8 },
+    groupIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 12,
+      backgroundColor: theme.colors.cyanSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    groupTitle: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '900', flex: 1 },
+    groupCount: { color: theme.colors.cyan, fontSize: 11, fontWeight: '900' },
+    linksCard: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surfaceSolid,
+      borderRadius: 19,
+      overflow: 'hidden',
+    },
+    serviceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15 },
+    serviceBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+    disabled: { opacity: 0.45 },
+    serviceIcon: {
+      width: 41,
+      height: 41,
+      borderRadius: 14,
+      backgroundColor: theme.colors.cyanSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    serviceCopy: { flex: 1 },
+    serviceLabel: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '800' },
+    serviceStatus: { color: theme.colors.textMuted, fontSize: 9, lineHeight: 13, marginTop: 3 },
+    footerNote: { color: theme.colors.textMuted, fontSize: 9, textAlign: 'center', marginHorizontal: 20 },
   });
 }
