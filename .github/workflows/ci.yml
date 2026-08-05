@@ -41,7 +41,7 @@ jobs:
         run: npm run build:web
 
   backend:
-    name: API tRPC — Build TypeScript
+    name: API tRPC — Build et tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,5 +60,5 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
-      - name: Compiler le backend
-        run: npm run build
+      - name: Compiler et tester le backend
+        run: npm run validate
