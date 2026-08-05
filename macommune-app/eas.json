@@ -7,18 +7,30 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://villeconnect-staging-staging.up.railway.app",
+        "EXPO_PUBLIC_WEB_APP_URL": "https://app.villeconnectos.com"
+      },
       "ios": {
         "simulator": false
       }
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://villeconnect-staging-staging.up.railway.app",
+        "EXPO_PUBLIC_WEB_APP_URL": "https://app.villeconnectos.com"
+      },
       "ios": {
         "simulator": false
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://villeconnect-production.up.railway.app",
+        "EXPO_PUBLIC_WEB_APP_URL": "https://app.villeconnectos.com"
+      }
     }
   },
   "submit": {
