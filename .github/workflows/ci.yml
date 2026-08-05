@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   mobile-web:
-    name: Expo — TypeScript, sécurité et export web
+    name: Expo — TypeScript, compatibilité, sécurité et export web
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -36,6 +36,9 @@ jobs:
 
       - name: Auditer les dépendances de production
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Vérifier la compatibilité Expo
+        run: npx expo-doctor
 
       - name: Vérifier TypeScript
         run: npx tsc --noEmit
