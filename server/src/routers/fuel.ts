@@ -1,43 +1,140 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { adminProcedure, publicProcedure, router } from '../trpc';
 import { db } from '../db';
 
-// NOTE: la table `fuel_stations` n'existe pas encore en production — l'intégration
-// Statbel/SPF Économie (bestat.statbel.fgov.be) n'a pas été branchée côté DB.
-// En attendant, on renvoie des données de repli réalistes pour ne pas casser l'écran.
-
-// Whitelist stricte carburant → nom de colonne réel. Le nom de colonne SQL n'est JAMAIS
-// construit depuis l'entrée client — seul un enum validé par Zod peut sélectionner
-// une des 3 valeurs ci-dessous (élimine tout risque d'injection sur l'ORDER BY).
-const FUEL_COLUMNS: Record<string, string> = {
+const FUEL_COLUMNS = {
   E10: 'price_e10',
   E5: 'price_e5',
   DIESEL: 'price_diesel',
-};
+} as const;
+
+const priceSchema = z.number().positive().max(4).nullable().optional();
+const optionalUrl = z.preprocess(
+  value => typeof value === 'string' && value.trim() === '' ? undefined : value,
+  z.string().url().max(1000).optional()
+);
 
 export const fuelRouter = router({
   getStations: publicProcedure
     .input(z.object({
-      postalCode: z.string().default('7370'),
+      postalCode: z.string().trim().min(3).max(12).default('7370'),
       fuelType: z.enum(['E10', 'E5', 'DIESEL']).default('E10'),
+      limit: z.number().int().min(1).max(25).default(10),
     }))
     .query(async ({ input }) => {
       const column = FUEL_COLUMNS[input.fuelType];
       try {
         const [rows] = await db.execute(
-          `SELECT * FROM fuel_stations WHERE postal_code = ? ORDER BY ${column} ASC LIMIT 10`,
+          `SELECT id, external_id AS externalId, name, address,
+                  postal_code AS postalCode, city_name AS city,
+                  latitude, longitude,
+                  price_e10 AS priceE10, price_e5 AS priceE5,
+                  price_diesel AS priceDiesel,
+                  source_name AS sourceName, source_url AS sourceUrl,
+                  source_updated_at AS sourceUpdatedAt
+           FROM fuel_stations
+           WHERE postal_code = ? AND is_active = 1 AND ${column} IS NOT NULL
+           ORDER BY ${column} ASC, source_updated_at DESC
+           LIMIT ${input.limit}`,
           [input.postalCode]
         ) as any[];
-        if (rows && (rows as any[]).length > 0) return rows;
-      } catch {
-        // table absente ou erreur DB — on tombe sur le fallback ci-dessous
+
+        const items = (rows as any[]).map(row => ({
+          ...row,
+          id: String(row.id),
+          latitude: row.latitude == null ? null : Number(row.latitude),
+          longitude: row.longitude == null ? null : Number(row.longitude),
+          priceE10: row.priceE10 == null ? null : Number(row.priceE10),
+          priceE5: row.priceE5 == null ? null : Number(row.priceE5),
+          priceDiesel: row.priceDiesel == null ? null : Number(row.priceDiesel),
+        }));
+
+        return {
+          items,
+          status: items.length > 0 ? 'available' as const : 'empty' as const,
+          sourceUpdatedAt: items[0]?.sourceUpdatedAt || null,
+        };
+      } catch (error: any) {
+        // La fonctionnalité reste explicitement indisponible tant que la migration ou
+        // l'alimentation de données n'est pas opérationnelle. Aucun prix n'est inventé.
+        console.error(JSON.stringify({
+          level: 'error',
+          scope: 'fuel.getStations',
+          code: error?.code || 'DB_ERROR',
+        }));
+        return { items: [], status: 'unavailable' as const, sourceUpdatedAt: null };
       }
-      return [
-        { id: '1', name: 'Colruyt Dour', address: 'Zone commerciale', distance: 0.8,
-          price_e10: 1.679, price_diesel: 1.579, price_e5: 1.739, postal_code: input.postalCode, _mock: true },
-        { id: '2', name: 'Carrefour Boussu', address: 'Rue du Centre 12', distance: 4.1,
-          price_e10: 1.689, price_diesel: 1.589, price_e5: 1.749, postal_code: input.postalCode, _mock: true },
-      ];
+    }),
+
+  upsertStation: adminProcedure
+    .input(z.object({
+      externalId: z.string().trim().min(1).max(190),
+      name: z.string().trim().min(2).max(190),
+      address: z.string().trim().min(3).max(255),
+      postalCode: z.string().trim().min(3).max(12),
+      city: z.string().trim().max(120).optional(),
+      latitude: z.number().min(-90).max(90).nullable().optional(),
+      longitude: z.number().min(-180).max(180).nullable().optional(),
+      priceE10: priceSchema,
+      priceE5: priceSchema,
+      priceDiesel: priceSchema,
+      sourceName: z.string().trim().min(2).max(120),
+      sourceUrl: optionalUrl,
+      sourceUpdatedAt: z.string().datetime(),
+      isActive: z.boolean().default(true),
+    }))
+    .mutation(async ({ input }) => {
+      if (input.priceE10 == null && input.priceE5 == null && input.priceDiesel == null) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Au moins un prix carburant est requis.',
+        });
+      }
+
+      const sourceDate = new Date(input.sourceUpdatedAt);
+      if (sourceDate.getTime() > Date.now() + 5 * 60 * 1000) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'La date de source ne peut pas être dans le futur.',
+        });
+      }
+
+      await db.execute(
+        `INSERT INTO fuel_stations (
+           external_id, name, address, postal_code, city_name,
+           latitude, longitude, price_e10, price_e5, price_diesel,
+           source_name, source_url, source_updated_at, is_active
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           name = VALUES(name), address = VALUES(address), postal_code = VALUES(postal_code),
+           city_name = VALUES(city_name), latitude = VALUES(latitude), longitude = VALUES(longitude),
+           price_e10 = VALUES(price_e10), price_e5 = VALUES(price_e5),
+           price_diesel = VALUES(price_diesel), source_url = VALUES(source_url),
+           source_updated_at = VALUES(source_updated_at), is_active = VALUES(is_active),
+           updated_at = CURRENT_TIMESTAMP`,
+        [
+          input.externalId, input.name, input.address, input.postalCode, input.city || null,
+          input.latitude ?? null, input.longitude ?? null,
+          input.priceE10 ?? null, input.priceE5 ?? null, input.priceDiesel ?? null,
+          input.sourceName, input.sourceUrl || null,
+          sourceDate.toISOString().slice(0, 19).replace('T', ' '), input.isActive ? 1 : 0,
+        ]
+      );
+      return { success: true };
+    }),
+
+  deactivateStation: adminProcedure
+    .input(z.object({ id: z.string().regex(/^\d+$/) }))
+    .mutation(async ({ input }) => {
+      const [result] = await db.execute(
+        'UPDATE fuel_stations SET is_active = 0 WHERE id = ?',
+        [input.id]
+      ) as any[];
+      if (Number((result as any).affectedRows) !== 1) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Station introuvable' });
+      }
+      return { success: true };
     }),
 });
