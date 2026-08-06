@@ -35,9 +35,15 @@
         "projectId": "9945412e-d2d1-490b-a583-d7568cddd47d"
       }
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
     "updates": {
-      "url": "https://u.expo.dev/9945412e-d2d1-490b-a583-d7568cddd47d"
+      "url": "https://u.expo.dev/9945412e-d2d1-490b-a583-d7568cddd47d",
+      "requestHeaders": {
+        "expo-channel-name": "staging"
+      }
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
