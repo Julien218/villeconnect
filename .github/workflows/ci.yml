@@ -1,0 +1,73 @@
+name: VilleConnect CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: villeconnect-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-web:
+    name: Expo — TypeScript, compatibilité, sécurité et export web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: macommune-app
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.4
+          cache: npm
+          cache-dependency-path: macommune-app/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Auditer les dépendances de production
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Vérifier la compatibilité Expo
+        run: npx expo-doctor
+
+      - name: Vérifier TypeScript
+        run: npx tsc --noEmit
+
+      - name: Exporter la version web
+        run: npm run build:web
+
+  backend:
+    name: API tRPC — Build, tests et sécurité
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.4
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Auditer les dépendances de production
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Compiler et tester le backend
+        run: npm run validate

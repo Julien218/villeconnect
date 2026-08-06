@@ -1,26 +1,55 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-// Client tRPC minimal (fetch-based) pour l'app Ma Commune / VilleConnect OS.
-// Centralise l'URL du backend Railway, le token de session utilisateur (auth réelle)
-// et l'identifiant citoyen anonyme historique (device-based, pré-auth).
+// Client tRPC minimal pour VilleConnect OS.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-function clean(v?: string) {
-  return v && v.trim().length > 0 ? v.trim() : undefined;
+function clean(value?: string) {
+  return value && value.trim().length > 0 ? value.trim().replace(/\/$/, '') : undefined;
 }
 
-export const API_URL =
-  clean(process.env.EXPO_PUBLIC_API_URL) || 'https://villeconnect-production.up.railway.app';
+const explicitApiUrl = clean(process.env.EXPO_PUBLIC_API_URL);
+export const API_URL = explicitApiUrl ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://villeconnect-production.up.railway.app'
+    : 'http://localhost:3000');
 
 const TRPC_BASE = `${API_URL}/api/trpc`;
+const REQUEST_TIMEOUT_MS = 12_000;
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// --- Token de session utilisateur (auth réelle) -----------------------------------
-// Ce module garde l'access token courant en mémoire. Le AuthProvider (shared/auth-context.tsx)
-// est seul responsable de l'écrire/l'effacer, en synchro avec AsyncStorage + le refresh token.
-// Jamais loggé, jamais affiché — uniquement transmis en en-tête Authorization.
+async function fetchJson(url: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    const raw = await response.text();
+    let json: any = null;
+    try {
+      json = raw ? JSON.parse(raw) : null;
+    } catch {
+      return {
+        response,
+        json: null,
+        parseError: 'Réponse serveur invalide',
+      };
+    }
+    return { response, json, parseError: null };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function messageFromResponse(response: Response, json: any, parseError?: string | null) {
+  return parseError ||
+    json?.error?.json?.message ||
+    json?.error?.message ||
+    json?.message ||
+    `HTTP ${response.status}`;
+}
+
+// Token de session utilisateur uniquement en mémoire.
 let currentAccessToken: string | null = null;
 
 export function setAccessToken(token: string | null) {
@@ -31,87 +60,91 @@ export function getCurrentAccessToken() {
   return currentAccessToken;
 }
 
-/**
- * Appelle une query tRPC (GET) publique ou authentifiée. Retourne { data, error }.
- * Réessaie une fois après un court délai en cas d'échec réseau (cold-start Railway
- * possible après une période d'inactivité du service).
- */
+/** Query tRPC publique ou authentifiée. Une seule nouvelle tentative est autorisée
+ * pour les erreurs réseau, timeouts et erreurs serveur 5xx. */
 export async function trpcQuery<T = any>(
   path: string,
   input: Record<string, any>,
   options?: { authenticated?: boolean }
 ): Promise<{ data: T | null; error: string | null }> {
-  const attempt = async () => {
+  const attempt = async (): Promise<{
+    data: T | null;
+    error: string | null;
+    retryable: boolean;
+  }> => {
     const url = `${TRPC_BASE}/${path}?input=${encodeURIComponent(JSON.stringify(input))}`;
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (options?.authenticated && currentAccessToken) {
       headers.Authorization = `Bearer ${currentAccessToken}`;
     }
-    const res = await fetch(url, { headers });
-    const json = await res.json();
-    if (!res.ok || json?.error) {
-      return { data: null, error: json?.error?.message || `HTTP ${res.status}` };
+
+    try {
+      const { response, json, parseError } = await fetchJson(url, { headers });
+      if (!response.ok || json?.error || parseError) {
+        return {
+          data: null,
+          error: messageFromResponse(response, json, parseError),
+          retryable: response.status >= 500 || response.status === 408 || response.status === 429,
+        };
+      }
+      return { data: json?.result?.data ?? null, error: null, retryable: false };
+    } catch (error: any) {
+      const timedOut = error?.name === 'AbortError';
+      return {
+        data: null,
+        error: timedOut ? 'Délai de connexion dépassé' : error?.message || 'Erreur réseau',
+        retryable: true,
+      };
     }
-    return { data: json?.result?.data ?? null, error: null };
   };
 
-  try {
-    const first = await attempt();
-    if (first.data !== null) return first;
-    // Un seul retry après un court délai (cold-start backend)
-    await sleep(900);
-    return await attempt();
-  } catch (e: any) {
-    try {
-      await sleep(900);
-      return await attempt();
-    } catch (e2: any) {
-      return { data: null, error: e2?.message || e?.message || 'network_error' };
-    }
-  }
+  const first = await attempt();
+  if (!first.retryable) return { data: first.data, error: first.error };
+  await sleep(800);
+  const second = await attempt();
+  return { data: second.data, error: second.error };
 }
 
-/**
- * Appelle une mutation tRPC (POST). Pas de retry automatique (évite les doublons).
- * Si `authenticated` est vrai, attache un token en en-tête Authorization :
- * priorité au vrai token de session utilisateur (auth.login/register) s'il existe,
- * sinon repli sur l'ancien device token anonyme (compatibilité wallet invité).
- */
+/** Mutation tRPC. Aucune nouvelle tentative automatique afin d’éviter les doublons. */
 export async function trpcMutation<T = any>(
   path: string,
   input: Record<string, any>,
   options?: { authenticated?: boolean }
 ): Promise<{ data: T | null; error: string | null }> {
-  try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (options?.authenticated) {
-      if (currentAccessToken) {
-        headers.Authorization = `Bearer ${currentAccessToken}`;
-      } else {
-        const token = await getDeviceToken();
-        if (token) headers.Authorization = `Bearer ${token}`;
-      }
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (options?.authenticated) {
+    if (currentAccessToken) {
+      headers.Authorization = `Bearer ${currentAccessToken}`;
+    } else {
+      const token = await getDeviceToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
     }
-    const res = await fetch(`${TRPC_BASE}/${path}`, {
+  }
+
+  try {
+    const { response, json, parseError } = await fetchJson(`${TRPC_BASE}/${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(input),
     });
-    const json = await res.json();
-    if (!res.ok || json?.error) {
-      return { data: null, error: json?.error?.message || `HTTP ${res.status}` };
+    if (!response.ok || json?.error || parseError) {
+      return { data: null, error: messageFromResponse(response, json, parseError) };
     }
     return { data: json?.result?.data ?? null, error: null };
-  } catch (e: any) {
-    return { data: null, error: e?.message || 'network_error' };
+  } catch (error: any) {
+    return {
+      data: null,
+      error: error?.name === 'AbortError'
+        ? 'Délai de connexion dépassé'
+        : error?.message || 'Erreur réseau',
+    };
   }
 }
 
 const OPEN_ID_KEY = 'macommune_open_id';
 const DEVICE_TOKEN_KEY = 'macommune_device_token';
 
-/** Identifiant citoyen anonyme persistant (device-based), utilisé pour le CivicWallet
- *  avant connexion — et transmis à l'inscription pour rattacher le wallet existant. */
+/** Identifiant citoyen anonyme persistant utilisé avant connexion. */
 export async function getOpenId(): Promise<string> {
   try {
     const existing = await AsyncStorage.getItem(OPEN_ID_KEY);
@@ -120,33 +153,30 @@ export async function getOpenId(): Promise<string> {
     await AsyncStorage.setItem(OPEN_ID_KEY, id);
     return id;
   } catch {
-    // fallback si AsyncStorage indisponible (ex: SSR) — ID de session non persistant
     return `guest-session-${Math.random().toString(36).slice(2, 10)}`;
   }
 }
 
-/**
- * Récupère (ou obtient auprès du serveur) le token signé prouvant l'identité anonyme
- * du device — nécessaire pour appeler les routes protégées en mode invité (avant login).
- * Mis en cache localement ; redemandé automatiquement s'il est absent ou expiré.
- */
+/** Obtient le token signé du device invité. */
 export async function getDeviceToken(): Promise<string | null> {
   try {
     const cached = await AsyncStorage.getItem(DEVICE_TOKEN_KEY);
     if (cached) return cached;
-  } catch { /* ignore */ }
+  } catch { /* stockage indisponible */ }
 
   try {
     const openId = await getOpenId();
-    const res = await fetch(`${TRPC_BASE}/auth.deviceLogin`, {
+    const { response, json } = await fetchJson(`${TRPC_BASE}/auth.deviceLogin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ openId }),
     });
-    const json = await res.json();
+    if (!response.ok) return null;
     const token = json?.result?.data?.token;
     if (!token) return null;
-    try { await AsyncStorage.setItem(DEVICE_TOKEN_KEY, token); } catch { /* ignore */ }
+    try {
+      await AsyncStorage.setItem(DEVICE_TOKEN_KEY, token);
+    } catch { /* stockage indisponible */ }
     return token;
   } catch {
     return null;
