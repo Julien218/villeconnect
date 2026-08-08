@@ -13,7 +13,7 @@ export const db = pool;
 // Auto-migration non bloquante au startup
 (async () => {
   try {
-    // 1. CREATE TABLE IF NOT EXISTS commerce_catalog (MySQL 8.0 supporte IF NOT EXISTS)
+    // CREATE TABLE IF NOT EXISTS (MySQL 8.0 compatible)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS commerce_catalog (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -52,24 +52,34 @@ export const db = pool;
     `);
     console.log('✅ commerce_catalog table ready');
 
-    // 2. ALTER TABLE sans IF NOT EXISTS (MySQL 8.0 ne supporte pas cette syntaxe)
-    //    On catch errno 1060 (Duplicate column name) = colonne existe déjà
-    const alters = [
-      "ALTER TABLE commerce_catalog ADD COLUMN city_name VARCHAR(120) NOT NULL DEFAULT 'Ville non renseignée'",
-      "ALTER TABLE commerce_catalog ADD COLUMN canonical_key CHAR(64) NOT NULL DEFAULT ''",
-      "ALTER TABLE commerce_catalog ADD COLUMN publication_status ENUM('draft','published','suspended','archived') NOT NULL DEFAULT 'draft'",
-      "ALTER TABLE commerce_catalog ADD COLUMN validation_status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'",
-      "ALTER TABLE commerce_catalog ADD COLUMN city_id INT NULL",
-      "ALTER TABLE commerce_catalog ADD COLUMN source ENUM('landing','backoffice','import','legacy') NOT NULL DEFAULT 'landing'",
-      "ALTER TABLE commerce_catalog ADD COLUMN consent_publication TINYINT(1) NOT NULL DEFAULT 0",
+    // ALTER TABLE — TOUTES les colonnes (MySQL 8.0 sans IF NOT EXISTS, catch errno 1060)
+    const columns = [
+      ["canonical_key", "CHAR(64) NOT NULL DEFAULT ''"],
+      ["legacy_shop_id", "INT NULL"],
+      ["city_id", "INT NULL"],
+      ["city_name", "VARCHAR(120) NOT NULL DEFAULT 'Ville non renseignée'"],
+      ["rating", "DECIMAL(3,2) NOT NULL DEFAULT 0"],
+      ["review_count", "INT UNSIGNED NOT NULL DEFAULT 0"],
+      ["has_promotion", "TINYINT(1) NOT NULL DEFAULT 0"],
+      ["promotion_text", "VARCHAR(255) NULL"],
+      ["validation_status", "ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'"],
+      ["publication_status", "ENUM('draft','published','suspended','archived') NOT NULL DEFAULT 'draft'"],
+      ["source", "ENUM('landing','backoffice','import','legacy') NOT NULL DEFAULT 'landing'"],
+      ["consent_publication", "TINYINT(1) NOT NULL DEFAULT 0"],
+      ["submitted_by_user_id", "INT NULL"],
+      ["reviewed_by_user_id", "INT NULL"],
+      ["reviewed_at", "DATETIME NULL"],
+      ["published_at", "DATETIME NULL"],
+      ["rejection_reason", "VARCHAR(500) NULL"],
     ];
-    for (const sql of alters) {
+
+    for (const [col, def] of columns) {
       try {
-        await pool.query(sql);
+        await pool.query(`ALTER TABLE commerce_catalog ADD COLUMN ${col} ${def}`);
       } catch (e: any) {
-        // errno 1060 = Duplicate column name (déjà existante) — OK
+        // errno 1060 = Duplicate column name (déjà existante) — normal
         if (e?.errno !== 1060) {
-          console.error('  ALTER skip:', e?.message?.substring(0, 80));
+          console.error(`  ALTER ${col}: ${e?.message?.substring(0, 80)}`);
         }
       }
     }
