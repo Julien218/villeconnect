@@ -72,7 +72,7 @@ export function HexFavorite({ item, size = 68, editMode = false, onPress, onLong
         <BlurView
           intensity={theme.mode === 'dark' ? 34 : 50}
           tint={theme.mode === 'dark' ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <LinearGradient
           colors={theme.mode === 'dark'
@@ -82,10 +82,10 @@ export function HexFavorite({ item, size = 68, editMode = false, onPress, onLong
         />
 
         {haloColor && (
-          <View style={[StyleSheet.absoluteFillObject, s.halo, { shadowColor: haloColor, borderColor: haloColor }]} />
+          <View style={[StyleSheet.absoluteFill, s.halo, { shadowColor: haloColor, borderColor: haloColor }]} />
         )}
         {item.state === 'syncing' && (
-          <Animated.View style={[StyleSheet.absoluteFillObject, s.syncRing, syncStyle]} />
+          <Animated.View style={[StyleSheet.absoluteFill, s.syncRing, syncStyle]} />
         )}
         <View style={[s.iconBubble, { backgroundColor: moduleColor.bg }]}>
           <Ionicons name={item.icon} size={size * 0.34} color={moduleColor.fg} />

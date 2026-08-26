@@ -31,13 +31,13 @@ export function RadialQuickMenu({ visible, originX, originY, onClose, onSelect }
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <AnimatePresence>
         {visible && (
-          <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFillObject} onPress={onClose}>
+          <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={onClose}>
             <MotiView
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ type: 'timing', duration: 180 }}
-              style={[StyleSheet.absoluteFillObject, s.backdrop]}
+              style={[StyleSheet.absoluteFill, s.backdrop]}
             >
               {RADIAL_ACTIONS.map((action, i) => {
                 const angle = startAngle + ((endAngle - startAngle) * i) / (N - 1);
