@@ -341,7 +341,11 @@ function makeStyles(theme: ThemeTokens) {
     cardPressable: { borderRadius: 24 },
     cardScene: { height: 232, position: 'relative' },
     face: {
-      ...StyleSheet.absoluteFillObject,
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
       borderRadius: 24,
       backfaceVisibility: 'hidden',
       overflow: 'hidden',

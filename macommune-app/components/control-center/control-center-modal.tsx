@@ -145,12 +145,12 @@ export function ControlCenterModal({ visible, onClose, aiContext = {} }: Props) 
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <BlurView intensity={40} tint={theme.mode === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFillObject}>
+      <BlurView intensity={40} tint={theme.mode === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill}>
         <LinearGradient
           colors={theme.mode === 'dark'
             ? ['rgba(6,11,24,0.6)', 'rgba(6,11,24,0.96)']
             : ['rgba(245,247,250,0.6)', 'rgba(245,247,250,0.96)']}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
 
         <View style={s.topBar}>

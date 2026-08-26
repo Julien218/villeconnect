@@ -4,17 +4,10 @@
     "slug": "macommune",
     "owner": "js-innov.ia",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "scheme": "macommune",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0A0F1E"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "be.jsinnovaia.macommune",
@@ -35,7 +28,19 @@
         "projectId": "9945412e-d2d1-490b-a583-d7568cddd47d"
       }
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0F1E"
+        }
+      ],
+      "expo-status-bar"
+    ],
     "updates": {
       "url": "https://u.expo.dev/9945412e-d2d1-490b-a583-d7568cddd47d"
     },

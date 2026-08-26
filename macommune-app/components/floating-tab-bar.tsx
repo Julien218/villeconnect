@@ -1,7 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
 import { LivingC } from './control-center/living-c';

@@ -18,7 +18,7 @@ function ThemedStack() {
   const { theme } = useTheme();
   return (
     <>
-      <StatusBar style={theme.statusBarStyle} backgroundColor={theme.colors.bgDeep} />
+      <StatusBar style={theme.statusBarStyle} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: theme.colors.bgDeep },

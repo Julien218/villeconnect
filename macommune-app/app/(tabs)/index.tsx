@@ -157,7 +157,7 @@ export default function HomeScreen() {
       >
         <LinearGradient
           colors={['rgba(3,8,23,0.18)', 'rgba(3,8,23,0.72)', theme.colors.bgDeep]}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <View style={s.heroTop}>
           <View>
