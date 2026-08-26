@@ -7,6 +7,10 @@ function readPublic(name) {
   return fs.readFileSync(path.join(__dirname, '..', '..', 'public', name), 'utf8');
 }
 
+function readCloudflareLanding(name) {
+  return fs.readFileSync(path.join(__dirname, '..', '..', 'cloudflare-landing-deploy', name), 'utf8');
+}
+
 test('la landing relie les parcours citoyens, commerces et confidentialité', () => {
   const html = readPublic('landing.html');
   assert.match(html, /href="\/commerce\.html"/);
@@ -29,4 +33,14 @@ test('la notice de confidentialité expose les droits sans prétendre à une val
   assert.match(html, /Exporter ses données|exporter ses données/i);
   assert.match(html, /effacement/i);
   assert.match(html, /doit être relue et validée/i);
+});
+
+test('la landing Cloudflare relie le site, l’application et l’API de production', () => {
+  const html = readCloudflareLanding('index.html');
+  assert.match(html, /https:\/\/app\.villeconnectos\.com\//);
+  assert.match(html, /https:\/\/villeconnect-production\.up\.railway\.app/);
+  assert.match(html, /waitlist\.join/);
+  assert.match(html, /privacyConsent/);
+  assert.match(html, /JSON\.stringify\(\{json:payload\}\)/);
+  assert.match(html, /rel="noopener noreferrer"/);
 });
