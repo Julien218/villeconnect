@@ -52,6 +52,8 @@ services:
       EXPO_PUBLIC_API_URL: https://8000-${BASE44_PUBLIC_HOST_SUFFIX}
       EXPO_PUBLIC_WEB_APP_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
       EXPO_NO_TELEMETRY: 1
+      # No desktop debugger in the headless container; keep Metro live reload enabled.
+      EXPO_UNSTABLE_HEADLESS: 1
     command: sh -c "npm ci && npx expo start --web --port 3000 --host lan"
     ports: ["3000:3000"]
 volumes:
