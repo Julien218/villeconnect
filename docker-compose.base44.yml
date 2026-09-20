@@ -1,0 +1,82 @@
+# Base44 dev environment for VilleConnect OS (Ma Commune)
+# Fullstack: Expo web frontend (port 3000) + Node tRPC API (port 8000) + MySQL 8
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: vc_root_dev
+      MYSQL_DATABASE: villeconnect
+      MYSQL_USER: villeconnect
+      MYSQL_PASSWORD: villeconnect
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  migrate:
+    image: mysql:8.0
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./server/src/migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for f in /migrations/*.sql; do
+          echo "Applying $$f ..."
+          mysql -h mysql -u villeconnect -pvilleconnect villeconnect < "$$f" || { echo "FAILED: $$f"; exit 1; }
+        done
+        echo "All migrations applied successfully."
+    restart: "no"
+
+  api:
+    image: node:20-slim
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    working_dir: /app
+    volumes:
+      - ./server:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - DATABASE_URL=mysql://villeconnect:villeconnect@mysql:3306/villeconnect
+      - CORS_ORIGINS=https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      - WEB_APP_URL=https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    command: sh -c "npm install && TS_NODE_TRANSPILE_ONLY=1 node --watch --require ts-node/register src/index.ts"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  web:
+    image: node:20-slim
+    depends_on:
+      api:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./macommune-app:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - EXPO_PUBLIC_API_URL=https://8000-${BASE44_PUBLIC_HOST_SUFFIX}
+      - EXPO_PACKAGER_PROXY_URL=https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      - HOST=0.0.0.0
+    command: sh -c "npm install && npx expo start --web --port 3000"
+
+volumes:
+  mysql_data:

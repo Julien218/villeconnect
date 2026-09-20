@@ -1,0 +1,30 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "JWT_SECRET",
+      "description": "JWT signing secret for auth tokens (32+ random chars). Generate with: openssl rand -hex 32",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "WALLET_QR_SECRET",
+      "description": "HMAC secret for CivicLoop QR token signing (32+ random chars, distinct from JWT_SECRET). Generate with: openssl rand -hex 32",
+      "requiredAtBoot": false,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "CITY_HASH_SALT",
+      "description": "Salt for hashing user IDs and IPs in city/privacy requests (random string). Generate with: openssl rand -hex 32",
+      "requiredAtBoot": false,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "description": "Resend API key for transactional emails (email verification, password reset). Optional — app boots without it but emails won't be sent. Get from https://resend.com/api-keys",
+      "requiredAtBoot": false
+    }
+  ]
+}
