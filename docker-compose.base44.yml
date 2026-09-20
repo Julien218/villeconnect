@@ -76,7 +76,7 @@ services:
       - EXPO_PUBLIC_API_URL=https://8000-${BASE44_PUBLIC_HOST_SUFFIX}
       - EXPO_PACKAGER_PROXY_URL=https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
       - HOST=0.0.0.0
-    command: sh -c "npm install && npx expo start --web --port 3000"
+    command: sh -c "npm install && sed -i 's/const isAllowedHost = allowedHosts.includes(host) || isLocalhost;/const isAllowedHost = true;/' node_modules/expo/node_modules/@expo/cli/build/src/start/server/middleware/CorsMiddleware.js && npx expo start --web --port 3000"
 
 volumes:
   mysql_data:
