@@ -1,0 +1,11 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    { "name": "JWT_SECRET", "description": "Clé de signature des sessions, au moins 32 caractères.", "requiredAtBoot": true },
+    { "name": "WALLET_QR_SECRET", "description": "Clé HMAC des QR CivicLoop, distincte du JWT, au moins 32 caractères.", "requiredAtBoot": true },
+    { "name": "CITY_HASH_SALT", "description": "Sel du hachage des demandes citoyennes.", "requiredAtBoot": true },
+    { "name": "RESEND_API_KEY", "description": "Optionnel : clé Resend pour les emails de vérification et de réinitialisation.", "requiredAtBoot": false }
+  ]
+}

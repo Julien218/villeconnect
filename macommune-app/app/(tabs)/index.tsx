@@ -2,8 +2,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  ImageBackground,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -15,13 +13,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getOpenId, trpcQuery } from '@/shared/api-client';
-import { useTheme } from '@/shared/theme-context';
-import { ThemeTokens } from '@/shared/theme';
+import { darkTheme, ThemeTokens } from '@/shared/theme';
 import { getBranding } from '@/shared/branding';
 import { GlassCard } from '@/components/glass-card';
 import { useAuth } from '@/shared/auth-context';
 import { CityStatusBanner } from '@/components/CityStatusBanner';
 import { useCityStatus } from '@/shared/useCityStatus';
+import { NightHome } from '@/components/home/night-home';
 
 const BANNER_STATUSES = new Set([
   'unknown',
@@ -56,7 +54,7 @@ interface LocalEvent {
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoggedIn, user } = useAuth();
-  const { theme } = useTheme();
+  const theme = darkTheme;
   const s = makeStyles(theme);
 
   const postalCode = user?.postalCode?.trim() || '7370';
@@ -66,6 +64,7 @@ export default function HomeScreen() {
   const [balance, setBalance] = useState<number | null>(null);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [featuredCommerce, setFeaturedCommerce] = useState<Commerce | null>(null);
+  const [localEvents, setLocalEvents] = useState<LocalEvent[]>([]);
   const [latestEvent, setLatestEvent] = useState<LocalEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,6 +93,7 @@ export default function HomeScreen() {
       commerces.find(item => Boolean(item.hasPromotion)) || commerces[0] || null
     );
     setLatestEvent(eventsResult.data?.[0] || null);
+    setLocalEvents(eventsResult.data || []);
 
     const failures = [wallet.error, missionsResult.error, commerceResult.error, eventsResult.error]
       .filter(Boolean);
@@ -150,45 +150,8 @@ export default function HomeScreen() {
         />
       }
     >
-      <ImageBackground
-        source={require('@/assets/city-skyline-header.png')}
-        style={s.hero}
-        imageStyle={s.heroImage}
-      >
-        <LinearGradient
-          colors={['rgba(3,8,23,0.18)', 'rgba(3,8,23,0.72)', theme.colors.bgDeep]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={s.heroTop}>
-          <View>
-            <Text style={s.hello}>Bonjour</Text>
-            <Text style={s.cityName}>{cityDisplayName}</Text>
-            <Text style={s.cityTagline}>Votre ville, connectée au quotidien.</Text>
-          </View>
-          <TouchableOpacity
-            style={s.profileButton}
-            onPress={() => router.push(isLoggedIn ? '/(tabs)/profile' as any : '/login' as any)}
-            accessibilityRole="button"
-            accessibilityLabel={isLoggedIn ? 'Ouvrir mon profil' : 'Se connecter'}
-          >
-            <Ionicons
-              name={isLoggedIn ? 'person' : 'log-in-outline'}
-              size={20}
-              color={theme.colors.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={s.heroBrand}>
-          <View style={s.logoHalo}>
-            <Image source={require('@/assets/logo-official-small.png')} style={s.logo} />
-          </View>
-          <View style={s.heroBrandCopy}>
-            <Text style={s.platformName}>VILLECONNECT OS</Text>
-            <Text style={s.platformStatus}>Plateforme locale active · {postalCode}</Text>
-          </View>
-        </View>
-      </ImageBackground>
+      <NightHome city={cityDisplayName} events={localEvents} />
+      <Text style={s.localSpace}>VOTRE ESPACE {brand.appName.toUpperCase()}</Text>
 
       {dataError && (
         <TouchableOpacity
@@ -439,48 +402,18 @@ function EmptyCard({
 
 function makeStyles(theme: ThemeTokens) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.colors.bgDeep },
+    screen: { flex: 1, width: '100%', maxWidth: 473, alignSelf: 'center', backgroundColor: '#02070D' },
+    localSpace: { color: '#8194AB', fontSize: 10, letterSpacing: 2, marginTop: 36, marginBottom: 18, textAlign: 'center' },
     content: { paddingBottom: 125 },
-    hero: {
-      height: 330,
-      paddingTop: 56,
-      paddingHorizontal: 20,
-      justifyContent: 'space-between',
-      paddingBottom: 58,
-      overflow: 'hidden',
-    },
-    heroImage: { opacity: 0.62 },
-    heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-    hello: { color: theme.colors.cyan, fontSize: 15, fontWeight: '600' },
-    cityName: { color: theme.colors.textPrimary, fontSize: 38, fontWeight: '900', marginTop: 2 },
-    cityTagline: { color: theme.colors.textSecondary, fontSize: 16, lineHeight: 23, marginTop: 5 },
-    profileButton: {
-      width: 48, height: 48, borderRadius: 24,
-      borderWidth: 1, borderColor: theme.colors.cyan + '55',
-      backgroundColor: 'rgba(3,8,23,0.62)',
-      alignItems: 'center', justifyContent: 'center',
-    },
-    heroBrand: { flexDirection: 'row', alignItems: 'center', gap: 13 },
-    logoHalo: {
-      width: 66, height: 66, borderRadius: 33,
-      borderWidth: 1, borderColor: theme.colors.cyan + '88',
-      backgroundColor: 'rgba(0,96,255,0.22)',
-      alignItems: 'center', justifyContent: 'center',
-      shadowColor: theme.colors.cyan, shadowOpacity: 0.45, shadowRadius: 18,
-    },
-    logo: { width: 52, height: 52, resizeMode: 'contain' },
-    heroBrandCopy: { flex: 1 },
-    platformName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '900', letterSpacing: 1.2 },
-    platformStatus: { color: theme.colors.cyan, fontSize: 11, marginTop: 4 },
     errorBanner: {
-      marginHorizontal: 16, marginTop: -24, marginBottom: 10,
+      marginHorizontal: 16, marginTop: 0, marginBottom: 10,
       padding: 13, borderRadius: 14, flexDirection: 'row', gap: 9,
       borderWidth: 1, borderColor: theme.colors.warning + '55',
       backgroundColor: theme.colors.surfaceSolid,
     },
     errorText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, flex: 1 },
     walletCard: {
-      marginHorizontal: 16, marginTop: -28, borderRadius: 26,
+      marginHorizontal: 16, marginTop: 0, borderRadius: 26,
       padding: 20, minHeight: 180, justifyContent: 'space-between',
       shadowColor: theme.colors.cyan, shadowOpacity: 0.25, shadowRadius: 22,
     },

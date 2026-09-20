@@ -16,7 +16,7 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen name="index" />
+      <Tabs.Screen name="index" options={{ sceneStyle: { backgroundColor: '#02070D' } }} />
       <Tabs.Screen name="events" options={{ headerShown: true, headerTitle: 'Événements' }} />
       <Tabs.Screen name="wallet" options={{ headerShown: true, headerTitle: 'Wallet CivicLoop' }} />
       <Tabs.Screen name="shops" options={{ headerShown: true, headerTitle: 'Commerces locaux' }} />
