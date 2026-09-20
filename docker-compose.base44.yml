@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: villeconnect
+      MYSQL_USER: villeconnect
+      MYSQL_PASSWORD: local_vc_dev_93a7
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  api:
+    image: node:22
+    working_dir: /app/server
+    volumes:
+      - .:/app
+      - api_modules:/app/server/node_modules
+    env_file:
+      - /run/base44/app.env
+    environment:
+      NODE_ENV: development
+      PORT: 8000
+      DATABASE_URL: mysql://villeconnect:local_vc_dev_93a7@db:3306/villeconnect
+      CORS_ORIGINS: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      WEB_APP_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      TSC_WATCHFILE: FixedPollingInterval
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c 'npm ci && npm run build && (npx tsc --watch --preserveWatchOutput & node --watch dist/index.js)'
+  web:
+    image: node:22
+    working_dir: /app/macommune-app
+    volumes:
+      - .:/app
+      - web_modules:/app/macommune-app/node_modules
+    environment:
+      EXPO_PUBLIC_API_URL: https://8000-${BASE44_PUBLIC_HOST_SUFFIX}
+      EXPO_PUBLIC_WEB_APP_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      EXPO_PUBLIC_DESKTOP_APP_URL: https://3000-${BASE44_PUBLIC_HOST_SUFFIX}
+      EXPO_NO_TELEMETRY: "1"
+      REACT_NATIVE_PACKAGER_HOSTNAME: 3000-${BASE44_PUBLIC_HOST_SUFFIX}
+    ports:
+      - "3000:3000"
+    command: sh -c 'npm ci && npx expo start --web --port 3000 --host lan'
+volumes:
+  mysql_data:
+  api_modules:
+  web_modules:

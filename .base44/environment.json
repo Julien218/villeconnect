@@ -1,0 +1,11 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    { "name": "JWT_SECRET", "description": "Clé privée de signature des sessions VilleConnect (32 caractères minimum).", "requiredAtBoot": true },
+    { "name": "WALLET_QR_SECRET", "description": "Clé HMAC des QR CivicLoop, distincte du JWT (32 caractères minimum).", "requiredAtBoot": true },
+    { "name": "CITY_HASH_SALT", "description": "Sel privé du hachage des demandes communales.", "requiredAtBoot": true },
+    { "name": "RESEND_API_KEY", "description": "Clé API Resend pour les emails transactionnels, disponible dans le tableau de bord Resend.", "requiredAtBoot": false }
+  ]
+}
