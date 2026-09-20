@@ -20,6 +20,7 @@ import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 import { AuthGate } from '@/components/auth-gate';
 import { ThemePicker } from '@/components/theme-picker';
+import { CustomColorPicker } from '@/components/custom-color-picker';
 import { useAuth } from '@/shared/auth-context';
 import { getBranding } from '@/shared/branding';
 
@@ -247,6 +248,7 @@ export default function ProfileScreen() {
         </View>
         <View style={s.pickerWrap}>
           <ThemePicker />
+          <CustomColorPicker />
         </View>
       </GlassCard>
 
