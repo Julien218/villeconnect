@@ -39,7 +39,16 @@
           "backgroundColor": "#0A0F1E"
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Autorisez Ma Commune à utiliser votre position pour trouver les stations-service et comparer leurs prix autour de vous.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/9945412e-d2d1-490b-a583-d7568cddd47d"
