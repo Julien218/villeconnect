@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { Alert, ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { trpcQuery, trpcMutation, getOpenId } from '@/shared/api-client';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';

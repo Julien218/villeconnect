@@ -8,7 +8,8 @@
 // édition, drag & drop, favoris) pour permettre un diagnostic en direct via les logs Metro
 // pendant les tests réels, sans dépendre uniquement du ressenti visuel.
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
+import { Modal, View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';

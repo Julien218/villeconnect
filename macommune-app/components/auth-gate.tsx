@@ -2,7 +2,8 @@
 // Écran-relais affiché dans un onglet protégé (Wallet, Profil...) quand l'utilisateur
 // n'est pas connecté — invite propre à se connecter ou créer un compte, sans casser
 // la navigation publique du reste de l'app. S'adapte au thème actif.
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '@/shared/theme-context';
@@ -21,7 +22,7 @@ export function AuthGate({ message }: { message?: string }) {
           {message || 'Cette section est réservée aux citoyens connectés — crée ton compte ou connecte-toi pour continuer.'}
         </Text>
 
-        <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/login')} style={{ width: '100%' }}>
+        <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/login')} style={{ borderRadius: theme.radius.pill, width: '100%' }}>
           <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
             <Text style={s.primaryBtnText}>Se connecter</Text>
           </LinearGradient>

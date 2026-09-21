@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useState } from 'react';
-import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Image, ImageBackground, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -54,7 +55,7 @@ export function NightHome({ city, events = [] }: { city: string; events?: { id: 
             <Ionicons name="notifications-outline" size={22} color="#F4F7FA" /><View style={s.notificationDot} />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Assistant IA" style={[s.assistant, { top: 94 * k, right: 19 * k }]}
+        <TouchableOpacity neonSurface={false} accessibilityRole="button" accessibilityLabel="Assistant IA" style={[s.assistant, { top: 94 * k, right: 19 * k }]}
           onPress={() => setNotice({ title: 'Votre futur assistant IA', text: 'Un assistant pour vous orienter dans la vie locale et les services de votre ville. Cette interface est un aperçu : aucun assistant IA n’est encore connecté.' })}>
           <LinearGradient colors={['#006CFF', '#00CFFF', '#0647FA']} style={s.assistantRing}>
             <View style={s.assistantCore}><Ionicons name="pulse" size={31} color="#00CFFF" /></View>
@@ -77,7 +78,7 @@ export function NightHome({ city, events = [] }: { city: string; events?: { id: 
           </TouchableOpacity>
         </View>
         <View style={s.pagination}>{STORIES.map((_, index) => (
-          <TouchableOpacity key={index} accessibilityRole="button" accessibilityLabel={`Actualité ${index + 1}`} accessibilityState={{ selected: slide === index }} onPress={() => setSlide(index)} style={s.dotTarget}>
+          <TouchableOpacity neonSurface={false} key={index} accessibilityRole="button" accessibilityLabel={`Actualité ${index + 1}`} accessibilityState={{ selected: slide === index }} onPress={() => setSlide(index)} style={s.dotTarget}>
             <View style={[s.dot, slide === index && s.dotActive]} />
           </TouchableOpacity>
         ))}</View>
@@ -97,7 +98,7 @@ export function NightHome({ city, events = [] }: { city: string; events?: { id: 
         </View>
         <View style={s.eventRow}>
           {items.map((event, index) => (
-            <TouchableOpacity key={index} accessibilityRole="button" accessibilityLabel={event.title.replace('\n', ' ')} activeOpacity={0.8}
+            <TouchableOpacity neonColor={event.color} key={index} accessibilityRole="button" accessibilityLabel={event.title.replace('\n', ' ')} activeOpacity={0.8}
               onPress={() => illustrated ? setNotice({ title: event.title.replace('\n', ' '), text: 'Cet événement provient de votre maquette et illustre le futur agenda. Les événements réellement publiés sont accessibles dans « Voir tout ».' }) : router.push('/events' as any)}
               style={[s.eventCard, { minHeight: 100 * k, paddingHorizontal: 8 * k, gap: 7 * k }]}>
               <View style={[s.eventIcon, { borderColor: event.color, width: 41 * k, height: 44 * k }]}><Ionicons name={event.icon} size={27 * k} color={event.color} /></View>
@@ -142,7 +143,7 @@ const s = StyleSheet.create({
   discover: { borderWidth: 1, borderColor: '#14425D', borderRadius: 11, alignSelf: 'flex-start', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 18, backgroundColor: 'rgba(2,10,20,0.8)' },
   pagination: { position: 'absolute', bottom: 5, left: '41%', flexDirection: 'row' },
   dotTarget: { paddingHorizontal: 5, paddingVertical: 10 },
-  dot: { width: 5, height: 5, borderRadius: 5, backgroundColor: '#536173' },
+  dot: { width: 5, height: 5, borderRadius: 5, backgroundColor: '#536173', boxShadow: '0 2px 0 #001126, inset 0 1px 0 #9BCEEE, 0 0 5px #008FFF66' },
   dotActive: { width: 14, backgroundColor: '#009FFF' },
   events: { padding: 8, borderWidth: 1, borderColor: '#152B40', borderRadius: 18, backgroundColor: '#030910' },
   eventsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 7, paddingVertical: 5, marginBottom: 8 },

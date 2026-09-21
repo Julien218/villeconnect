@@ -6,11 +6,11 @@ import {
   ScrollView,
   StyleSheet,
   Image,
-  Pressable,
   Linking,
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { NeonPressable as Pressable } from '@/components/neon-button';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { DOWNLOAD_LINKS, IOS_AVAILABLE } from '@/shared/download-links';

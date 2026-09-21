@@ -2,7 +2,8 @@
 // VilleConnect OS — Raccourci hexagonal du Centre de Contrôle, avec ses 7 états visuels
 // officiels : normal / notification / nouveau contenu / urgence / erreur / synchronisation /
 // favori. Rendu glassmorphism (flou + bordure lumineuse + reflet) façon cockpit smart city.
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -97,7 +98,7 @@ export function HexFavorite({ item, size = 68, editMode = false, onPress, onLong
         )}
 
         {editMode && (
-          <TouchableOpacity style={s.removeBtn} onPress={onRemove} hitSlop={8}>
+          <TouchableOpacity neonColor={theme.colors.danger} style={s.removeBtn} onPress={onRemove} hitSlop={8}>
             <Ionicons name="close" size={11} color="#fff" />
           </TouchableOpacity>
         )}

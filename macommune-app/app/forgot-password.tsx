@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '@/shared/theme-context';
@@ -36,7 +37,7 @@ export default function ForgotPasswordScreen() {
             <>
               <Text style={s.emoji}>📬</Text>
               <Text style={s.text}>Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé. Vérifie ta boîte (et tes spams).</Text>
-              <TouchableOpacity onPress={() => router.replace('/login')} style={{ width: '100%', marginTop: 18 }}>
+              <TouchableOpacity onPress={() => router.replace('/login')} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 18 }}>
                 <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
                   <Text style={s.primaryBtnText}>Retour à la connexion</Text>
                 </LinearGradient>
@@ -51,7 +52,7 @@ export default function ForgotPasswordScreen() {
                 placeholder="toi@exemple.com" placeholderTextColor={theme.colors.textMuted}
                 autoCapitalize="none" keyboardType="email-address" testID="forgot-email"
               />
-              <TouchableOpacity activeOpacity={0.85} onPress={submit} disabled={loading} style={{ width: '100%', marginTop: 20 }} testID="forgot-submit">
+              <TouchableOpacity activeOpacity={0.85} onPress={submit} disabled={loading} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 20 }} testID="forgot-submit">
                 <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
                   {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Envoyer le lien</Text>}
                 </LinearGradient>

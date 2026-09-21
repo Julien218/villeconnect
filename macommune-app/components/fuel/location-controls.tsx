@@ -1,5 +1,6 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme-context';
 import { FuelPosition } from '@/shared/use-fuel-location';

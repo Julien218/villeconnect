@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
+import { NeonPressable as Pressable } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 
 export type FeatureNoticeContent = { title: string; text: string };

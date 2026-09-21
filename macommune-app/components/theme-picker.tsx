@@ -1,7 +1,8 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 // Sélecteur de thème réutilisable (3 options) — utilisé à l'inscription et dans les
 // paramètres du profil. Style "bouton tertiaire / segmenté" conforme à la planche ADN.
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeMode } from '@/shared/theme';

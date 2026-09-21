@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useState } from 'react';
-import { Image, View, TouchableOpacity, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { Image, View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
@@ -43,7 +44,7 @@ const makeStyles = (k: number) => StyleSheet.create({
   wrap: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', paddingBottom: 14 * k, paddingTop: 18 * k, backgroundColor: 'rgba(2,7,13,0.92)' },
   bar: { width: '95%', maxWidth: 449, height: 73 * k, borderRadius: 40, borderWidth: 1, borderColor: '#122D43', backgroundColor: '#07121F', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, shadowColor: '#000000', shadowOpacity: 0.5, shadowRadius: 20 },
   slot: { flex: 1 },
-  tab: { height: 61 * k, alignItems: 'center', justifyContent: 'center', gap: 7 },
+  tab: { height: 61 * k, marginHorizontal: 3, borderRadius: 16, backgroundColor: '#081A2B', alignItems: 'center', justifyContent: 'center', gap: 7 },
   label: { color: '#98A5BA', fontSize: 10, fontWeight: '400' },
   active: { color: '#00BFFF' },
   line: { position: 'absolute', bottom: 1, width: 14, height: 1, backgroundColor: '#00BFFF' },

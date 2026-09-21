@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Share, StyleSheet, Text, View } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/shared/theme-context';
@@ -108,6 +109,7 @@ export function RewardPass({ redemption, cancelling = false, onCancel, onExpired
           <Text style={s.actionText}>Partager le code</Text>
         </TouchableOpacity>
         <TouchableOpacity
+          neonColor={theme.colors.danger}
           style={[s.cancelButton, cancelling && s.actionDisabled]}
           onPress={onCancel}
           disabled={cancelling}
