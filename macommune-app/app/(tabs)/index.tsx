@@ -212,6 +212,7 @@ export default function HomeScreen() {
         {modules.map(module => (
           <TouchableOpacity
             key={module.key}
+            neonSurface={false}
             style={s.moduleCard}
             activeOpacity={0.78}
             onPress={() => router.push(module.route as any)}
