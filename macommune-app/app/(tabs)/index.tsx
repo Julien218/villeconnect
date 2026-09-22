@@ -21,6 +21,7 @@ import { CityStatusBanner } from '@/components/CityStatusBanner';
 import { useCityStatus } from '@/shared/useCityStatus';
 import { NightHome } from '@/components/home/night-home';
 import { ServiceLogo, type ServiceLogoName } from '@/components/home/service-logo';
+import { NeonPulseButton } from '@/components/neon-pulse-button';
 
 const BANNER_STATUSES = new Set([
   'unknown',
@@ -210,11 +211,10 @@ export default function HomeScreen() {
 
       <View style={s.moduleGrid} testID="connected-services">
         {modules.map(module => (
-          <TouchableOpacity
+          <NeonPulseButton
             key={module.key}
-            neonSurface={false}
             style={s.moduleCard}
-            activeOpacity={0.78}
+            activeOpacity={0.95}
             onPress={() => router.push(module.route as any)}
             accessibilityRole="button"
             accessibilityLabel={module.label}
@@ -222,7 +222,7 @@ export default function HomeScreen() {
             <ServiceLogo name={module.key} />
             <Text style={s.moduleLabel}>{module.label}</Text>
             <View style={s.moduleLine} />
-          </TouchableOpacity>
+          </NeonPulseButton>
         ))}
       </View>
 

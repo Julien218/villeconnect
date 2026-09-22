@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
+import { NeonPulseButton } from '@/components/neon-pulse-button';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Stop, Path, Circle } from 'react-native-svg';
 
@@ -29,10 +30,10 @@ export function ServiceOrbit({ width, onService, onWallet }: {
           <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="3" fill="#00DEFF" />
         ))}
       </Svg>
-      <TouchableOpacity neonSurface={false} accessibilityRole="button" accessibilityLabel="Ouvrir le Wallet CivicLoop" onPress={onWallet}
-        activeOpacity={0.85} style={{ position: 'absolute', left: 111 * k, top: 17 * k, width: 215 * k, height: 242 * k }}>
+      <NeonPulseButton testID="central-logo-button" accessibilityRole="button" accessibilityLabel="Ouvrir le Wallet CivicLoop" onPress={onWallet}
+        activeOpacity={0.95} style={{ position: 'absolute', left: 111 * k, top: 17 * k, width: 215 * k, height: 242 * k }}>
         <Image source={require('@/assets/night-orbit.webp')} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-      </TouchableOpacity>
+      </NeonPulseButton>
       {HOME_SERVICES.map((item, index) => {
         const row = Math.floor(index / 2);
         const offset = row === 0 ? 10 : row === 1 ? -4 : 26;
