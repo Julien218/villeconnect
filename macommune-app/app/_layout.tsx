@@ -11,21 +11,26 @@ import { Poppins_700Bold } from '@expo-google-fonts/poppins/700Bold';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '@/shared/auth-context';
 import { ThemeProvider, useTheme } from '@/shared/theme-context';
+import { useReducedMotion } from 'react-native-reanimated';
+import { WebStackTransition, TRANSITION_DURATION } from '@/components/screen-transition';
 
 SplashScreen.preventAutoHideAsync();
 
 function ThemedStack() {
   const { theme } = useTheme();
+  const reducedMotion = useReducedMotion();
   return (
     <>
       <StatusBar style={theme.statusBarStyle} />
       <Stack
+        screenLayout={({ children }) => <WebStackTransition>{children}</WebStackTransition>}
         screenOptions={{
           headerStyle: { backgroundColor: theme.colors.bgDeep },
           headerTintColor: theme.colors.textPrimary,
           headerTitleStyle: { fontWeight: '800', fontFamily: theme.fonts.semibold },
           contentStyle: { backgroundColor: theme.colors.bgDeep },
-          animation: 'slide_from_right',
+          animation: reducedMotion ? 'none' : 'fade_from_bottom',
+          animationDuration: reducedMotion ? 0 : TRANSITION_DURATION,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
