@@ -73,7 +73,8 @@ function WalletScreenContent() {
       isLoggedIn
         ? trpcQuery<any[]>('wallet.getMyTransactions', { limit: 20 }, { authenticated: true })
         : trpcQuery<any[]>('wallet.getTransactions', { openId, limit: 20 }),
-      isLoggedIn
+      // The API requires a verified email for reward passes, not just a session.
+      isLoggedIn && user?.emailVerified
         ? trpcQuery<ActiveRedemption[]>('wallet.getMyRedemptions', { limit: 20 }, { authenticated: true })
         : Promise.resolve({ data: [] as ActiveRedemption[], error: null }),
     ]);
@@ -109,7 +110,7 @@ function WalletScreenContent() {
     setIsMock(mock);
     setLoading(false);
     setRefreshing(false);
-  }, [isLoggedIn, postalCode]);
+  }, [isLoggedIn, postalCode, user?.emailVerified]);
 
   useEffect(() => { load(); }, [load]);
 
