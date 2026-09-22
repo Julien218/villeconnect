@@ -20,6 +20,7 @@ import { useAuth } from '@/shared/auth-context';
 import { CityStatusBanner } from '@/components/CityStatusBanner';
 import { useCityStatus } from '@/shared/useCityStatus';
 import { NightHome } from '@/components/home/night-home';
+import { ServiceLogo, type ServiceLogoName } from '@/components/home/service-logo';
 
 const BANNER_STATUSES = new Set([
   'unknown',
@@ -124,18 +125,18 @@ export default function HomeScreen() {
     userPostalCode && !cityLoading && BANNER_STATUSES.has(cityStatus)
   );
 
-  const modules = [
-    { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
-    { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
-    { key: 'shops', label: 'Commerces', icon: 'storefront-outline', route: '/(tabs)/shops' },
-    { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
-    { key: 'wallet', label: 'CivicLoop', icon: 'wallet-outline', route: '/(tabs)/wallet' },
-    { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
-    { key: 'profile', label: 'Mon profil', icon: 'person-outline', route: '/(tabs)/profile' },
+  const modules: { key: ServiceLogoName; label: string; route: string }[] = [
+    { key: 'events', label: 'Actualités', route: '/(tabs)/events' },
+    { key: 'agenda', label: 'Agenda', route: '/(tabs)/events' },
+    { key: 'shops', label: 'Commerces', route: '/(tabs)/shops' },
+    { key: 'fuel', label: 'Carburant', route: '/(tabs)/fuel' },
+    { key: 'wallet', label: 'CivicLoop', route: '/(tabs)/wallet' },
+    { key: 'services', label: 'Services', route: '/services' },
+    { key: 'profile', label: 'Mon profil', route: '/(tabs)/profile' },
     isLoggedIn
-      ? { key: 'account', label: 'Mon compte', icon: 'shield-checkmark-outline', route: '/(tabs)/profile' }
-      : { key: 'login', label: 'Connexion', icon: 'log-in-outline', route: '/login' },
-  ] as const;
+      ? { key: 'account', label: 'Mon compte', route: '/(tabs)/profile' }
+      : { key: 'login', label: 'Connexion', route: '/login' },
+  ];
 
   return (
     <ScrollView
@@ -207,8 +208,8 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={s.moduleGrid}>
-        {modules.map((module, index) => (
+      <View style={s.moduleGrid} testID="connected-services">
+        {modules.map(module => (
           <TouchableOpacity
             key={module.key}
             style={s.moduleCard}
@@ -217,9 +218,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={module.label}
           >
-            <View style={[s.moduleIcon, index % 3 === 1 && s.moduleIconAlt]}>
-              <Ionicons name={module.icon as any} size={23} color={theme.colors.cyan} />
-            </View>
+            <ServiceLogo name={module.key} />
             <Text style={s.moduleLabel}>{module.label}</Text>
             <View style={s.moduleLine} />
           </TouchableOpacity>
@@ -433,16 +432,9 @@ function makeStyles(theme: ThemeTokens) {
       marginHorizontal: 12,
     },
     moduleCard: {
-      width: '25%', minHeight: 112, alignItems: 'center',
-      justifyContent: 'center', paddingHorizontal: 4, gap: 8,
+      width: '25%', minHeight: 142, alignItems: 'center',
+      justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 10, gap: 6,
     },
-    moduleIcon: {
-      width: 58, height: 58, borderRadius: 19,
-      borderWidth: 1, borderColor: theme.colors.cyan + '55',
-      backgroundColor: theme.colors.cyanSoft,
-      alignItems: 'center', justifyContent: 'center',
-    },
-    moduleIconAlt: { borderRadius: 29, backgroundColor: theme.colors.surfaceSolid },
     moduleLabel: { color: theme.colors.textPrimary, fontSize: 11, fontWeight: '700', textAlign: 'center' },
     moduleLine: { width: 18, height: 2, borderRadius: 2, backgroundColor: theme.colors.cyan },
     cityBannerWrap: { marginHorizontal: 16, marginTop: 20 },
