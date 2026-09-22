@@ -13,6 +13,7 @@ import { AuthProvider } from '@/shared/auth-context';
 import { ThemeProvider, useTheme } from '@/shared/theme-context';
 import { useReducedMotion } from 'react-native-reanimated';
 import { WebStackTransition, TRANSITION_DURATION } from '@/components/screen-transition';
+import { NeonNavigationGlow } from '@/components/neon-navigation-glow';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,6 +44,7 @@ function ThemedStack() {
         <Stack.Screen name="services" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" options={{ title: 'Page introuvable' }} />
       </Stack>
+      <NeonNavigationGlow />
     </>
   );
 }
