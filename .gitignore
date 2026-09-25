@@ -1,1 +1,25 @@
 .agents/.env
+
+# Secrets: examples remain versioned, real credentials never do.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies and generated output
+node_modules/
+dist/
+.expo/
+*.log
+
+# Backups contain private source and personal data
+backups/
+*.sql.gz
+*.dump
+*.bundle
+*.age
+*.gpg
+.DS_Store

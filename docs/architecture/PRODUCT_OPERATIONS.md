@@ -203,7 +203,9 @@ Ces éléments ne remplacent pas la validation humaine des bases légales, duré
 Exemple à adapter dans un contexte sécurisé :
 
 ```bash
-mysqldump --single-transaction --routines --triggers --set-gtid-purged=OFF "$DATABASE_URL" > villeconnect-YYYYMMDD-HHMM.sql
+# Décomposer la connexion en hôte, utilisateur et nom de base ; -p demande le mot de passe.
+# Ne jamais passer une URL MySQL directement à mysqldump.
+mysqldump -h <hote> -u <utilisateur> -p --single-transaction --no-tablespaces --routines --triggers --set-gtid-purged=OFF <base> > villeconnect-YYYYMMDD-HHMM.sql
 ```
 
 Ne jamais afficher l’URL ou le mot de passe dans les logs. Chiffrer et stocker le dump hors du conteneur Railway.

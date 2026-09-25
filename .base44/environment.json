@@ -1,0 +1,11 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    { "name": "JWT_SECRET", "description": "Clé aléatoire de signature des sessions, distincte par environnement.", "requiredAtBoot": true },
+    { "name": "WALLET_QR_SECRET", "description": "Clé aléatoire dédiée aux QR CivicLoop, distincte du JWT.", "requiredAtBoot": true },
+    { "name": "CITY_HASH_SALT", "description": "Sel privé des empreintes de confidentialité.", "requiredAtBoot": true },
+    { "name": "RESEND_API_KEY", "description": "Clé obtenue dans Resend > API Keys. Nécessaire à l’envoi réel des emails de vérification et de récupération.", "requiredAtBoot": false }
+  ]
+}

@@ -45,7 +45,10 @@ export const authRouter = router({
   // login). Reste inoffensive : n'attribue jamais de rôle privilégié ni d'email.
   deviceLogin: publicProcedure
     .input(z.object({ openId: z.string().min(8).max(128), postalCode: z.string().optional() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      if (!checkRateLimit(`device:${ctx.ip || 'unknown'}`, 30, 15 * 60 * 1000)) {
+        throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Trop de tentatives, réessayez plus tard' });
+      }
       const { id, role } = await getOrCreateUserId(input.openId, input.postalCode);
       const token = jwt.sign(
         { sub: id, openId: input.openId, role, type: 'device' },
@@ -85,23 +88,30 @@ export const authRouter = router({
 
       if (input.deviceOpenId) {
         const [deviceRows] = await db.execute(
-          'SELECT id, email FROM users WHERE openId = ?', [input.deviceOpenId]
+          'SELECT id, email, password_hash, role, loginMethod, is_active, merged_into_user_id FROM users WHERE openId = ?', [input.deviceOpenId]
         ) as any[];
         const deviceUser = (deviceRows as any[])[0];
 
-        if (deviceUser && deviceUser.email) {
+        if (deviceUser && (deviceUser.email || deviceUser.password_hash ||
+            deviceUser.role !== 'citizen' || deviceUser.loginMethod !== 'anonymous' ||
+            !deviceUser.is_active || deviceUser.merged_into_user_id)) {
           throw new TRPCError({ code: 'CONFLICT', message: 'Ce device est déjà lié à un compte existant, connectez-vous plutôt' });
         }
 
         if (deviceUser) {
           // Claim en place : le wallet CivicLoop existant reste attaché (même user_id).
-          await db.execute(
+          const [claimed] = await db.execute(
             `UPDATE users SET email = ?, password_hash = ?, role = 'citizen', loginMethod = 'password',
              name = COALESCE(?, name), postalCode = COALESCE(?, postalCode), city = COALESCE(?, city),
              theme_preference = COALESCE(?, theme_preference)
-             WHERE id = ?`,
+             WHERE id = ? AND email IS NULL AND password_hash IS NULL
+               AND role = 'citizen' AND loginMethod = 'anonymous'
+               AND is_active = 1 AND merged_into_user_id IS NULL`,
             [input.email, passwordHash, input.name || null, input.postalCode || null, input.city || null, input.themePreference || null, deviceUser.id]
-          );
+          ) as any[];
+          if (Number(claimed.affectedRows) !== 1) {
+            throw new TRPCError({ code: 'CONFLICT', message: 'Ce device est déjà lié à un compte' });
+          }
           userId = deviceUser.id;
         } else {
           const [result] = await db.execute(
@@ -144,8 +154,10 @@ export const authRouter = router({
       platform: z.string().max(32).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const rateKey = `login:${ctx.ip || 'unknown'}:${input.email}`;
-      if (!checkRateLimit(rateKey, 8, 15 * 60 * 1000)) {
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const rateKey = `login:${ctx.ip || 'unknown'}:${normalizedEmail}`;
+      if (!checkRateLimit(`login-ip:${ctx.ip || 'unknown'}`, 40, 15 * 60 * 1000) ||
+          !checkRateLimit(rateKey, 8, 15 * 60 * 1000)) {
         throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Trop de tentatives, réessayez plus tard' });
       }
 
@@ -258,9 +270,13 @@ export const authRouter = router({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Session invalide ou expirée, reconnectez-vous' });
       }
       const [rows] = await db.execute(
-        'SELECT openId, role, email_verified_at FROM users WHERE id = ?', [result.userId]
+        'SELECT openId, role, email_verified_at, is_active FROM users WHERE id = ?', [result.userId]
       ) as any[];
       const u = (rows as any[])[0];
+      if (!u || !u.is_active) {
+        await revokeAllUserTokens(result.userId);
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Session invalide ou expirée, reconnectez-vous' });
+      }
 
       if (input.deviceOpenId) {
         try { await upsertUserDevice(result.userId, input.deviceOpenId, input.platform); }

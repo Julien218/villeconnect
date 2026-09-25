@@ -1,5 +1,6 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { db } from '../db';
+import { TRPCError } from '@trpc/server';
 
 export interface ResolvedUser {
   id: number;
@@ -13,9 +14,19 @@ export interface ResolvedUser {
  * Partagé entre routers/auth.ts (émission de token) et routers/wallet.ts (lectures publiques).
  */
 export async function getOrCreateUserId(openId: string, postalCode?: string): Promise<ResolvedUser> {
-  const [rows] = await db.execute('SELECT id, role FROM users WHERE openId = ?', [openId]) as any[];
-  const arr = rows as any[];
-  if (arr.length > 0) return { id: arr[0].id, role: arr[0].role };
+  const [rows] = await db.execute(
+    'SELECT id, role, email, password_hash, loginMethod, is_active, merged_into_user_id FROM users WHERE openId = ?',
+    [openId]
+  ) as any[];
+  const user = (rows as any[])[0];
+  if (user) {
+    // Un identifiant public d'appareil n'est jamais une preuve d'accès à un compte.
+    if (user.email || user.password_hash || user.role !== 'citizen' ||
+        user.loginMethod !== 'anonymous' || !user.is_active || user.merged_into_user_id) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Connectez-vous à votre compte' });
+    }
+    return { id: user.id, role: 'citizen' };
+  }
   await db.execute(
     `INSERT INTO users (openId, loginMethod, role, postalCode) VALUES (?, 'anonymous', 'citizen', ?)`,
     [openId, postalCode || null]

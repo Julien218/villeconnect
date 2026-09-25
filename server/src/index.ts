@@ -15,7 +15,7 @@ import { authRouter } from './routers/auth';
 import { privacyRouter } from './routers/privacy';
 import { waitlistRouter } from './routers/waitlist';
 import { cityRouter } from './routers/city';
-import { db } from './db';
+
 
 // ─── App Router ───────────────────────────────────────────
 export const appRouter = router({
@@ -39,7 +39,12 @@ const PORT = process.env.PORT || 3000;
 const VERSION = '2.3.0';
 
 app.disable('x-powered-by');
-app.set('trust proxy', 1);
+// Aucun en-tête client ne fait autorité sans proxy explicitement approuvé.
+const proxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
+if (!Number.isInteger(proxyHops) || proxyHops < 0 || proxyHops > 10) {
+  throw new Error('TRUST_PROXY_HOPS invalide');
+}
+app.set('trust proxy', proxyHops);
 
 const defaultOrigins = [
   'https://villeconnectos.com',
@@ -60,7 +65,7 @@ app.use(cors({
     if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('Origine non autorisée'));
+    return callback(Object.assign(new Error('Origine non autorisée'), { status: 403 }));
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -95,7 +100,6 @@ app.use(
         scope: 'trpc',
         path: path || 'unknown',
         code: error.code,
-        message: error.message,
       }));
     },
   })
@@ -113,24 +117,16 @@ app.get('/', (_req, res) => {
   });
 });
 
-// DEBUG — schema inspector : STRICTEMENT réservé au développement local.
-if (process.env.NODE_ENV === 'development') {
-  app.get('/api/schema/:table', async (req, res) => {
-    try {
-      const safeTable = req.params.table;
-      if (!/^[A-Za-z0-9_]+$/.test(safeTable)) {
-        return res.status(400).json({ error: 'Nom de table invalide' });
-      }
-      const [rows] = await db.execute(`DESCRIBE \`${safeTable}\``);
-      return res.json(rows);
-    } catch (e: any) {
-      return res.status(500).json({ error: e.message });
-    }
-  });
-}
+// L'inspection du schéma se fait via un accès DB administratif, jamais par HTTP.
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route introuvable' });
+});
+
+// Ne jamais transmettre stack, requête SQL ou détails du parseur au client.
+app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const status = [400, 403, 413].includes(error.status) ? error.status : 500;
+  res.status(status).json({ error: status === 500 ? 'Erreur interne du serveur' : 'Requête refusée' });
 });
 
 app.listen(PORT, () => {
