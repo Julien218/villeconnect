@@ -55,7 +55,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     );
   }
 
-  const walletFocused = activeRoute === 'wallet';
+  const homeFocused = activeRoute === 'index';
 
   return (
     <View style={s.wrap} pointerEvents="box-none">
@@ -69,17 +69,17 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         <GlowOrb
           size={126}
           color={theme.colors.cyan}
-          opacity={walletFocused ? 0.74 : 0.55}
+          opacity={homeFocused ? 0.74 : 0.55}
           centerOpacity={0.43}
           style={s.centerGlow}
         />
         <TouchableOpacity
           activeOpacity={0.84}
-          style={[s.centerButtonRing, walletFocused && s.centerButtonActive]}
-          onPress={() => navigation.navigate('wallet' as never)}
+          style={[s.centerButtonRing, homeFocused && s.centerButtonActive]}
+          onPress={() => navigation.navigate('index' as never)}
           accessibilityRole="button"
-          accessibilityLabel="Ouvrir le Wallet CivicLoop"
-          accessibilityState={{ selected: walletFocused }}
+          accessibilityLabel="Retour à l’accueil"
+          accessibilityState={{ selected: homeFocused }}
         >
           <LivingC size={48} />
         </TouchableOpacity>

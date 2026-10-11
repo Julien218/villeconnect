@@ -5,7 +5,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { trpcMutation, trpcQuery, setAccessToken, getOpenId } from './api-client';
+import { trpcMutation, trpcQuery, setAccessToken } from './api-client';
 
 const REFRESH_KEY = 'macommune_user_refresh_token';
 // L'access token vit uniquement en mémoire (module api-client) — jamais persisté en clair,
@@ -72,10 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistTokens]);
 
   const doRefresh = useCallback(async (refresh: string) => {
-    const deviceOpenId = await getOpenId();
     const { data } = await trpcMutation<{ accessToken: string; refreshToken: string }>(
       'auth.refresh',
-      { refreshToken: refresh, deviceOpenId, platform: Platform.OS }
+      { refreshToken: refresh, platform: Platform.OS }
     );
     if (!data) {
       await clearSession();
@@ -116,13 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, doRefresh]);
 
   const login = useCallback(async (email: string, password: string) => {
-    // Transmet l'openId de CET appareil : si un wallet invité y était attaché,
-    // le serveur le fusionne automatiquement dans le compte qu'on authentifie ici.
-    const deviceOpenId = await getOpenId();
     const { data, error } = await trpcMutation<{
       accessToken: string; refreshToken: string;
       user: { id: number; email: string; role: string; emailVerified: boolean };
-    }>('auth.login', { email, password, deviceOpenId, platform: Platform.OS });
+    }>('auth.login', { email, password, platform: Platform.OS });
     if (error || !data) return { ok: false, error: error || 'Erreur inconnue' };
 
     await persistTokens(data.accessToken, data.refreshToken);
@@ -132,11 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistTokens, fetchMe]);
 
   const register = useCallback(async (input: RegisterInput) => {
-    // Rattache le wallet CivicLoop anonyme existant (device) au nouveau compte, si présent.
-    const deviceOpenId = await getOpenId();
     const { data, error } = await trpcMutation<{ success: boolean; message: string }>(
       'auth.register',
-      { ...input, deviceOpenId }
+      input
     );
     if (error || !data) return { ok: false, error: error || 'Erreur inconnue' };
     return { ok: true, message: data.message };

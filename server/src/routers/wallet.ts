@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, publicProcedure, protectedProcedure, merchantProcedure } from '../trpc';
 import { db } from '../db';
-import { getOrCreateUserId } from '../lib/users';
-import { checkRateLimit } from '../lib/auth';
 
 const REDEMPTION_TTL_MS = 10 * 60 * 1000;
 
@@ -210,39 +208,9 @@ export const walletTestUtils = {
 };
 
 export const walletRouter = router({
-  getWallet: publicProcedure
-    .input(z.object({
-      openId: z.string().min(8).max(190),
-      postalCode: z.string().trim().min(3).max(12).optional(),
-    }))
-    .query(async ({ input, ctx }) => {
-      if (!checkRateLimit(`wallet:init:${ctx.ip || 'unknown'}`, 30, 60 * 60 * 1000)) {
-        throw new TRPCError({
-          code: 'TOO_MANY_REQUESTS',
-          message: 'Trop de créations de portefeuille. Réessayez plus tard.',
-        });
-      }
-      const { id: userId } = await getOrCreateUserId(input.openId, input.postalCode);
-      return getOrCreateWalletWithWelcomeBonus(userId);
-    }),
-
-  getTransactions: publicProcedure
-    .input(z.object({
-      openId: z.string().min(8).max(190),
-      limit: z.number().int().min(1).max(100).default(20),
-    }))
-    .query(async ({ input, ctx }) => {
-      if (!checkRateLimit(`wallet:history:${ctx.ip || 'unknown'}`, 120, 60 * 60 * 1000)) {
-        throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Trop de requêtes.' });
-      }
-      const { id: userId } = await getOrCreateUserId(input.openId);
-      const [rows] = await db.execute(
-        `SELECT * FROM civic_transactions
-         WHERE user_id = ? ORDER BY created_at DESC LIMIT ${input.limit}`,
-        [userId]
-      ) as any[];
-      return rows;
-    }),
+  // Les anciens accès publics par openId (getWallet / getTransactions) ont été retirés :
+  // ils créaient des utilisateurs à la demande et exposaient un historique à qui connaissait
+  // un identifiant. Le wallet n'est plus utilisé par l'application citoyenne.
 
   getMyWallet: protectedProcedure.query(async ({ ctx }) => {
     return getOrCreateWalletWithWelcomeBonus(ctx.user.id);

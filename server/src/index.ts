@@ -16,6 +16,9 @@ import { privacyRouter } from './routers/privacy';
 import { waitlistRouter } from './routers/waitlist';
 import { cityRouter } from './routers/city';
 import { db } from './db';
+import { assertConfig } from './lib/config';
+
+assertConfig();
 
 // ─── App Router ───────────────────────────────────────────
 export const appRouter = router({

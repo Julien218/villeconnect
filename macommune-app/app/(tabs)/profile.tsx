@@ -282,7 +282,7 @@ export default function ProfileScreen() {
             <Text style={s.dangerTitle}>Supprimer mon compte</Text>
             <Text style={s.hint}>
               Les identifiants, coordonnées et moyens de connexion seront supprimés ou anonymisés.
-              Les écritures nécessaires à la sécurité et au grand livre CivicLoop peuvent être conservées sans identité directe.
+              Les écritures nécessaires à la sécurité ou à des obligations légales peuvent être conservées sans identité directe.
             </Text>
           </View>
         </View>

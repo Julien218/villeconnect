@@ -43,7 +43,6 @@ export const ALL_MODULES: ModuleDef[] = [
   { key: 'parking',      icon: 'car-sport',             label: 'Parking',      route: '/(tabs)/index',  colorKey: 'commune' },
   { key: 'tourisme',     icon: 'compass',                label: 'Tourisme',     route: '/(tabs)/index',  colorKey: 'promotions' },
   { key: 'ia',           icon: 'sparkles',              label: 'Assistant IA', route: '/(tabs)/index',  colorKey: 'commune' },
-  { key: 'wallet',       icon: 'wallet',                label: 'Wallet',       route: '/(tabs)/wallet', colorKey: 'guichet' },
   { key: 'commune',      icon: 'location',              label: 'Ma commune',   route: '/(tabs)/index',  colorKey: 'commune' },
 ];
 

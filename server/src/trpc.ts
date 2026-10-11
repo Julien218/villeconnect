@@ -47,7 +47,9 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 });
 
 export function createContext(req: any): Context {
-  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress;
+  // req.ip tient compte de `trust proxy` (1 saut) : on ne lit jamais directement
+  // l'en-tête x-forwarded-for, que le client peut falsifier pour contourner les limites de débit.
+  const ip: string | undefined = req.ip || req.socket?.remoteAddress;
   const userAgent = req.headers['user-agent'];
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) return { ip, userAgent };
@@ -55,15 +57,17 @@ export function createContext(req: any): Context {
     const token = auth.slice(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
     if (!decoded?.sub || !decoded?.openId) return { ip, userAgent };
+    const isAccess = decoded.type === 'access';
     return {
       ip,
       userAgent,
       user: {
         id: Number(decoded.sub),
         openId: decoded.openId,
-        role: decoded.role || 'citizen',
-        email_verified: Boolean(decoded.email_verified),
-        authType: decoded.type === 'access' ? 'access' : 'device',
+        // Un jeton « appareil » (invité) n'a JAMAIS de rôle privilégié, quel que soit son contenu.
+        role: isAccess ? (decoded.role || 'citizen') : 'citizen',
+        email_verified: isAccess ? Boolean(decoded.email_verified) : false,
+        authType: isAccess ? 'access' : 'device',
       },
     };
   } catch {
