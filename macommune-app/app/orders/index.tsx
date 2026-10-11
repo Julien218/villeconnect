@@ -15,6 +15,7 @@ interface OrderRow {
   id: number;
   commerceName?: string | null;
   status: OrderStatus;
+  fulfillment?: 'pickup' | 'delivery';
   totalCents: number;
   createdAt: string;
 }
@@ -77,7 +78,7 @@ export default function OrdersScreen() {
               <Text style={s.title}>{order.commerceName || 'Commerce'}</Text>
               <Text style={s.price}>{formatEuros(order.totalCents)}</Text>
             </View>
-            <Text style={s.status}>{orderStatusLabel(order.status)}</Text>
+            <Text style={s.status}>{orderStatusLabel(order.status, order.fulfillment)}</Text>
             <Text style={s.muted}>{new Date(order.createdAt).toLocaleDateString('fr-BE')}</Text>
           </GlassCard>
         </TouchableOpacity>

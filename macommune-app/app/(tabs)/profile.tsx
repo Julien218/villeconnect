@@ -271,6 +271,16 @@ export default function ProfileScreen() {
             <Text style={s.sectionButtonText}>Événements à valider</Text>
           </TouchableOpacity>
         )}
+        {['city_admin', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/admin/sport' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Valider les fiches Sport en attente"
+          >
+            <Text style={s.sectionButtonText}>Fiches Sport à valider</Text>
+          </TouchableOpacity>
+        )}
         {['merchant', 'admin', 'super_admin'].includes(String(user.role)) && (
           <TouchableOpacity
             onPress={() => router.push('/pro' as any)}

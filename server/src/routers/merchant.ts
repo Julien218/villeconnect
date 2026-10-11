@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { adminProcedure, merchantProcedure, router } from '../trpc';
 import { db } from '../db';
 import { checkRateLimit } from '../lib/auth';
-import { MAX_ORDER_CENTS, normalizePickupCode } from '../lib/money';
+import { MAX_ORDER_CENTS, normalizePickupCode, parsePostalCodes } from '../lib/money';
 import {
   StripeApiError, createAccountLink, createStandardAccount, isStripeConfigured, retrieveAccount,
 } from '../lib/stripe';
@@ -110,8 +110,8 @@ export const merchantRouter = router({
 
         const link = await createAccountLink({
           accountId,
-          returnUrl: `${base}/pro/paiements?retour=1`,
-          refreshUrl: `${base}/pro/paiements?refresh=1`,
+          returnUrl: `${base}/pro/${input.commerceId}?retour=1`,
+          refreshUrl: `${base}/pro/${input.commerceId}?refresh=1`,
         });
         return { url: link.url };
       } catch (error) {
@@ -197,6 +197,56 @@ export const merchantRouter = router({
       return { id: Number((result as any).insertId) };
     }),
 
+  // ── Livraison ──
+  deliveryGet: merchantProcedure
+    .input(z.object({ commerceId }))
+    .query(async ({ ctx, input }) => {
+      await requireMembership(ctx.user, input.commerceId);
+      const [rows] = await db.execute(
+        `SELECT delivery_enabled, fee_cents, free_from_cents, postal_codes, delivery_note
+         FROM commerce_delivery_settings WHERE commerce_id = ?`,
+        [input.commerceId]
+      ) as any[];
+      const row = (rows as any[])[0];
+      return {
+        enabled: Boolean(row?.delivery_enabled),
+        feeCents: row ? Number(row.fee_cents) : 0,
+        freeFromCents: row?.free_from_cents === null || row?.free_from_cents === undefined ? null : Number(row.free_from_cents),
+        postalCodes: parsePostalCodes(row?.postal_codes),
+        note: row?.delivery_note || null,
+      };
+    }),
+
+  deliverySave: merchantProcedure
+    .input(z.object({
+      commerceId,
+      enabled: z.boolean(),
+      feeCents: z.number().int().min(0).max(10_000),
+      freeFromCents: z.number().int().min(0).max(MAX_ORDER_CENTS).nullable(),
+      postalCodes: z.array(z.string().trim().regex(/^\d{4}$/)).max(40),
+      note: z.string().trim().max(200).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await requireMembership(ctx.user, input.commerceId, true);
+      const postalCodes = [...new Set(input.postalCodes)];
+      if (input.enabled && postalCodes.length === 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Indiquez au moins un code postal livré.' });
+      }
+      await db.execute(
+        `INSERT INTO commerce_delivery_settings
+           (commerce_id, delivery_enabled, fee_cents, free_from_cents, postal_codes, delivery_note)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE delivery_enabled = VALUES(delivery_enabled), fee_cents = VALUES(fee_cents),
+           free_from_cents = VALUES(free_from_cents), postal_codes = VALUES(postal_codes),
+           delivery_note = VALUES(delivery_note)`,
+        [
+          input.commerceId, input.enabled ? 1 : 0, input.feeCents, input.freeFromCents,
+          postalCodes.join(','), input.note || null,
+        ]
+      );
+      return { success: true };
+    }),
+
   // ── Commandes ──
   orders: merchantProcedure
     .input(z.object({
@@ -207,8 +257,11 @@ export const merchantRouter = router({
     .query(async ({ ctx, input }) => {
       await requireMembership(ctx.user, input.commerceId);
       const params: any[] = [input.commerceId];
-      let sql = `SELECT id, status, total_cents AS totalCents, platform_fee_cents AS platformFeeCents,
-                        note, created_at AS createdAt, paid_at AS paidAt
+      let sql = `SELECT id, status, fulfillment, total_cents AS totalCents,
+                        platform_fee_cents AS platformFeeCents, delivery_fee_cents AS deliveryFeeCents,
+                        note, delivery_address AS deliveryAddress, delivery_postal_code AS deliveryPostalCode,
+                        delivery_city AS deliveryCity, delivery_phone AS deliveryPhone,
+                        created_at AS createdAt, paid_at AS paidAt
                  FROM orders WHERE commerce_id = ? AND status <> 'pending_payment' AND status <> 'cancelled'`;
       if (input.status) {
         sql += ' AND status = ?';

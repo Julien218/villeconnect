@@ -39,12 +39,15 @@ export interface PricedLine {
 
 export interface OrderTotals {
   subtotalCents: number;
+  /** Commission calculée sur les produits seulement, jamais sur les frais de livraison. */
   platformFeeCents: number;
+  deliveryFeeCents: number;
   /** Ce que paie le client : la commission est prélevée sur la part du commerçant, jamais ajoutée. */
   totalCents: number;
 }
 
-export function priceOrder(lines: PricedLine[], percent: number): OrderTotals {
+export function priceOrder(lines: PricedLine[], percent: number, deliveryFeeCents = 0): OrderTotals {
+  if (!Number.isInteger(deliveryFeeCents) || deliveryFeeCents < 0) throw new Error('Frais de livraison invalides');
   if (lines.length === 0) throw new Error('Commande vide');
   let subtotal = 0;
   for (const line of lines) {
@@ -53,7 +56,32 @@ export function priceOrder(lines: PricedLine[], percent: number): OrderTotals {
     subtotal += line.unitPriceCents * line.quantity;
   }
   const fee = computePlatformFeeCents(subtotal, percent);
-  return { subtotalCents: subtotal, platformFeeCents: fee, totalCents: subtotal };
+  return {
+    subtotalCents: subtotal,
+    platformFeeCents: fee,
+    deliveryFeeCents,
+    totalCents: subtotal + deliveryFeeCents,
+  };
+}
+
+export interface DeliverySettings {
+  enabled: boolean;
+  feeCents: number;
+  freeFromCents: number | null;
+  postalCodes: string[];
+}
+
+/** « 7370, 7380 ;7387 » -> ['7370', '7380', '7387'] (4 chiffres belges, sans doublon). */
+export function parsePostalCodes(raw: string | null | undefined): string[] {
+  const codes = (raw || '').split(/[\s,;]+/).map(code => code.trim()).filter(code => /^\d{4}$/.test(code));
+  return [...new Set(codes)];
+}
+
+/** Frais de livraison dus pour un sous-total produits ; null si l'adresse n'est pas livrée. */
+export function deliveryFeeFor(settings: DeliverySettings, subtotalCents: number, postalCode: string): number | null {
+  if (!settings.enabled || !settings.postalCodes.includes(postalCode.trim())) return null;
+  if (settings.freeFromCents !== null && subtotalCents >= settings.freeFromCents) return 0;
+  return settings.feeCents;
 }
 
 // Sans I, L, O, 0, 1 pour éviter les confusions à la lecture d'un code à voix haute.

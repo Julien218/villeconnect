@@ -35,7 +35,7 @@ jobs:
         run: npm ci
 
       - name: Auditer les dépendances de production
-        run: npm audit --omit=dev --audit-level=high
+        run: npm run audit:ci
 
       - name: Vérifier la compatibilité Expo
         run: npx expo-doctor

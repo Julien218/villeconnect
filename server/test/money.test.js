@@ -47,3 +47,26 @@ test('le code de retrait a 6 caractères sans lettres ambiguës', () => {
   }
   assert.equal(normalizePickupCode(' ab c 23 '), 'ABC23');
 });
+
+test('la livraison s’ajoute au total sans augmenter la commission', () => {
+  const totals = priceOrder([{ unitPriceCents: 2000, quantity: 1 }], 5, 350);
+  assert.equal(totals.subtotalCents, 2000);
+  assert.equal(totals.deliveryFeeCents, 350);
+  assert.equal(totals.totalCents, 2350);
+  assert.equal(totals.platformFeeCents, 100); // 5 % des produits seulement
+  assert.throws(() => priceOrder([{ unitPriceCents: 2000, quantity: 1 }], 5, -1));
+  assert.throws(() => priceOrder([{ unitPriceCents: 2000, quantity: 1 }], 5, 1.5));
+});
+
+test('les frais de livraison suivent la zone et le seuil de gratuité du commerçant', () => {
+  const { deliveryFeeFor, parsePostalCodes } = require('../dist/lib/money');
+  assert.deepEqual(parsePostalCodes(' 7370, 7380;7370  abc 12345 7387'), ['7370', '7380', '7387']);
+  assert.deepEqual(parsePostalCodes(null), []);
+
+  const settings = { enabled: true, feeCents: 300, freeFromCents: 4000, postalCodes: ['7370', '7380'] };
+  assert.equal(deliveryFeeFor(settings, 2000, '7370'), 300);
+  assert.equal(deliveryFeeFor(settings, 4000, '7380'), 0);
+  assert.equal(deliveryFeeFor(settings, 2000, '7000'), null);
+  assert.equal(deliveryFeeFor({ ...settings, enabled: false }, 2000, '7370'), null);
+  assert.equal(deliveryFeeFor({ ...settings, freeFromCents: null }, 99999, '7370'), 300);
+});
