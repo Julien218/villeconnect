@@ -43,6 +43,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "audit:ci": "node scripts/audit-ci.js",
     "build:web": "expo export --platform web && node scripts/fix-web-assets.js",
     "deploy:web": "npm run build:web && wrangler pages deploy dist --project-name=villeconnect --branch=main --commit-dirty=true"
   },
