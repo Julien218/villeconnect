@@ -238,6 +238,36 @@ export default function ProfileScreen() {
       <GlassCard style={[s.card, s.sectionCard] as any}>
         <View style={s.sectionHeading}>
           <View style={s.sectionIcon}>
+            <Ionicons name="bag-handle-outline" size={20} color={theme.colors.cyan} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.sectionTitle}>Mes commandes</Text>
+            <Text style={s.hint}>Suivez vos commandes et retrouvez votre code de retrait.</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push('/orders' as any)}
+          style={s.sectionButton}
+          accessibilityRole="button"
+          accessibilityLabel="Ouvrir mes commandes"
+        >
+          <Text style={s.sectionButtonText}>Voir mes commandes</Text>
+        </TouchableOpacity>
+        {['merchant', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/pro' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir l’espace commerçant"
+          >
+            <Text style={s.sectionButtonText}>Espace commerçant</Text>
+          </TouchableOpacity>
+        )}
+      </GlassCard>
+
+      <GlassCard style={[s.card, s.sectionCard] as any}>
+        <View style={s.sectionHeading}>
+          <View style={s.sectionIcon}>
             <Ionicons name="color-palette-outline" size={20} color={theme.colors.cyan} />
           </View>
           <View style={{ flex: 1 }}>
@@ -348,6 +378,11 @@ function makeStyles(theme: ThemeTokens) {
     },
     card: { width: '100%', maxWidth: 520, padding: theme.spacing.lg },
     sectionCard: { marginTop: 14 },
+    sectionButton: {
+      marginTop: 12, minHeight: 44, borderRadius: theme.radius.md, alignItems: 'center',
+      justifyContent: 'center', borderWidth: 1, borderColor: theme.colors.borderCyan,
+    },
+    sectionButtonText: { color: theme.colors.cyan, fontSize: 13, fontWeight: '800' },
     avatarWrap: { alignItems: 'center', marginBottom: 18 },
     avatar: {
       width: 68,

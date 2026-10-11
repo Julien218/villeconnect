@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { trpcQuery } from '@/shared/api-client';
 import { useAuth } from '@/shared/auth-context';
 import { useTheme } from '@/shared/theme-context';
@@ -53,6 +54,7 @@ function categoryIcon(category: string): keyof typeof Ionicons.glyphMap {
 export default function ShopsScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const router = useRouter();
   const s = makeStyles(theme);
   const postalCode = user?.postalCode?.trim() || '7370';
   const cityLabel = user?.city?.trim() || 'votre ville';
@@ -206,6 +208,7 @@ export default function ShopsScreen() {
           <TouchableOpacity
             key={shop.id}
             activeOpacity={0.82}
+            onPress={() => router.push(`/commerce/${shop.id}` as any)}
             accessibilityRole="button"
             accessibilityLabel={`${shop.name}, ${shop.category}, ${shop.address}`}
           >
