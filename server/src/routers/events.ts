@@ -1,7 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { cityAdminProcedure, publicProcedure, router } from '../trpc';
+import { cityAdminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
 import { db } from '../db';
 
 const EVENT_WINDOW_MS = 60 * 60 * 1000;
@@ -107,6 +107,66 @@ export const eventsRouter = router({
       ) as any[];
       const id = Number((result as any).insertId);
       return { success: true, id, reference: `VC-${new Date().getUTCFullYear()}-${String(id).padStart(5, '0')}` };
+    }),
+
+  // Publication par un organisateur connecté (ASBL, commune, commerce) rattaché à une fiche
+  // `event_organizers`. Un organisateur « de confiance » publie sans modération ; les autres
+  // restent en attente. L'email n'est jamais pris dans le formulaire : il vient du compte.
+  submitAsOrganizer: protectedProcedure
+    .input(z.object({
+      title: z.string().trim().min(3).max(190),
+      description: z.string().trim().min(10).max(5000),
+      dateStart: z.string().datetime(),
+      location: z.string().trim().min(2).max(190),
+      address: z.string().trim().max(255).optional(),
+      category: z.enum(['Culture', 'Sport', 'Marché', 'Jeunesse', 'Environnement', 'Communal', 'Autre']).default('Autre'),
+      organizerPhone: z.string().trim().max(40).optional(),
+      isFree: z.boolean().default(true),
+      price: z.number().min(0).max(100000).default(0),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [orgRows] = await db.execute(
+        `SELECT o.name, o.postal_code, o.trusted, u.email
+         FROM event_organizers o JOIN users u ON u.id = o.user_id
+         WHERE o.user_id = ? AND o.is_active = 1 LIMIT 1`,
+        [ctx.user.id]
+      ) as any[];
+      const organizer = (orgRows as any[])[0];
+      if (!organizer) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Votre compte n’est pas rattaché à un organisateur. Contactez VilleConnect.',
+        });
+      }
+
+      const start = new Date(input.dateStart);
+      if (start.getTime() < Date.now() - 5 * 60 * 1000) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'La date de début doit être future.' });
+      }
+      if (!input.isFree && input.price <= 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Un prix est requis pour un événement payant.' });
+      }
+
+      // Publication directe uniquement si la fiche est de confiance ET l'email du compte est vérifié.
+      const autoApprove = Boolean(organizer.trusted) && ctx.user.email_verified;
+      const status = autoApprove ? 'approved' : 'pending';
+
+      const dateStart = start.toISOString().slice(0, 19).replace('T', ' ');
+      const [result] = await db.execute(
+        `INSERT INTO events (
+           title, description, dateStart, location, address, category,
+           postalCode, city, organizer, organizerEmail, organizerPhone,
+           isFree, price, status
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          input.title, input.description, dateStart, input.location,
+          input.address || '', input.category, organizer.postal_code, '',
+          organizer.name, organizer.email, input.organizerPhone || '',
+          input.isFree ? 1 : 0, input.isFree ? 0 : input.price, status,
+        ]
+      ) as any[];
+      const id = Number((result as any).insertId);
+      return { success: true, id, status, published: autoApprove };
     }),
 
   approve: cityAdminProcedure

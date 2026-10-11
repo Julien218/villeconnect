@@ -49,3 +49,18 @@ test('la migration liste d’attente conserve une preuve de consentement version
   assert.match(sql, /UNIQUE KEY uq_waitlist_consent_version/i);
   assert.match(sql, /ip_hash CHAR\(64\)/i);
 });
+
+test('la migration organisateurs lie un compte réel à une fiche et sépare la confiance', () => {
+  const sql = readMigration('015_event_organizers.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS event_organizers/i);
+  assert.match(sql, /UNIQUE KEY uq_event_organizer_user \(user_id\)/i);
+  assert.match(sql, /trusted TINYINT\(1\) NOT NULL DEFAULT 0/i);
+  assert.match(sql, /organizer_type ENUM\('asbl', 'commune', 'commerce', 'autre'\)/i);
+  assert.doesNotMatch(sql, /(password|secret)/i);
+});
+
+test('la publication directe exige une fiche de confiance et un email vérifié', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'routers', 'events.ts'), 'utf8');
+  assert.match(src, /submitAsOrganizer: protectedProcedure/);
+  assert.match(src, /Boolean\(organizer\.trusted\) && ctx\.user\.email_verified/);
+});

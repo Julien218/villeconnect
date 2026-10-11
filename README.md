@@ -62,6 +62,18 @@ Dour est la ville active. Pour les autres communes, le mécanisme existe déjà 
 
 Aucune donnée citoyenne n'est exposée publiquement : seul le nombre agrégé est utilisé.
 
+## D'où viennent les événements
+
+Trois sources, une seule règle de publication :
+
+| Source | Fonctionnement |
+|---|---|
+| **ASBL, commune, commerces** | Elles créent un compte, puis l'administrateur les rattache à une fiche organisateur (`organizers.adminUpsert`). Elles publient avec `events.submitAsOrganizer`. |
+| **Organisateur de confiance** | Si sa fiche est marquée `trusted` et que l'email de son compte est vérifié, l'événement est publié immédiatement. |
+| **Proposition publique** (portail, sans compte) | `events.submit` : l'événement reste `pending` jusqu'à validation par un administrateur. |
+
+La commune est traitée comme un organisateur de type `commune`. Le rôle `city_admin` n'est pas limité à sa commune dans le code actuel : ne l'attribuer qu'à des personnes de confiance tant que ce cloisonnement n'existe pas.
+
 ## Sécurité : points d'attention connus
 
 - Les limitations de débit sont **en mémoire** : elles conviennent à une seule instance. Passer à Redis avant d'ajouter des instances.

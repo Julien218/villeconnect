@@ -15,6 +15,7 @@ import { authRouter } from './routers/auth';
 import { privacyRouter } from './routers/privacy';
 import { waitlistRouter } from './routers/waitlist';
 import { cityRouter } from './routers/city';
+import { organizersRouter } from './routers/organizers';
 import { db } from './db';
 import { assertConfig } from './lib/config';
 
@@ -32,6 +33,7 @@ export const appRouter = router({
   privacy: privacyRouter,
   waitlist: waitlistRouter,
   city: cityRouter,
+  organizers: organizersRouter,
 });
 
 export type AppRouter = typeof appRouter;
