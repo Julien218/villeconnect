@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams } from 'expo-router';
 import { trpcQuery } from '@/shared/api-client';
 import { useAuth } from '@/shared/auth-context';
 import { useTheme } from '@/shared/theme-context';
@@ -72,7 +73,13 @@ export default function EventsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
+  // Le module « Sport » du hub ouvre l'agenda déjà filtré (?category=Sport).
+  const params = useLocalSearchParams<{ category?: string }>();
+  const [selectedCategory, setSelectedCategory] = useState<string>(params.category || 'Tous');
+
+  useEffect(() => {
+    setSelectedCategory(params.category || 'Tous');
+  }, [params.category]);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -100,9 +107,13 @@ export default function EventsScreen() {
   }, [load]);
 
   const categories = useMemo(() => {
-    const values = Array.from(new Set(events.map(event => event.category || 'Autre'))).sort();
+    // La catégorie sélectionnée reste visible même si aucun événement ne l'utilise encore.
+    const known = events.map(event => event.category || 'Autre');
+    const values = Array.from(new Set(
+      selectedCategory !== 'Tous' ? [...known, selectedCategory] : known
+    )).sort();
     return ['Tous', ...values];
-  }, [events]);
+  }, [events, selectedCategory]);
 
   const filteredEvents = useMemo(() => (
     selectedCategory === 'Tous'

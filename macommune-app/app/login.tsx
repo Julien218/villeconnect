@@ -25,7 +25,7 @@ export default function LoginScreen() {
     const res = await login(email.trim().toLowerCase(), password);
     setLoading(false);
     if (!res.ok) return setError(res.error || 'Email ou mot de passe incorrect');
-    router.replace('/(tabs)/wallet');
+    router.replace('/(tabs)');
   };
 
   return (

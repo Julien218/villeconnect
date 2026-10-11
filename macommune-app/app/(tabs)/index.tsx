@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getOpenId, trpcQuery } from '@/shared/api-client';
+import { trpcQuery } from '@/shared/api-client';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
 import { getBranding } from '@/shared/branding';
@@ -30,13 +30,6 @@ const BANNER_STATUSES = new Set([
   'contacted',
   'interested',
 ]);
-
-interface Mission {
-  id: number | string;
-  title: string;
-  credits?: number;
-  icon?: string;
-}
 
 interface Commerce {
   id: string;
@@ -63,8 +56,6 @@ export default function HomeScreen() {
   const brand = useMemo(() => getBranding(postalCode), [postalCode]);
   const cityDisplayName = user?.city?.trim() || brand.cityName;
 
-  const [balance, setBalance] = useState<number | null>(null);
-  const [missions, setMissions] = useState<Mission[]>([]);
   const [featuredCommerce, setFeaturedCommerce] = useState<Commerce | null>(null);
   const [latestEvent, setLatestEvent] = useState<LocalEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,18 +67,10 @@ export default function HomeScreen() {
     else setLoading(true);
     setDataError(null);
 
-    const openId = await getOpenId();
-    const [wallet, missionsResult, commerceResult, eventsResult] = await Promise.all([
-      isLoggedIn
-        ? trpcQuery<any>('wallet.getMyWallet', {}, { authenticated: true })
-        : trpcQuery<any>('wallet.getWallet', { openId, postalCode }),
-      trpcQuery<Mission[]>('wallet.getMissions', { postalCode }),
+    const [commerceResult, eventsResult] = await Promise.all([
       trpcQuery<{ items: Commerce[] }>('commerce.listPublished', { postalCode, limit: 30 }),
       trpcQuery<LocalEvent[]>('events.list', { postalCode, limit: 5 }),
     ]);
-
-    setBalance(wallet.data ? Number(wallet.data.available_balance ?? 0) : null);
-    setMissions(missionsResult.data?.slice(0, 3) || []);
 
     const commerces = commerceResult.data?.items || [];
     setFeaturedCommerce(
@@ -95,15 +78,14 @@ export default function HomeScreen() {
     );
     setLatestEvent(eventsResult.data?.[0] || null);
 
-    const failures = [wallet.error, missionsResult.error, commerceResult.error, eventsResult.error]
-      .filter(Boolean);
-    if (failures.length === 4) {
+    const failures = [commerceResult.error, eventsResult.error].filter(Boolean);
+    if (failures.length === 2) {
       setDataError('Les services VilleConnect sont momentanément indisponibles.');
     }
 
     setLoading(false);
     setRefreshing(false);
-  }, [isLoggedIn, postalCode]);
+  }, [postalCode]);
 
   useEffect(() => {
     loadDashboard();
@@ -128,8 +110,8 @@ export default function HomeScreen() {
     { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
     { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
     { key: 'shops', label: 'Commerces', icon: 'storefront-outline', route: '/(tabs)/shops' },
+    { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/(tabs)/events?category=Sport' },
     { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
-    { key: 'wallet', label: 'CivicLoop', icon: 'wallet-outline', route: '/(tabs)/wallet' },
     { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
     { key: 'profile', label: 'Mon profil', icon: 'person-outline', route: '/(tabs)/profile' },
     isLoggedIn
@@ -201,42 +183,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => router.push('/(tabs)/wallet' as any)}
-        accessibilityRole="button"
-        accessibilityLabel="Ouvrir le Wallet CivicLoop"
-      >
-        <LinearGradient
-          colors={[theme.colors.navyGrad2, theme.colors.cyanGrad1, theme.colors.cyanGrad2]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={s.walletCard}
-        >
-          <View style={s.walletHeader}>
-            <View>
-              <Text style={s.walletLabel}>CARTE DE FIDÉLITÉ CIVICLOOP</Text>
-              <Text style={s.walletHint}>Missions et récompenses locales</Text>
-            </View>
-            <Ionicons name="shield-checkmark" size={25} color="#FFFFFF" />
-          </View>
-          <View style={s.walletRow}>
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <>
-                <Text style={s.walletBalance}>{balance ?? '—'}</Text>
-                <Text style={s.walletUnit}>CL</Text>
-              </>
-            )}
-          </View>
-          <View style={s.walletFooter}>
-            <Text style={s.walletCta}>Ouvrir mon Wallet</Text>
-            <Ionicons name="arrow-forward" size={17} color="#FFFFFF" />
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-
       <View style={s.sectionHeader}>
         <View>
           <Text style={s.sectionEyebrow}>SERVICES CONNECTÉS</Text>
@@ -276,39 +222,6 @@ export default function HomeScreen() {
             onInvite={registerInterest}
           />
         </View>
-      )}
-
-      <SectionHeader
-        theme={theme}
-        title="Missions CivicLoop"
-        action="Voir le Wallet"
-        onPress={() => router.push('/(tabs)/wallet' as any)}
-      />
-      {loading ? (
-        <View style={s.inlineLoading}><ActivityIndicator color={theme.colors.cyan} /></View>
-      ) : missions.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.horizontalContent}
-        >
-          {missions.map(mission => (
-            <GlassCard key={String(mission.id)} style={s.missionCard as any}>
-              <View style={s.missionIcon}>
-                <Ionicons name="flag-outline" size={20} color={theme.colors.cyan} />
-              </View>
-              <Text style={s.missionTitle} numberOfLines={2}>{mission.title}</Text>
-              <Text style={s.missionPoints}>+{Number(mission.credits ?? 0)} CL</Text>
-            </GlassCard>
-          ))}
-        </ScrollView>
-      ) : (
-        <EmptyCard
-          theme={theme}
-          icon="flag-outline"
-          title="Aucune mission disponible"
-          text="Les prochaines missions locales apparaîtront ici après publication."
-        />
       )}
 
       <SectionHeader
@@ -479,19 +392,6 @@ function makeStyles(theme: ThemeTokens) {
       backgroundColor: theme.colors.surfaceSolid,
     },
     errorText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, flex: 1 },
-    walletCard: {
-      marginHorizontal: 16, marginTop: -28, borderRadius: 26,
-      padding: 20, minHeight: 180, justifyContent: 'space-between',
-      shadowColor: theme.colors.cyan, shadowOpacity: 0.25, shadowRadius: 22,
-    },
-    walletHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-    walletLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-    walletHint: { color: 'rgba(255,255,255,0.78)', fontSize: 11, marginTop: 5 },
-    walletRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 7, minHeight: 58 },
-    walletBalance: { color: '#FFFFFF', fontSize: 46, fontWeight: '900', lineHeight: 52 },
-    walletUnit: { color: '#FFFFFF', fontSize: 16, fontWeight: '800', marginBottom: 7 },
-    walletFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    walletCta: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
     sectionHeader: { marginHorizontal: 17, marginTop: 28, marginBottom: 13 },
     sectionEyebrow: { color: theme.colors.cyan, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
     sectionTitle: { color: theme.colors.textPrimary, fontSize: 22, fontWeight: '900', marginTop: 4 },
@@ -521,14 +421,6 @@ function makeStyles(theme: ThemeTokens) {
     listAction: { color: theme.colors.cyan, fontSize: 11, fontWeight: '800' },
     inlineLoading: { paddingVertical: 28, alignItems: 'center' },
     horizontalContent: { paddingHorizontal: 16, gap: 10 },
-    missionCard: { width: 168, minHeight: 132, padding: 15, gap: 9 },
-    missionIcon: {
-      width: 38, height: 38, borderRadius: 13,
-      backgroundColor: theme.colors.cyanSoft,
-      alignItems: 'center', justifyContent: 'center',
-    },
-    missionTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '800', lineHeight: 18 },
-    missionPoints: { color: theme.colors.cyan, fontSize: 12, fontWeight: '900' },
     featureCard: {
       marginHorizontal: 16, padding: 16,
       flexDirection: 'row', alignItems: 'center', gap: 13,

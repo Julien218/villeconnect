@@ -46,13 +46,25 @@ export const authRouter = router({
   deviceLogin: publicProcedure
     .input(z.object({ openId: z.string().min(8).max(128), postalCode: z.string().optional() }))
     .mutation(async ({ input }) => {
-      const { id, role } = await getOrCreateUserId(input.openId, input.postalCode);
+      const { id } = await getOrCreateUserId(input.openId, input.postalCode);
+      // Un identifiant appareil ne doit jamais ouvrir la session d'un vrai compte
+      // (email, mot de passe, rôle commerçant ou admin) : on exige une connexion normale.
+      const [accountRows] = await db.execute(
+        'SELECT email, password_hash, role FROM users WHERE id = ?', [id]
+      ) as any[];
+      const account = (accountRows as any[])[0];
+      if (account && (account.email || account.password_hash || account.role !== 'citizen')) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cet appareil est lié à un compte : connectez-vous avec votre email.',
+        });
+      }
       const token = jwt.sign(
-        { sub: id, openId: input.openId, role, type: 'device' },
+        { sub: id, openId: input.openId, role: 'citizen', type: 'device' },
         process.env.JWT_SECRET as string,
-        { expiresIn: '30d' }
+        { expiresIn: '7d' }
       );
-      return { token, role };
+      return { token, role: 'citizen' };
     }),
 
   // Inscription citoyenne publique. Si `deviceOpenId` correspond à un device anonyme

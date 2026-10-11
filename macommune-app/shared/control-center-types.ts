@@ -33,6 +33,7 @@ export const ALL_MODULES: ModuleDef[] = [
   { key: 'guichet',      icon: 'document-text',         label: 'E-guichet',    route: '/(tabs)/index',  colorKey: 'guichet' },
   { key: 'commerces',    icon: 'storefront',            label: 'Commerces',    route: '/(tabs)/shops',  colorKey: 'commerces' },
   { key: 'promotions',   icon: 'pricetag',              label: 'Promotions',   route: '/(tabs)/shops',  colorKey: 'promotions' },
+  { key: 'sport',        icon: 'trophy',                label: 'Sport',        route: '/(tabs)/events?category=Sport', colorKey: 'agenda' },
   { key: 'carburant',    icon: 'flame',                 label: 'Carburant',    route: '/(tabs)/fuel',   colorKey: 'carburant' },
   { key: 'entraide',     icon: 'people',                label: 'Entraide',     route: '/(tabs)/index',  colorKey: 'entraide' },
   { key: 'travaux',      icon: 'construct',             label: 'Travaux',      route: '/(tabs)/index',  colorKey: 'commune' },
@@ -43,13 +44,14 @@ export const ALL_MODULES: ModuleDef[] = [
   { key: 'parking',      icon: 'car-sport',             label: 'Parking',      route: '/(tabs)/index',  colorKey: 'commune' },
   { key: 'tourisme',     icon: 'compass',                label: 'Tourisme',     route: '/(tabs)/index',  colorKey: 'promotions' },
   { key: 'ia',           icon: 'sparkles',              label: 'Assistant IA', route: '/(tabs)/index',  colorKey: 'commune' },
-  { key: 'wallet',       icon: 'wallet',                label: 'Wallet',       route: '/(tabs)/wallet', colorKey: 'guichet' },
   { key: 'commune',      icon: 'location',              label: 'Ma commune',   route: '/(tabs)/index',  colorKey: 'commune' },
 ];
 
 // Sélection par défaut affichée autour du C tant que l'utilisateur n'a rien personnalisé.
+// Uniquement des modules qui ouvrent un vrai écran : les autres restent disponibles dans la
+// personnalisation, mais ne sont pas affichés par défaut tant que leur écran n'existe pas.
 export const DEFAULT_FAVORITE_KEYS = [
-  'actualites', 'agenda', 'signalement', 'guichet', 'commerces', 'travaux',
+  'actualites', 'agenda', 'commerces', 'sport', 'carburant',
 ];
 
 export interface RadialAction {
