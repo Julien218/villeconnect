@@ -1,5 +1,5 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-// Vitrine d'un commerce : produits, panier, commande avec retrait et paiement en ligne.
+// Vitrine d'un commerce : produits, panier, commande avec retrait ou livraison et paiement en ligne.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Linking, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
@@ -23,9 +23,17 @@ interface Product {
   available: boolean;
 }
 
+interface DeliveryOffer {
+  feeCents: number;
+  freeFromCents: number | null;
+  postalCodes: string[];
+  note: string | null;
+}
+
 interface Catalog {
   commerce: { id: number; name: string };
   acceptsOnlineOrders: boolean;
+  delivery: DeliveryOffer | null;
   minOrderCents: number;
   products: Product[];
 }
@@ -46,6 +54,17 @@ export default function CommerceScreen() {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'pickup' | 'delivery'>('pickup');
+  const [address, setAddress] = useState('');
+  const [postalCode, setPostalCode] = useState(user?.postalCode || '');
+  const [city, setCity] = useState(user?.city || '');
+  const [phone, setPhone] = useState('');
+
+  // Le profil peut arriver après le premier rendu : on pré-remplit sans écraser une saisie.
+  useEffect(() => {
+    if (user?.postalCode) setPostalCode(current => current || user.postalCode || '');
+    if (user?.city) setCity(current => current || user.city || '');
+  }, [user?.postalCode, user?.city]);
 
   const load = useCallback(async (isRefresh = false) => {
     if (!Number.isInteger(commerceId) || commerceId <= 0) {
@@ -76,9 +95,21 @@ export default function CommerceScreen() {
       .map(product => ({ product, quantity: cart[product.id] }));
   }, [catalog, cart]);
 
-  const totalCents = lines.reduce((sum, line) => sum + line.product.priceCents * line.quantity, 0);
+  const subtotalCents = lines.reduce((sum, line) => sum + line.product.priceCents * line.quantity, 0);
   const minCents = catalog?.minOrderCents ?? 0;
-  const belowMinimum = totalCents > 0 && totalCents < minCents;
+  const belowMinimum = subtotalCents > 0 && subtotalCents < minCents;
+
+  // Affichage seulement : le serveur recalcule les frais et refuse un code postal non livré.
+  const delivery = catalog?.delivery || null;
+  const isDelivery = mode === 'delivery' && delivery !== null;
+  const outOfZone = isDelivery && /^\d{4}$/.test(postalCode.trim()) && !delivery!.postalCodes.includes(postalCode.trim());
+  const deliveryFeeCents = !isDelivery
+    ? 0
+    : delivery!.freeFromCents !== null && subtotalCents >= delivery!.freeFromCents ? 0 : delivery!.feeCents;
+  const totalCents = subtotalCents + deliveryFeeCents;
+  const deliveryIncomplete = isDelivery && (
+    address.trim().length < 5 || !/^\d{4}$/.test(postalCode.trim()) || city.trim().length < 2 || phone.trim().length < 6
+  );
 
   const change = (productId: number, delta: number) => {
     setCart(current => {
@@ -107,6 +138,10 @@ export default function CommerceScreen() {
         commerceId,
         items: lines.map(line => ({ productId: line.product.id, quantity: line.quantity })),
         note: note.trim() || undefined,
+        fulfillment: isDelivery ? 'delivery' : 'pickup',
+        delivery: isDelivery
+          ? { address: address.trim(), postalCode: postalCode.trim(), city: city.trim(), phone: phone.trim() }
+          : undefined,
       },
       { authenticated: true }
     );
@@ -148,13 +183,21 @@ export default function CommerceScreen() {
       {!loading && catalog && (
         <>
           <GlassCard style={s.card as any}>
-            <Text style={s.eyebrow}>COMMANDE AVEC RETRAIT EN COMMERCE</Text>
+            <Text style={s.eyebrow}>{catalog.delivery ? 'RETRAIT EN COMMERCE OU LIVRAISON' : 'COMMANDE AVEC RETRAIT EN COMMERCE'}</Text>
             <Text style={s.title}>{catalog.commerce.name}</Text>
             <Text style={s.muted}>
               {catalog.acceptsOnlineOrders
-                ? `Payez en ligne (Bancontact ou carte), puis retirez avec votre code. Commande minimale : ${formatEuros(catalog.minOrderCents)}.`
+                ? `Payez en ligne (Bancontact ou carte), puis retirez avec votre code${catalog.delivery ? ' ou faites-vous livrer' : ''}. Commande minimale : ${formatEuros(catalog.minOrderCents)}.`
                 : 'Ce commerce n’accepte pas encore les commandes en ligne.'}
             </Text>
+            {catalog.acceptsOnlineOrders && catalog.delivery && (
+              <Text style={s.muted}>
+                Livraison : {catalog.delivery.feeCents > 0 ? formatEuros(catalog.delivery.feeCents) : 'offerte'}
+                {catalog.delivery.freeFromCents !== null && catalog.delivery.feeCents > 0
+                  ? `, offerte dès ${formatEuros(catalog.delivery.freeFromCents)}` : ''}
+                {` · ${catalog.delivery.postalCodes.join(', ')}`}
+              </Text>
+            )}
           </GlassCard>
 
           {catalog.products.length === 0 && (
@@ -205,6 +248,60 @@ export default function CommerceScreen() {
                   <Text style={s.rowText}>{formatEuros(line.product.priceCents * line.quantity)}</Text>
                 </View>
               ))}
+              {delivery && (
+                <View style={s.modeRow} accessibilityRole="radiogroup">
+                  {([['pickup', 'Retrait', 'storefront-outline'], ['delivery', 'Livraison', 'bicycle-outline']] as const).map(([value, label, icon]) => (
+                    <TouchableOpacity
+                      key={value}
+                      onPress={() => setMode(value)}
+                      style={[s.modeBtn, mode === value && s.modeBtnOn]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: mode === value }}
+                    >
+                      <Ionicons name={icon} size={16} color={mode === value ? theme.colors.cyan : theme.colors.textSecondary} />
+                      <Text style={[s.modeText, mode === value && s.modeTextOn]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {isDelivery && (
+                <View style={{ gap: 8 }}>
+                  <TextInput
+                    style={s.input} value={address} onChangeText={setAddress} maxLength={255}
+                    placeholder="Rue et numéro" placeholderTextColor={theme.colors.textMuted}
+                    autoComplete="street-address"
+                  />
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput
+                      style={[s.input, { width: 96, flexShrink: 0 }]} value={postalCode} onChangeText={setPostalCode} maxLength={4}
+                      placeholder="7370" placeholderTextColor={theme.colors.textMuted} keyboardType="number-pad"
+                    />
+                    <TextInput
+                      style={[s.input, { flex: 1, minWidth: 0 }]} value={city} onChangeText={setCity} maxLength={120}
+                      placeholder="Localité" placeholderTextColor={theme.colors.textMuted}
+                    />
+                  </View>
+                  <TextInput
+                    style={s.input} value={phone} onChangeText={setPhone} maxLength={40}
+                    placeholder="Téléphone (pour le livreur)" placeholderTextColor={theme.colors.textMuted}
+                    keyboardType="phone-pad" autoComplete="tel"
+                  />
+                  {delivery?.note ? <Text style={s.muted}>{delivery.note}</Text> : null}
+                  {outOfZone && (
+                    <Text style={s.warning}>
+                      Ce commerce livre seulement : {delivery!.postalCodes.join(', ')}. Choisissez le retrait.
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {isDelivery && (
+                <View style={s.row}>
+                  <Text style={s.rowText}>Livraison</Text>
+                  <Text style={s.rowText}>{deliveryFeeCents > 0 ? formatEuros(deliveryFeeCents) : 'Offerte'}</Text>
+                </View>
+              )}
               <View style={[s.row, s.totalRow]}>
                 <Text style={s.totalText}>Total</Text>
                 <Text style={s.totalText}>{formatEuros(totalCents)}</Text>
@@ -224,14 +321,14 @@ export default function CommerceScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={order}
-                disabled={submitting || belowMinimum}
+                disabled={submitting || belowMinimum || outOfZone || deliveryIncomplete}
                 accessibilityRole="button"
                 accessibilityLabel="Commander et payer"
               >
                 <LinearGradient
                   colors={[theme.colors.electric, theme.colors.cyan]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={[s.primaryBtn, (submitting || belowMinimum) && s.disabled]}
+                  style={[s.primaryBtn, (submitting || belowMinimum || outOfZone || deliveryIncomplete) && s.disabled]}
                 >
                   {submitting
                     ? <ActivityIndicator color="#FFFFFF" />
@@ -275,6 +372,14 @@ function makeStyles(theme: ThemeTokens) {
       paddingHorizontal: 14, paddingVertical: 11, color: theme.colors.textPrimary,
       backgroundColor: theme.colors.surfaceSolid, fontSize: 13,
     },
+    modeRow: { flexDirection: 'row', gap: 8 },
+    modeBtn: {
+      flex: 1, minHeight: 44, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border,
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    },
+    modeBtnOn: { borderColor: theme.colors.cyan, backgroundColor: theme.colors.cyanSoft },
+    modeText: { color: theme.colors.textSecondary, fontSize: 13, fontWeight: '800' },
+    modeTextOn: { color: theme.colors.cyan },
     warning: { color: theme.colors.warning, fontSize: 12, fontWeight: '700' },
     errorText: { color: theme.colors.danger, fontSize: 12, fontWeight: '700' },
     primaryBtn: { minHeight: 50, borderRadius: theme.radius.md, alignItems: 'center', justifyContent: 'center' },

@@ -18,6 +18,7 @@ import { cityRouter } from './routers/city';
 import { organizersRouter } from './routers/organizers';
 import { merchantRouter } from './routers/merchant';
 import { ordersRouter } from './routers/orders';
+import { sportRouter } from './routers/sport';
 import { db } from './db';
 import { assertConfig } from './lib/config';
 import { stripeWebhookHandler } from './routes/stripeWebhook';
@@ -39,6 +40,7 @@ export const appRouter = router({
   organizers: organizersRouter,
   merchant: merchantRouter,
   orders: ordersRouter,
+  sport: sportRouter,
 });
 
 export type AppRouter = typeof appRouter;

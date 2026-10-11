@@ -26,7 +26,15 @@ const LABELS: Record<OrderStatus, string> = {
   cancelled: 'Annulée',
 };
 
-export function orderStatusLabel(status: string): string {
+const DELIVERY_LABELS: Partial<Record<OrderStatus, string>> = {
+  ready: 'En cours de livraison',
+  collected: 'Livrée',
+};
+
+export function orderStatusLabel(status: string, fulfillment?: string | null): string {
+  if (fulfillment === 'delivery' && DELIVERY_LABELS[status as OrderStatus]) {
+    return DELIVERY_LABELS[status as OrderStatus]!;
+  }
   return LABELS[status as OrderStatus] || status;
 }
 

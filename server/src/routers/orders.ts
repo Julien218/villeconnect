@@ -7,7 +7,8 @@ import { protectedProcedure, publicProcedure, router } from '../trpc';
 import { db } from '../db';
 import { checkRateLimit } from '../lib/auth';
 import {
-  MAX_ORDER_CENTS, generatePickupCode, minOrderCents, platformFeePercent, priceOrder,
+  DeliverySettings, MAX_ORDER_CENTS, deliveryFeeFor, generatePickupCode, minOrderCents,
+  parsePostalCodes, platformFeePercent, priceOrder,
 } from '../lib/money';
 import { createCheckoutSession } from '../lib/stripe';
 
@@ -19,6 +20,30 @@ const PICKUP_VISIBLE = ['paid', 'preparing', 'ready', 'collected'];
 function formatEuros(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',') + ' €';
 }
+
+async function loadDeliverySettings(commerceId: number): Promise<DeliverySettings & { note: string | null }> {
+  const [rows] = await db.execute(
+    `SELECT delivery_enabled, fee_cents, free_from_cents, postal_codes, delivery_note
+     FROM commerce_delivery_settings WHERE commerce_id = ?`,
+    [commerceId]
+  ) as any[];
+  const row = (rows as any[])[0];
+  if (!row) return { enabled: false, feeCents: 0, freeFromCents: null, postalCodes: [], note: null };
+  return {
+    enabled: Boolean(row.delivery_enabled),
+    feeCents: Number(row.fee_cents),
+    freeFromCents: row.free_from_cents === null ? null : Number(row.free_from_cents),
+    postalCodes: parsePostalCodes(row.postal_codes),
+    note: row.delivery_note || null,
+  };
+}
+
+const deliveryInput = z.object({
+  address: z.string().trim().min(5).max(255),
+  postalCode: z.string().trim().regex(/^\d{4}$/, 'Code postal belge à 4 chiffres.'),
+  city: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(6).max(40),
+});
 
 export const ordersRouter = router({
   // Catalogue public d'un commerce publié.
@@ -42,9 +67,11 @@ export const ordersRouter = router({
         [input.commerceId]
       ) as any[];
 
+      const delivery = await loadDeliverySettings(input.commerceId);
       return {
         commerce: { id: Number(commerce.id), name: commerce.name },
         acceptsOnlineOrders: Boolean(commerce.chargesEnabled),
+        delivery: delivery.enabled ? delivery : null,
         minOrderCents: minOrderCents(),
         products: (products as any[]).map(row => ({ ...row, available: Boolean(row.available) })),
       };
@@ -58,6 +85,8 @@ export const ordersRouter = router({
         quantity: z.number().int().min(1).max(MAX_QUANTITY),
       })).min(1).max(MAX_LINES),
       note: z.string().trim().max(300).optional(),
+      fulfillment: z.enum(['pickup', 'delivery']).default('pickup'),
+      delivery: deliveryInput.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.authType !== 'access' || !ctx.user.email_verified) {
@@ -110,8 +139,28 @@ export const ordersRouter = router({
         lines.push({ productId, name: product.name, unitPriceCents: Number(product.priceCents), quantity });
       }
 
-      const totals = priceOrder(lines, platformFeePercent());
-      if (totals.totalCents < minOrderCents()) {
+      let deliveryFeeCents = 0;
+      if (input.fulfillment === 'delivery') {
+        if (!input.delivery) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Adresse de livraison manquante.' });
+        }
+        const settings = await loadDeliverySettings(input.commerceId);
+        const subtotal = lines.reduce((sum, line) => sum + line.unitPriceCents * line.quantity, 0);
+        const fee = deliveryFeeFor(settings, subtotal, input.delivery.postalCode);
+        if (fee === null) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: settings.enabled
+              ? 'Ce commerce ne livre pas à ce code postal. Choisissez le retrait.'
+              : 'Ce commerce ne propose pas la livraison.',
+          });
+        }
+        deliveryFeeCents = fee;
+      }
+
+      const totals = priceOrder(lines, platformFeePercent(), deliveryFeeCents);
+      // Le minimum porte sur les produits : les frais de livraison ne permettent pas de l'atteindre.
+      if (totals.subtotalCents < minOrderCents()) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: `Commande minimale : ${formatEuros(minOrderCents())}.`,
@@ -121,6 +170,7 @@ export const ordersRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Montant de commande trop élevé.' });
       }
 
+      const isDelivery = input.fulfillment === 'delivery';
       // Création de la commande et de ses lignes dans une seule transaction.
       const conn = await db.getConnection();
       let orderId = 0;
@@ -129,12 +179,18 @@ export const ordersRouter = router({
         for (let attempt = 0; attempt < 5 && !orderId; attempt += 1) {
           try {
             const [result] = await conn.execute(
-              `INSERT INTO orders (commerce_id, user_id, status, subtotal_cents, platform_fee_cents,
-                                   total_cents, pickup_code, note)
-               VALUES (?, ?, 'pending_payment', ?, ?, ?, ?, ?)`,
+              `INSERT INTO orders (commerce_id, user_id, status, fulfillment, subtotal_cents,
+                                   platform_fee_cents, delivery_fee_cents, total_cents, pickup_code, note,
+                                   delivery_address, delivery_postal_code, delivery_city, delivery_phone)
+               VALUES (?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
-                input.commerceId, ctx.user.id, totals.subtotalCents, totals.platformFeeCents,
-                totals.totalCents, generatePickupCode(), input.note || null,
+                input.commerceId, ctx.user.id, input.fulfillment, totals.subtotalCents,
+                totals.platformFeeCents, totals.deliveryFeeCents, totals.totalCents,
+                generatePickupCode(), input.note || null,
+                isDelivery ? input.delivery!.address : null,
+                isDelivery ? input.delivery!.postalCode : null,
+                isDelivery ? input.delivery!.city : null,
+                isDelivery ? input.delivery!.phone : null,
               ]
             ) as any[];
             orderId = Number((result as any).insertId);
@@ -165,11 +221,16 @@ export const ordersRouter = router({
         const session = await createCheckoutSession({
           accountId: commerce.accountId,
           orderId,
-          lines: lines.map(line => ({ name: line.name, unitAmountCents: line.unitPriceCents, quantity: line.quantity })),
+          lines: [
+            ...lines.map(line => ({ name: line.name, unitAmountCents: line.unitPriceCents, quantity: line.quantity })),
+            ...(totals.deliveryFeeCents > 0
+              ? [{ name: 'Livraison à domicile', unitAmountCents: totals.deliveryFeeCents, quantity: 1 }]
+              : []),
+          ],
           applicationFeeCents: totals.platformFeeCents,
           customerEmail: (userRows as any[])[0]?.email || undefined,
-          successUrl: `${base}/commandes/${orderId}?paiement=ok`,
-          cancelUrl: `${base}/commandes/${orderId}?paiement=annule`,
+          successUrl: `${base}/orders/${orderId}?paiement=ok`,
+          cancelUrl: `${base}/orders/${orderId}?paiement=annule`,
           expiresAtSeconds: Math.floor(Date.now() / 1000) + 31 * 60,
         });
         await db.execute('UPDATE orders SET stripe_session_id = ? WHERE id = ?', [session.id, orderId]);
@@ -186,7 +247,7 @@ export const ordersRouter = router({
 
   mine: protectedProcedure.query(async ({ ctx }) => {
     const [rows] = await db.execute(
-      `SELECT o.id, o.status, o.total_cents AS totalCents, o.created_at AS createdAt,
+      `SELECT o.id, o.status, o.fulfillment, o.total_cents AS totalCents, o.created_at AS createdAt,
               c.name AS commerceName
        FROM orders o JOIN commerce_catalog c ON c.id = o.commerce_id
        WHERE o.user_id = ? AND o.status <> 'cancelled'
@@ -200,8 +261,11 @@ export const ordersRouter = router({
     .input(z.object({ orderId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const [rows] = await db.execute(
-        `SELECT o.id, o.status, o.total_cents AS totalCents, o.pickup_code AS pickupCode,
-                o.note, o.created_at AS createdAt, o.paid_at AS paidAt, o.ready_at AS readyAt,
+        `SELECT o.id, o.status, o.fulfillment, o.subtotal_cents AS subtotalCents,
+                o.delivery_fee_cents AS deliveryFeeCents, o.total_cents AS totalCents,
+                o.pickup_code AS pickupCode, o.note, o.delivery_address AS deliveryAddress,
+                o.delivery_postal_code AS deliveryPostalCode, o.delivery_city AS deliveryCity,
+                o.created_at AS createdAt, o.paid_at AS paidAt, o.ready_at AS readyAt,
                 c.name AS commerceName, c.address AS commerceAddress, c.phone AS commercePhone
          FROM orders o JOIN commerce_catalog c ON c.id = o.commerce_id
          WHERE o.id = ? AND o.user_id = ?`,

@@ -15,8 +15,14 @@ interface OrderDetail {
   id: number;
   commerceName?: string | null;
   status: OrderStatus;
+  fulfillment?: 'pickup' | 'delivery';
+  subtotalCents?: number;
+  deliveryFeeCents?: number;
   totalCents: number;
   pickupCode?: string | null;
+  deliveryAddress?: string | null;
+  deliveryPostalCode?: string | null;
+  deliveryCity?: string | null;
   note?: string | null;
   items: { name: string; quantity: number; unitPriceCents: number }[];
 }
@@ -52,6 +58,7 @@ export default function OrderDetailScreen() {
 
   // Rafraîchit toutes les 6 s tant que la commande évolue (paiement, préparation).
   const inProgress = order ? isOrderInProgress(order.status) : false;
+  const isDelivery = order?.fulfillment === 'delivery';
   useEffect(() => {
     if (!inProgress) return;
     timer.current = setInterval(() => load('silent'), 6000);
@@ -89,7 +96,12 @@ export default function OrderDetailScreen() {
         <>
           <GlassCard style={s.card as any}>
             <Text style={s.eyebrow}>{(order.commerceName || 'COMMERCE').toUpperCase()}</Text>
-            <Text style={s.title}>{orderStatusLabel(order.status)}</Text>
+            <Text style={s.title}>{orderStatusLabel(order.status, order.fulfillment)}</Text>
+            {isDelivery && order.deliveryAddress ? (
+              <Text style={s.muted}>
+                Adresse de livraison : {order.deliveryAddress}, {order.deliveryPostalCode} {order.deliveryCity}
+              </Text>
+            ) : null}
             {order.status === 'pending_payment' && (
               <Text style={s.muted}>
                 Le paiement n’est pas encore confirmé. Si vous l’avez terminé, cette page se met à jour toute seule.
@@ -99,11 +111,15 @@ export default function OrderDetailScreen() {
 
           {order.pickupCode ? (
             <GlassCard style={s.card as any}>
-              <Text style={s.eyebrow}>CODE DE RETRAIT</Text>
+              <Text style={s.eyebrow}>{isDelivery ? 'CODE DE LIVRAISON' : 'CODE DE RETRAIT'}</Text>
               <Text style={s.code} accessibilityLabel={`Code de retrait ${order.pickupCode.split('').join(' ')}`}>
                 {order.pickupCode}
               </Text>
-              <Text style={s.muted}>Présentez ce code au commerçant pour récupérer votre commande.</Text>
+              <Text style={s.muted}>
+                {isDelivery
+                  ? 'Donnez ce code au livreur à la réception : il confirme que la commande vous a bien été remise.'
+                  : 'Présentez ce code au commerçant pour récupérer votre commande.'}
+              </Text>
             </GlassCard>
           ) : null}
 
@@ -114,6 +130,12 @@ export default function OrderDetailScreen() {
                 <Text style={s.rowText}>{formatEuros(item.unitPriceCents * item.quantity)}</Text>
               </View>
             ))}
+            {isDelivery ? (
+              <View style={s.row}>
+                <Text style={s.rowText}>Livraison</Text>
+                <Text style={s.rowText}>{order.deliveryFeeCents ? formatEuros(order.deliveryFeeCents) : 'Offerte'}</Text>
+              </View>
+            ) : null}
             <View style={[s.row, s.totalRow]}>
               <Text style={s.totalText}>Total</Text>
               <Text style={s.totalText}>{formatEuros(order.totalCents)}</Text>

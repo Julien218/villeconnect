@@ -92,3 +92,20 @@ test('la commande ne reçoit jamais de prix du client', () => {
   const input = src.slice(src.indexOf('create: protectedProcedure'), src.indexOf('.mutation(async ({ ctx, input }) => {\n      if (ctx.user.authType'));
   assert.doesNotMatch(input, /price|amount|total/i);
 });
+
+test('la migration livraison est rejouable et garde la commission sur les produits', () => {
+  const sql = readMigration('017_delivery.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS commerce_delivery_settings/i);
+  assert.match(sql, /information_schema\.COLUMNS/i);
+  assert.match(sql, /fulfillment ENUM\('pickup', 'delivery'\)/i);
+  assert.match(sql, /delivery_fee_cents INT UNSIGNED NOT NULL DEFAULT 0/i);
+});
+
+test('le schéma de base reconstruit ne crée que des tables absentes', () => {
+  const sql = readMigration('000_base_schema.sql');
+  const creates = sql.match(/CREATE TABLE/gi) || [];
+  const safe = sql.match(/CREATE TABLE IF NOT EXISTS/gi) || [];
+  assert.ok(creates.length >= 10);
+  assert.equal(creates.length, safe.length);
+  assert.doesNotMatch(sql, /\b(DROP|TRUNCATE|DELETE)\b/i);
+});

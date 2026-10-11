@@ -110,7 +110,7 @@ export default function HomeScreen() {
     { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
     { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
     { key: 'shops', label: 'Commerces', icon: 'storefront-outline', route: '/(tabs)/shops' },
-    { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/(tabs)/events?category=Sport' },
+    { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/sport' },
     { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
     { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
     { key: 'profile', label: 'Mon profil', icon: 'person-outline', route: '/(tabs)/profile' },
@@ -365,8 +365,9 @@ function makeStyles(theme: ThemeTokens) {
     heroImage: { opacity: 0.62 },
     heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
     hello: { color: theme.colors.cyan, fontSize: 15, fontWeight: '600' },
-    cityName: { color: theme.colors.textPrimary, fontSize: 38, fontWeight: '900', marginTop: 2 },
-    cityTagline: { color: theme.colors.textSecondary, fontSize: 16, lineHeight: 23, marginTop: 5 },
+    // Le haut du bandeau est toujours sur la photo assombrie : texte clair quel que soit le thème.
+    cityName: { color: '#FFFFFF', fontSize: 38, fontWeight: '900', marginTop: 2 },
+    cityTagline: { color: 'rgba(255,255,255,0.82)', fontSize: 16, lineHeight: 23, marginTop: 5 },
     profileButton: {
       width: 48, height: 48, borderRadius: 24,
       borderWidth: 1, borderColor: theme.colors.cyan + '55',

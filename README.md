@@ -17,7 +17,7 @@ Les dossiers `villeconnect-civicloop/`, `villeconnect-push/` et `villeconnect-pr
 
 ## Fonctionnement actuel de l'application
 
-Accueil, actualités et agenda, annuaire des commerces, prix des carburants, profil, services communaux. Les comptes citoyens utilisent email et mot de passe.
+Accueil, actualités et agenda, annuaire des commerces avec vitrine et commande en ligne (retrait ou livraison), rubrique Sport, prix des carburants, profil, services communaux. Les comptes citoyens utilisent email et mot de passe.
 
 Le Wallet et la carte de fidélité sont **retirés** de l'application. Le code serveur correspondant reste dans `server/src/routers/wallet.ts` mais n'est plus appelé par l'app.
 
@@ -96,20 +96,40 @@ Les citoyens commandent chez un commerce, paient en ligne (Bancontact ou carte) 
 4. Chaque commerçant doit activer Bancontact dans son propre compte Stripe.
 5. **Tester entièrement avec les clés `sk_test_` avant tout argent réel.**
 
-**Écrans de l'app** : vitrine et panier (`/commerce/<id>`), « Mes commandes » (`/orders`), espace commerçant (`/pro` : commandes, retrait par code, produits, activation Stripe). Côté événements : `/organizer` (publication par les ASBL et la commune) et `/admin/events` (validation). Aucun de ces écrans n'a encore été compilé ni testé sur appareil.
+**Livraison à domicile** (migration `017_delivery.sql`) : chaque commerçant l'active dans `/pro/<id>` → onglet Livraison (frais, livraison offerte dès un montant, codes postaux livrés). Le client choisit « Retrait » ou « Livraison » au panier et indique son adresse et son téléphone. Le commerçant livre lui-même ; à la remise, le client donne son code au livreur, qui le saisit comme pour un retrait. Les frais de livraison vont entièrement au commerçant : la commission de 5 % porte uniquement sur les produits, et le minimum de commande ne compte pas les frais.
 
-**Pas encore fait** : livraison, TVA sur la commission, remboursement depuis l'app. Le retour de paiement utilise `WEB_APP_URL` : pour l'app native, il faudra un lien universel.
+**Écrans de l'app** : vitrine et panier (`/commerce/<id>`), « Mes commandes » (`/orders`), espace commerçant (`/pro` : commandes, remise par code, produits, livraison, activation Stripe). Côté événements : `/organizer` (publication par les ASBL et la commune) et `/admin/events` (validation). Ces écrans ont été parcourus dans la version web, sur une base locale de démonstration (voir « Démonstration locale »). Le paiement Stripe lui-même n'a pas encore été testé, faute de clé de test.
+
+**Pas encore fait** : TVA sur la commission, remboursement depuis l'app. Le retour de paiement utilise `WEB_APP_URL` (`/orders/<id>`) : pour l'app native, il faudra un lien universel.
 
 ## Rubrique Sport
 
-Le module « Sport » de l'accueil ouvre l'agenda filtré sur la catégorie `Sport`. Les clubs et ASBL sportifs publient leurs événements comme n'importe quel organisateur (voir plus haut).
+L'écran `/sport` (tuile « Sport » de l'accueil) regroupe, pour la commune de l'utilisateur :
+
+- les **disciplines** disponibles (filtre) ;
+- les **clubs** et les **installations** (salles, terrains), avec public, horaires, tarifs, adresse et boutons Appeler, Email, Site et Itinéraire ;
+- les **prochains événements sportifs**, tirés de l'agenda (catégorie `Sport`).
+
+**Gestion légère** (migration `018_sport_places.sql`) : un club connecté propose sa fiche depuis `/sport`, et elle reste en attente. Un administrateur de ville la publie ou la refuse en un clic dans Profil → « Fiches Sport à valider » (`/admin/sport`). Il peut aussi saisir une fiche directement : elle est alors publiée tout de suite. Aucune fiche n'est créée d'office.
 
 ## Sécurité : points d'attention connus
 
 - Les limitations de débit sont **en mémoire** : elles conviennent à une seule instance. Passer à Redis avant d'ajouter des instances.
-- Les migrations numérotées **001 à 006** (tables `users`, `shops`, `events`, etc.) ne sont pas dans le dépôt : la base ne peut pas être recréée depuis zéro à partir des fichiers actuels.
+- Les migrations **001 à 006** d'origine ne sont pas dans le dépôt. `000_base_schema.sql` reconstruit leurs tables (`users`, `events`, jetons, `shops`…) d'après les requêtes du serveur, pour créer une base neuve. En production, ces tables existent déjà : ne pas s'en servir pour modifier une base existante sans comparer d'abord avec `DESCRIBE`.
 - Appliquer les migrations manuellement, après sauvegarde, jamais au démarrage de l'API.
+- **Ordre de mise en production** : appliquer `017_delivery.sql` et `018_sport_places.sql` (après sauvegarde) **avant** de déployer l'API qui les utilise. Sans elles, les commandes et la rubrique Sport renvoient une erreur.
+
+## Démonstration locale
+
+Pour voir l'application complète sur un ordinateur, sans toucher à la production :
+
+1. MySQL 8 local, puis appliquer dans l'ordre `000_base_schema.sql`, puis `007` à `018` (sans les fichiers `_ROLLBACK`).
+2. Lancer l'API (`server/`, `npm run build && npm start`) avec un `.env` de développement (`WEB_APP_URL=http://localhost:8090`).
+3. Construire l'app web pointée sur cette API : `EXPO_PUBLIC_API_URL=http://localhost:3000 npx expo export --clear --platform web`, puis servir `dist/` avec un repli vers `index.html`.
+4. Créer les comptes depuis l'écran d'inscription. Un administrateur rattache le commerçant (`merchant.adminLinkMember`).
+
+Sans clé Stripe, tout fonctionne jusqu'au paiement : la commande est créée, puis annulée avec le message « paiement momentanément indisponible ».
 
 ## Prochaines étapes prévues
 
-Livraison, clubs et installations sportives détaillés, livraison, clubs et installations sportives détaillés.
+Tester le paiement de bout en bout avec les clés Stripe de test (`sk_test_`), puis le retour vers l'app native (lien universel).
