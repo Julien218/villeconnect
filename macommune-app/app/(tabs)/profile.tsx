@@ -241,8 +241,8 @@ export default function ProfileScreen() {
             <Ionicons name="bag-handle-outline" size={20} color={theme.colors.cyan} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.sectionTitle}>Mes commandes</Text>
-            <Text style={s.hint}>Suivez vos commandes et retrouvez votre code de retrait.</Text>
+            <Text style={s.sectionTitle}>Commandes et publication</Text>
+            <Text style={s.hint}>Commandes, code de retrait, espaces commerçant et organisateur.</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -253,6 +253,24 @@ export default function ProfileScreen() {
         >
           <Text style={s.sectionButtonText}>Voir mes commandes</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => router.push('/organizer' as any)}
+          style={s.sectionButton}
+          accessibilityRole="button"
+          accessibilityLabel="Publier un événement pour une association ou la commune"
+        >
+          <Text style={s.sectionButtonText}>Publier un événement (associations, commune)</Text>
+        </TouchableOpacity>
+        {['city_admin', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/admin/events' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Valider les événements en attente"
+          >
+            <Text style={s.sectionButtonText}>Événements à valider</Text>
+          </TouchableOpacity>
+        )}
         {['merchant', 'admin', 'super_admin'].includes(String(user.role)) && (
           <TouchableOpacity
             onPress={() => router.push('/pro' as any)}

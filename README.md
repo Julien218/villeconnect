@@ -96,7 +96,7 @@ Les citoyens commandent chez un commerce, paient en ligne (Bancontact ou carte) 
 4. Chaque commerçant doit activer Bancontact dans son propre compte Stripe.
 5. **Tester entièrement avec les clés `sk_test_` avant tout argent réel.**
 
-**Écrans de l'app** : vitrine et panier (`/commerce/<id>`), « Mes commandes » (`/orders`), espace commerçant (`/pro` : commandes, retrait par code, produits, activation Stripe). Ils n'ont pas encore été compilés ni testés sur appareil.
+**Écrans de l'app** : vitrine et panier (`/commerce/<id>`), « Mes commandes » (`/orders`), espace commerçant (`/pro` : commandes, retrait par code, produits, activation Stripe). Côté événements : `/organizer` (publication par les ASBL et la commune) et `/admin/events` (validation). Aucun de ces écrans n'a encore été compilé ni testé sur appareil.
 
 **Pas encore fait** : livraison, TVA sur la commission, remboursement depuis l'app. Le retour de paiement utilise `WEB_APP_URL` : pour l'app native, il faudra un lien universel.
 
@@ -112,4 +112,4 @@ Le module « Sport » de l'accueil ouvre l'agenda filtré sur la catégorie `Spo
 
 ## Prochaines étapes prévues
 
-Écrans de l'app (organisateur, administration), livraison, clubs et installations sportives détaillés.
+Livraison, clubs et installations sportives détaillés, livraison, clubs et installations sportives détaillés.
