@@ -24,6 +24,12 @@ export function findConfigProblems(env: Record<string, string | undefined> = pro
     problems.push('DATABASE_URL (ou MYSQL_URL) est absente');
   }
 
+  // Paiement en ligne : optionnel, mais s'il est activé il doit être complet.
+  if (env.STRIPE_SECRET_KEY) {
+    if (!env.STRIPE_WEBHOOK_SECRET) problems.push('STRIPE_WEBHOOK_SECRET est absente alors que Stripe est activé');
+    if (!env.WEB_APP_URL || !env.WEB_APP_URL.trim()) problems.push('WEB_APP_URL est absente alors que Stripe est activé');
+  }
+
   if (isProduction) {
     const salt = secretProblem('CITY_HASH_SALT', env.CITY_HASH_SALT);
     if (salt) problems.push(salt);

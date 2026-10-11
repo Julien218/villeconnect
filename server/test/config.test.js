@@ -32,3 +32,13 @@ test('hors production, sel et CORS ne sont pas obligatoires', () => {
     []
   );
 });
+
+test('Stripe activé exige le secret du webhook et l’adresse de l’application', () => {
+  assert.equal(findConfigProblems({ ...good, STRIPE_SECRET_KEY: 'sk_test_x' }).length, 2);
+  assert.deepEqual(
+    findConfigProblems({
+      ...good, STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_x', WEB_APP_URL: 'https://app.villeconnectos.com',
+    }),
+    []
+  );
+});

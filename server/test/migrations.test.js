@@ -64,3 +64,31 @@ test('la publication directe exige une fiche de confiance et un email vérifié'
   assert.match(src, /submitAsOrganizer: protectedProcedure/);
   assert.match(src, /Boolean\(organizer\.trusted\) && ctx\.user\.email_verified/);
 });
+
+test('la migration commandes stocke les montants en centimes entiers et empêche les doublons', () => {
+  const sql = readMigration('016_shop_orders.sql');
+  for (const table of ['commerce_members', 'commerce_payment_accounts', 'products', 'orders', 'order_items', 'stripe_events']) {
+    assert.match(sql, new RegExp('CREATE TABLE IF NOT EXISTS ' + table, 'i'));
+  }
+  assert.match(sql, /price_cents INT UNSIGNED NOT NULL/i);
+  assert.match(sql, /platform_fee_cents INT UNSIGNED NOT NULL/i);
+  assert.match(sql, /UNIQUE KEY uq_order_pickup_code \(commerce_id, pickup_code\)/i);
+  assert.match(sql, /UNIQUE KEY uq_order_stripe_session \(stripe_session_id\)/i);
+  assert.doesNotMatch(sql, /DECIMAL|FLOAT|DOUBLE/i);
+  assert.doesNotMatch(sql, /(sk_live|sk_test|whsec_)/i);
+});
+
+test('le webhook Stripe reçoit le corps brut avant express.json et vérifie la signature', () => {
+  const index = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.ts'), 'utf8');
+  const rawPos = index.indexOf("app.post('/webhooks/stripe'");
+  const jsonPos = index.indexOf('app.use(express.json');
+  assert.ok(rawPos > 0 && jsonPos > rawPos, 'la route webhook doit précéder express.json()');
+  const handler = fs.readFileSync(path.join(__dirname, '..', 'src', 'routes', 'stripeWebhook.ts'), 'utf8');
+  assert.match(handler, /verifyStripeSignature/);
+});
+
+test('la commande ne reçoit jamais de prix du client', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'routers', 'orders.ts'), 'utf8');
+  const input = src.slice(src.indexOf('create: protectedProcedure'), src.indexOf('.mutation(async ({ ctx, input }) => {\n      if (ctx.user.authType'));
+  assert.doesNotMatch(input, /price|amount|total/i);
+});

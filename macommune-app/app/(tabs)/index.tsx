@@ -110,6 +110,7 @@ export default function HomeScreen() {
     { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
     { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
     { key: 'shops', label: 'Commerces', icon: 'storefront-outline', route: '/(tabs)/shops' },
+    { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/(tabs)/events?category=Sport' },
     { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
     { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
     { key: 'profile', label: 'Mon profil', icon: 'person-outline', route: '/(tabs)/profile' },
