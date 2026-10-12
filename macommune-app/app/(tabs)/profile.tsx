@@ -239,6 +239,64 @@ export default function ProfileScreen() {
       <GlassCard style={[s.card, s.sectionCard] as any}>
         <View style={s.sectionHeading}>
           <View style={s.sectionIcon}>
+            <Ionicons name="bag-handle-outline" size={20} color={theme.colors.cyan} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.sectionTitle}>Commandes et publication</Text>
+            <Text style={s.hint}>Commandes, code de retrait, espaces commerçant et organisateur.</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push('/orders' as any)}
+          style={s.sectionButton}
+          accessibilityRole="button"
+          accessibilityLabel="Ouvrir mes commandes"
+        >
+          <Text style={s.sectionButtonText}>Voir mes commandes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => router.push('/organizer' as any)}
+          style={s.sectionButton}
+          accessibilityRole="button"
+          accessibilityLabel="Publier un événement pour une association ou la commune"
+        >
+          <Text style={s.sectionButtonText}>Publier un événement (associations, commune)</Text>
+        </TouchableOpacity>
+        {['city_admin', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/admin/events' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Valider les événements en attente"
+          >
+            <Text style={s.sectionButtonText}>Événements à valider</Text>
+          </TouchableOpacity>
+        )}
+        {['city_admin', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/admin/sport' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Valider les fiches Sport en attente"
+          >
+            <Text style={s.sectionButtonText}>Fiches Sport à valider</Text>
+          </TouchableOpacity>
+        )}
+        {['merchant', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/pro' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir l’espace commerçant"
+          >
+            <Text style={s.sectionButtonText}>Espace commerçant</Text>
+          </TouchableOpacity>
+        )}
+      </GlassCard>
+
+      <GlassCard style={[s.card, s.sectionCard] as any}>
+        <View style={s.sectionHeading}>
+          <View style={s.sectionIcon}>
             <Ionicons name="color-palette-outline" size={20} color={theme.colors.cyan} />
           </View>
           <View style={{ flex: 1 }}>
@@ -284,7 +342,7 @@ export default function ProfileScreen() {
             <Text style={s.dangerTitle}>Supprimer mon compte</Text>
             <Text style={s.hint}>
               Les identifiants, coordonnées et moyens de connexion seront supprimés ou anonymisés.
-              Les écritures nécessaires à la sécurité et au grand livre CivicLoop peuvent être conservées sans identité directe.
+              Les écritures nécessaires à la sécurité ou à des obligations légales peuvent être conservées sans identité directe.
             </Text>
           </View>
         </View>
@@ -351,6 +409,11 @@ function makeStyles(theme: ThemeTokens) {
     },
     card: { width: '100%', maxWidth: 520, padding: theme.spacing.lg },
     sectionCard: { marginTop: 14 },
+    sectionButton: {
+      marginTop: 12, minHeight: 44, borderRadius: theme.radius.md, alignItems: 'center',
+      justifyContent: 'center', borderWidth: 1, borderColor: theme.colors.borderCyan,
+    },
+    sectionButtonText: { color: theme.colors.cyan, fontSize: 13, fontWeight: '800' },
     avatarWrap: { alignItems: 'center', marginBottom: 18 },
     avatar: {
       width: 68,

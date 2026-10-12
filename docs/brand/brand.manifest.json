@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "brand": "VilleConnect OS",
+  "status": "production",
+  "locale": "fr-BE",
+  "lastAligned": "2026-09-23",
+  "repository": {
+    "fullName": "Julien218/villeconnect",
+    "productionBranch": "main"
+  },
+  "canonicalSources": {
+    "bible": "docs/brand/BRAND_GUIDELINES.md",
+    "runtimeTheme": "macommune-app/shared/theme.ts",
+    "localBranding": "macommune-app/shared/branding.ts"
+  },
+  "identity": {
+    "platform": "VilleConnect OS",
+    "localInstancePattern": "{City}Connect",
+    "currentInstance": "DourConnect"
+  },
+  "palette": {
+    "navy": "#0A2D5E",
+    "blue": "#0047FF",
+    "cyan": "#00E5FF",
+    "teal": "#00BFA5",
+    "gray": "#AEB6C1",
+    "lightBackground": "#F5F7FA",
+    "white": "#FFFFFF",
+    "darkBackground": "#060B18",
+    "darkHeader": "#0B1330",
+    "darkSurface": "#101935"
+  },
+  "typography": {
+    "primary": "Poppins"
+  },
+  "assets": {
+    "master": "brand-assets/villeconnect-os-logo-official.png",
+    "web": "public/brand/logo-villeconnect-official.png",
+    "webp": "public/logo-villeconnect-official.webp",
+    "app": "macommune-app/assets/logo-official.png"
+  },
+  "agentPolicy": {
+    "mode": "fail-closed",
+    "readOrder": [
+      "docs/brand/brand.manifest.json",
+      "docs/brand/BRAND_GUIDELINES.md",
+      "macommune-app/shared/theme.ts",
+      "macommune-app/shared/branding.ts"
+    ],
+    "forbidden": [
+      "generate-logo",
+      "recolor-logo",
+      "invent-city-brand-palette",
+      "mix-other-jsinnovia-brand-assets",
+      "treat-module-colors-as-brand-palette"
+    ],
+    "qualityGate": [
+      "platform-vs-local-scope-confirmed",
+      "official-logo-used",
+      "canonical-tokens-used",
+      "poppins-used",
+      "light-dark-accessibility-checked",
+      "no-cross-brand-contamination"
+    ]
+  }
+}

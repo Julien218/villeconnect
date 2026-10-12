@@ -16,10 +16,10 @@ export const HOME_SERVICES = [
   { label: 'Travaux', icon: 'construct-outline', color: '#00DAC7', route: '/services' },
 ] as const;
 
-export function ServiceOrbit({ width, onService, onWallet }: {
+export function ServiceOrbit({ width, onService, onCenter }: {
   width: number;
   onService: (service: typeof HOME_SERVICES[number]) => void;
-  onWallet: () => void;
+  onCenter: () => void;
 }) {
   const k = width / 437;
   return (
@@ -30,7 +30,7 @@ export function ServiceOrbit({ width, onService, onWallet }: {
           <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="3" fill="#00DEFF" />
         ))}
       </Svg>
-      <NeonPulseButton testID="central-logo-button" accessibilityRole="button" accessibilityLabel="Ouvrir le Wallet CivicLoop" onPress={onWallet}
+      <NeonPulseButton testID="central-logo-button" accessibilityRole="button" accessibilityLabel="Ouvrir tous les services" onPress={onCenter}
         activeOpacity={0.95} style={{ position: 'absolute', left: 111 * k, top: 17 * k, width: 215 * k, height: 242 * k }}>
         <Image source={require('@/assets/night-orbit.webp')} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
       </NeonPulseButton>

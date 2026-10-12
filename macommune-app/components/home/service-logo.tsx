@@ -11,7 +11,7 @@ const artwork = {
   services: require('@/assets/service-logos/services.webp'),
   profile: require('@/assets/service-logos/profile.webp'),
 };
-export type ServiceLogoName = keyof typeof artwork | 'agenda' | 'login' | 'account';
+export type ServiceLogoName = keyof typeof artwork | 'agenda' | 'sport' | 'login' | 'account';
 
 /** Decorative only: the parent button supplies the accessible service name. */
 export function ServiceLogo({ name }: { name: ServiceLogoName }) {
@@ -58,6 +58,15 @@ export function ServiceLogo({ name }: { name: ServiceLogoName }) {
             <Path d="M73 59 V83 M121 59 V83" stroke="#003775" strokeWidth="10" strokeLinecap="round" />
             <Path d="M71 58 V80 M119 58 V80" stroke={`url(#${id}metal)`} strokeWidth="6" strokeLinecap="round" />
             {[0, 1, 2].flatMap(row => [0, 1, 2].map(col => <Rect key={`${row}-${col}`} x={64 + col * 25} y={113 + row * 18} width="13" height="9" rx="2" fill={row === 1 && col === 1 ? '#FFFFFF' : '#00BCEB'} opacity={row === 1 && col === 1 ? 1 : 0.8} />))}
+          </G>
+        ) : name === 'sport' ? (
+          <G>
+            <Path d="M66 76 H52 C44 76 42 104 70 112 M128 76 H142 C150 76 152 104 124 112" fill="none" stroke="#00416C" strokeWidth="9" />
+            <Path d="M64 72 H50 C40 72 39 102 68 109 M126 72 H140 C150 72 151 102 122 109" fill="none" stroke={`url(#${id}metal)`} strokeWidth="5" strokeLinecap="round" />
+            <Path d="M64 66 H126 V92 C126 116 112 130 95 130 C78 130 64 116 64 92 Z" fill={`url(#${id}face)`} stroke={`url(#${id}metal)`} strokeWidth="2.5" />
+            <Path d="M95 80 L99 89 L109 90 L101 96 L104 106 L95 100 L86 106 L89 96 L81 90 L91 89 Z" fill="#88F5FF" />
+            <Rect x="88" y="129" width="14" height="22" rx="3" fill="#034073" stroke="#00DFFF" strokeWidth="2" />
+            <Rect x="70" y="150" width="50" height="16" rx="5" fill={`url(#${id}face)`} stroke={`url(#${id}metal)`} strokeWidth="2" />
           </G>
         ) : (
           <G>

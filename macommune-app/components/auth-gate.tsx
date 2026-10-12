@@ -1,5 +1,5 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-// Écran-relais affiché dans un onglet protégé (Wallet, Profil...) quand l'utilisateur
+// Écran-relais affiché dans un onglet protégé (Profil, commandes...) quand l'utilisateur
 // n'est pas connecté — invite propre à se connecter ou créer un compte, sans casser
 // la navigation publique du reste de l'app. S'adapte au thème actif.
 import { View, Text, StyleSheet, Image, } from 'react-native';

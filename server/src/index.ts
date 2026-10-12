@@ -15,7 +15,15 @@ import { authRouter } from './routers/auth';
 import { privacyRouter } from './routers/privacy';
 import { waitlistRouter } from './routers/waitlist';
 import { cityRouter } from './routers/city';
+import { organizersRouter } from './routers/organizers';
+import { merchantRouter } from './routers/merchant';
+import { ordersRouter } from './routers/orders';
+import { sportRouter } from './routers/sport';
 import { db } from './db';
+import { assertConfig } from './lib/config';
+import { stripeWebhookHandler } from './routes/stripeWebhook';
+
+assertConfig();
 
 // ─── App Router ───────────────────────────────────────────
 export const appRouter = router({
@@ -29,6 +37,10 @@ export const appRouter = router({
   privacy: privacyRouter,
   waitlist: waitlistRouter,
   city: cityRouter,
+  organizers: organizersRouter,
+  merchant: merchantRouter,
+  orders: ordersRouter,
+  sport: sportRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -74,6 +86,10 @@ app.use((_req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
+
+// Webhook Stripe : corps BRUT obligatoire (signature calculée sur les octets exacts).
+// Cette route doit rester AVANT express.json().
+app.post('/webhooks/stripe', express.raw({ type: 'application/json', limit: '256kb' }), stripeWebhookHandler);
 
 app.use(express.json({ limit: '64kb' }));
 

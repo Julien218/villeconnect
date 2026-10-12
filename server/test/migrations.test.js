@@ -49,3 +49,63 @@ test('la migration liste d’attente conserve une preuve de consentement version
   assert.match(sql, /UNIQUE KEY uq_waitlist_consent_version/i);
   assert.match(sql, /ip_hash CHAR\(64\)/i);
 });
+
+test('la migration organisateurs lie un compte réel à une fiche et sépare la confiance', () => {
+  const sql = readMigration('015_event_organizers.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS event_organizers/i);
+  assert.match(sql, /UNIQUE KEY uq_event_organizer_user \(user_id\)/i);
+  assert.match(sql, /trusted TINYINT\(1\) NOT NULL DEFAULT 0/i);
+  assert.match(sql, /organizer_type ENUM\('asbl', 'commune', 'commerce', 'autre'\)/i);
+  assert.doesNotMatch(sql, /(password|secret)/i);
+});
+
+test('la publication directe exige une fiche de confiance et un email vérifié', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'routers', 'events.ts'), 'utf8');
+  assert.match(src, /submitAsOrganizer: protectedProcedure/);
+  assert.match(src, /Boolean\(organizer\.trusted\) && ctx\.user\.email_verified/);
+});
+
+test('la migration commandes stocke les montants en centimes entiers et empêche les doublons', () => {
+  const sql = readMigration('016_shop_orders.sql');
+  for (const table of ['commerce_members', 'commerce_payment_accounts', 'products', 'orders', 'order_items', 'stripe_events']) {
+    assert.match(sql, new RegExp('CREATE TABLE IF NOT EXISTS ' + table, 'i'));
+  }
+  assert.match(sql, /price_cents INT UNSIGNED NOT NULL/i);
+  assert.match(sql, /platform_fee_cents INT UNSIGNED NOT NULL/i);
+  assert.match(sql, /UNIQUE KEY uq_order_pickup_code \(commerce_id, pickup_code\)/i);
+  assert.match(sql, /UNIQUE KEY uq_order_stripe_session \(stripe_session_id\)/i);
+  assert.doesNotMatch(sql, /DECIMAL|FLOAT|DOUBLE/i);
+  assert.doesNotMatch(sql, /(sk_live|sk_test|whsec_)/i);
+});
+
+test('le webhook Stripe reçoit le corps brut avant express.json et vérifie la signature', () => {
+  const index = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.ts'), 'utf8');
+  const rawPos = index.indexOf("app.post('/webhooks/stripe'");
+  const jsonPos = index.indexOf('app.use(express.json');
+  assert.ok(rawPos > 0 && jsonPos > rawPos, 'la route webhook doit précéder express.json()');
+  const handler = fs.readFileSync(path.join(__dirname, '..', 'src', 'routes', 'stripeWebhook.ts'), 'utf8');
+  assert.match(handler, /verifyStripeSignature/);
+});
+
+test('la commande ne reçoit jamais de prix du client', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'routers', 'orders.ts'), 'utf8');
+  const input = src.slice(src.indexOf('create: protectedProcedure'), src.indexOf('.mutation(async ({ ctx, input }) => {\n      if (ctx.user.authType'));
+  assert.doesNotMatch(input, /price|amount|total/i);
+});
+
+test('la migration livraison est rejouable et garde la commission sur les produits', () => {
+  const sql = readMigration('017_delivery.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS commerce_delivery_settings/i);
+  assert.match(sql, /information_schema\.COLUMNS/i);
+  assert.match(sql, /fulfillment ENUM\('pickup', 'delivery'\)/i);
+  assert.match(sql, /delivery_fee_cents INT UNSIGNED NOT NULL DEFAULT 0/i);
+});
+
+test('le schéma de base reconstruit ne crée que des tables absentes', () => {
+  const sql = readMigration('000_base_schema.sql');
+  const creates = sql.match(/CREATE TABLE/gi) || [];
+  const safe = sql.match(/CREATE TABLE IF NOT EXISTS/gi) || [];
+  assert.ok(creates.length >= 10);
+  assert.equal(creates.length, safe.length);
+  assert.doesNotMatch(sql, /\b(DROP|TRUNCATE|DELETE)\b/i);
+});

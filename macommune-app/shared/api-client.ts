@@ -92,7 +92,7 @@ export async function trpcQuery<T = any>(
       const timedOut = error?.name === 'AbortError';
       return {
         data: null,
-        error: timedOut ? 'Délai de connexion dépassé' : error?.message || 'Erreur réseau',
+        error: timedOut ? 'Délai de connexion dépassé' : 'Connexion au serveur impossible. Vérifiez votre connexion internet.',
         retryable: true,
       };
     }
@@ -136,7 +136,7 @@ export async function trpcMutation<T = any>(
       data: null,
       error: error?.name === 'AbortError'
         ? 'Délai de connexion dépassé'
-        : error?.message || 'Erreur réseau',
+        : 'Connexion au serveur impossible. Vérifiez votre connexion internet.',
     };
   }
 }

@@ -16,7 +16,7 @@ const PREVIEW_EVENTS = [
 const STORIES = [
   { eyebrow: 'À LA UNE', title: 'Votre ville lance\nson app mobile !', copy: 'Toute votre ville dans\nvotre poche.', route: '/landing' },
   { eyebrow: 'VIE LOCALE', title: 'Vos commerces,\ntout près de vous.', copy: 'Découvrez les bonnes adresses\nde votre commune.', route: '/shops' },
-  { eyebrow: 'CIVICLOOP', title: 'Agir pour sa ville,\nça vous récompense.', copy: 'Missions citoyennes et\nrécompenses locales.', route: '/wallet' },
+  { eyebrow: 'SPORT', title: 'Bouger près de chez vous,\nc’est facile.', copy: 'Clubs, salles et\nprochains matchs.', route: '/sport' },
   { eyebrow: 'VOTRE COMMUNE', title: 'Vos démarches,\nen toute simplicité.', copy: 'Retrouvez les liens vers\nvos services publics.', route: '/services' },
 ];
 export function NightHome({ city, events = [] }: { city: string; events?: { id: string | number; title: string; dateStart?: string; location?: string }[] }) {
@@ -85,7 +85,7 @@ export function NightHome({ city, events = [] }: { city: string; events?: { id: 
       </View>
 
       <View style={{ marginHorizontal: 18 * k, marginTop: 15 * k }}>
-        <ServiceOrbit width={437 * k} onWallet={() => router.push('/wallet' as any)} onService={service => {
+        <ServiceOrbit width={437 * k} onCenter={() => router.push('/services' as any)} onService={service => {
           if (service.route) router.push(service.route as any);
           else setNotice({ title: 'Signalement citoyen', text: 'Le signalement d’un problème dans votre commune fait partie des futurs modules citoyens. Le formulaire de signalement n’est pas encore disponible.' });
         }} />

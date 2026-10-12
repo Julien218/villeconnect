@@ -32,7 +32,7 @@ export function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             </TouchableOpacity>
           </View>
         ))}
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Mon portefeuille CivicLoop" accessibilityState={{ selected: activeRoute === 'wallet' }} onPress={() => navigation.navigate('wallet')} activeOpacity={0.85} style={s.center}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retour à l’accueil" accessibilityState={{ selected: activeRoute === 'index' }} onPress={() => navigation.navigate('index')} activeOpacity={0.85} style={s.center}>
           <View style={s.innerRing}><Image source={require('@/assets/night-mark.webp')} style={s.logo} resizeMode="contain" /></View>
         </TouchableOpacity>
       </View>
