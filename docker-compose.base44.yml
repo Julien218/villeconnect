@@ -1,0 +1,107 @@
+# Base44 dev environment — VilleConnect OS
+# Frontend (Expo web) on host port 3000, API (tRPC/Express) on host port 8000, MySQL 8.
+services:
+  db:
+    image: mysql:8
+    restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: vcrootpass
+      MYSQL_DATABASE: villeconnect
+      MYSQL_USER: villeconnect
+      MYSQL_PASSWORD: vcdevpass
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  migrate:
+    image: mysql:8
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./server/src/migrations:/migrations:ro
+    environment:
+      MYSQL_PWD: vcdevpass
+    command:
+      - sh
+      - -ec
+      - |
+        for f in $$(ls /migrations/*.sql | sort | grep -v ROLLBACK); do
+          echo "Applying $$f"
+          mysql -h db -u villeconnect villeconnect < "$$f" || { echo "FAILED: $$f"; exit 1; }
+        done
+        echo "All migrations applied."
+    restart: "no"
+
+  api:
+    image: node:20
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    working_dir: /app/server
+    volumes:
+      - ./server:/app/server
+    ports:
+      - "8000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      DATABASE_URL: mysql://villeconnect:vcdevpass@db:3306/villeconnect
+      CORS_ORIGINS: "https://3000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      WEB_APP_URL: "https://3000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      BASE44_PREVIEW_MODE: "1"
+    env_file:
+      - /run/base44/app.env
+    command:
+      - sh
+      - -ec
+      - |
+        npm ci --no-audit --no-fund
+        exec npx ts-node --transpile-only src/index.ts
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    image: node:20
+    restart: on-failure
+    depends_on:
+      api:
+        condition: service_healthy
+    working_dir: /app/macommune-app
+    volumes:
+      - ./macommune-app:/app/macommune-app
+    ports:
+      - "3000:8081"
+    environment:
+      EXPO_PUBLIC_API_URL: "https://8000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      EXPO_PUBLIC_WEB_APP_URL: "https://3000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      EXPO_PUBLIC_DESKTOP_APP_URL: "https://3000-${BASE44_PUBLIC_HOST_SUFFIX}"
+      BASE44_PREVIEW_MODE: "1"
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: "${BASE44_PUBLIC_HOST_SUFFIX}"
+    command:
+      - sh
+      - -ec
+      - |
+        npm ci --no-audit --no-fund
+        exec npx expo start --web --port 8081 --host lan
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+volumes:
+  dbdata:

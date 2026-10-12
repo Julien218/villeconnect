@@ -1,0 +1,25 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "JWT_SECRET",
+      "description": "JWT signing secret for the API (≥32 random chars). Get from the app's secrets dashboard.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "CITY_HASH_SALT",
+      "description": "HMAC salt for city-interest hashing (≥32 chars). Required in production only; generated placeholder unblocks dev boot.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "WALLET_QR_SECRET",
+      "description": "HMAC secret for CivicLoop QR codes (distinct from JWT_SECRET). Used by server/src/routers/wallet.ts (wallet retired from app, code remains).",
+      "requiredAtBoot": false,
+      "generatedForDevelopment": true
+    }
+  ]
+}
