@@ -281,6 +281,16 @@ export default function ProfileScreen() {
             <Text style={s.sectionButtonText}>Fiches Sport à valider</Text>
           </TouchableOpacity>
         )}
+        {['admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/admin/feeds' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Gérer les flux d’événements importés"
+          >
+            <Text style={s.sectionButtonText}>Flux d’événements (import)</Text>
+          </TouchableOpacity>
+        )}
         {['merchant', 'admin', 'super_admin'].includes(String(user.role)) && (
           <TouchableOpacity
             onPress={() => router.push('/pro' as any)}

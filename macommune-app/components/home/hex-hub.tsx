@@ -10,12 +10,13 @@ export interface HubItem {
   key: string;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: string;
+  route?: string; // page de l'application
+  url?: string; // lien officiel externe (https)
 }
 
 interface Props {
   items: readonly HubItem[]; // 6 éléments : colonne gauche (3) puis colonne droite (3)
-  onPress: (route: string) => void;
+  onPress: (item: HubItem) => void;
 }
 
 // Hexagone « pointe à gauche et à droite » dans un rectangle w × h.
@@ -56,7 +57,7 @@ export function HexHub({ items, onPress }: Props) {
         key={item.key}
         style={style}
         activeOpacity={0.8}
-        onPress={() => onPress(item.route)}
+        onPress={() => onPress(item)}
         accessibilityRole="button"
         accessibilityLabel={item.label}
       >

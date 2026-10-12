@@ -74,6 +74,21 @@ Trois sources, une seule règle de publication :
 
 La commune est traitée comme un organisateur de type `commune`. Le rôle `city_admin` n'est pas limité à sa commune dans le code actuel : ne l'attribuer qu'à des personnes de confiance tant que ce cloisonnement n'existe pas.
 
+### Import automatique d'un calendrier (.ics)
+
+Quand une commune ou une ASBL publie un agenda au format iCal (`.ics`), VilleConnect peut le lire à intervalles réguliers (`server/src/lib/eventFeedSync.ts`).
+
+- **À n'utiliser qu'avec l'accord de la source.** Ne rien importer depuis un site sans autorisation ; le scraping de pages web n'est volontairement pas prévu.
+- Les événements importés restent `pending` (validation) sauf si le flux est marqué « publier sans validation ». Une fiche déjà validée ou refusée n'est jamais écrasée par la source.
+- Les doublons sont évités par `(source_feed_id, source_uid)`. Les événements récurrents ne sont importés que pour leur première occurrence.
+- Sécurité : `https` obligatoire, adresses internes refusées (y compris après résolution DNS), pas de redirection suivie, 1 Mo maximum, 10 secondes maximum.
+- Mise en route : appliquer la migration `019_event_feeds.sql` (après sauvegarde), puis ajouter un flux depuis le profil d'un administrateur (« Flux d'événements »). La synchronisation automatique (toutes les 6 h) s'active avec `EVENT_FEED_SYNC=1` ; sinon utiliser « Synchroniser maintenant ».
+- Les flux RSS ne sont pas pris en charge : ils donnent la date de publication d'un article, pas la date de l'événement.
+
+### Pages officielles de la commune (E-guichet, Travaux)
+
+Sur l'accueil, les modules E-guichet et Travaux ouvrent les liens officiels de la commune enregistrés dans `city_service_links` (types `eguichet` et `works`, `https` uniquement). Sans lien enregistré, l'accueil affiche Services et Carburant à leur place. Aucune donnée de la commune n'est copiée.
+
 ## Commandes, retrait en commerce et paiement
 
 Les citoyens commandent chez un commerce, paient en ligne (Bancontact ou carte) et retirent leur commande avec un code. VilleConnect garde **5 %** (`PLATFORM_FEE_PERCENT`), le reste va directement au commerçant.
