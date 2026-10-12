@@ -19,6 +19,8 @@ import { organizersRouter } from './routers/organizers';
 import { merchantRouter } from './routers/merchant';
 import { ordersRouter } from './routers/orders';
 import { sportRouter } from './routers/sport';
+import { eventFeedsRouter } from './routers/eventFeeds';
+import { startEventFeedScheduler } from './lib/eventFeedSync';
 import { db } from './db';
 import { assertConfig } from './lib/config';
 import { stripeWebhookHandler } from './routes/stripeWebhook';
@@ -41,6 +43,7 @@ export const appRouter = router({
   merchant: merchantRouter,
   orders: ordersRouter,
   sport: sportRouter,
+  eventFeeds: eventFeedsRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -154,4 +157,5 @@ app.listen(PORT, () => {
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
   console.log(`🏪  Commerce catalog: /api/trpc/commerce.*`);
   console.log(`🔐  Privacy rights: /api/trpc/privacy.*`);
+  startEventFeedScheduler();
 });

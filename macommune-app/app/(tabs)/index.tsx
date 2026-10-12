@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Image,
   ImageBackground,
+  Linking,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -21,7 +22,7 @@ import { getBranding } from '@/shared/branding';
 import { GlassCard } from '@/components/glass-card';
 import { useAuth } from '@/shared/auth-context';
 import { CityStatusBanner } from '@/components/CityStatusBanner';
-import { HexHub } from '@/components/home/hex-hub';
+import { HexHub, HubItem } from '@/components/home/hex-hub';
 import { useCityStatus } from '@/shared/useCityStatus';
 
 const BANNER_STATUSES = new Set([
@@ -92,6 +93,7 @@ export default function HomeScreen() {
     loadDashboard();
   }, [loadDashboard]);
 
+  // Les liens officiels de la commune sont publics : ils servent aussi aux visiteurs non connectés.
   const userPostalCode = isLoggedIn ? user?.postalCode || undefined : undefined;
   const {
     status: cityStatus,
@@ -101,21 +103,42 @@ export default function HomeScreen() {
     disclaimer,
     registerInterest,
     loading: cityLoading,
-  } = useCityStatus(userPostalCode);
+  } = useCityStatus(postalCode);
 
   const showCityBanner = Boolean(
     userPostalCode && !cityLoading && BANNER_STATUSES.has(cityStatus)
   );
 
-  // Six modules réels (colonne gauche, puis colonne droite), comme sur la maquette.
-  const hubItems = [
+  const officialUrl = (type: string): string | undefined => {
+    const link = links.find(item => item.service_type === type && /^https:\/\//i.test(item.url));
+    return link?.url;
+  };
+
+  // Six modules (colonne gauche, puis colonne droite), comme sur la maquette. E-guichet et
+  // Travaux ouvrent les pages officielles de la commune quand elles sont connues ; sinon on
+  // montre un module de l'application à leur place.
+  const eguichetUrl = officialUrl('eguichet');
+  const worksUrl = officialUrl('works');
+  const hubItems: HubItem[] = [
     { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
     { key: 'shops', label: 'Annuaire', icon: 'storefront-outline', route: '/(tabs)/shops' },
     { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/sport' },
     { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
-    { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
-    { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
-  ] as const;
+    eguichetUrl
+      ? { key: 'eguichet', label: 'E-guichet', icon: 'document-text-outline', url: eguichetUrl }
+      : { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
+    worksUrl
+      ? { key: 'works', label: 'Travaux', icon: 'construct-outline', url: worksUrl }
+      : { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
+  ];
+
+  const openHubItem = (item: HubItem) => {
+    if (item.url) {
+      Linking.openURL(item.url).catch(() => undefined);
+    } else if (item.route) {
+      router.push(item.route as any);
+    }
+  };
 
   return (
     <ScrollView
@@ -188,7 +211,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <HexHub items={hubItems} onPress={route => router.push(route as any)} />
+      <HexHub items={hubItems} onPress={openHubItem} />
 
       {showCityBanner && (
         <View style={s.cityBannerWrap}>
