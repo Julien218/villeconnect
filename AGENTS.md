@@ -38,7 +38,7 @@ The API's `assertConfig()` (server/src/lib/config.ts) exits the process if `JWT_
 
 ## Known non-fatal warnings
 
-- `libnspr4.so` missing in the `web` container: React Native DevTools can't install, but Metro bundler works fine.
+- `EXPO_UNSTABLE_HEADLESS=1` is set on the `web` service to disable the React Native DevTools fusebox shell, which needs `libnspr4`/`libdbus` system libraries unavailable in the slim Node image. Metro bundler works fine without it.
 - Peer dependency warnings about `expo-router@58` vs `expo-constants@57`: nested dependency mismatch from `npm audit fix`, does not affect the build.
 
 ## Verification
