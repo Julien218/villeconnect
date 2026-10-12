@@ -21,6 +21,7 @@ import { getBranding } from '@/shared/branding';
 import { GlassCard } from '@/components/glass-card';
 import { useAuth } from '@/shared/auth-context';
 import { CityStatusBanner } from '@/components/CityStatusBanner';
+import { HexHub } from '@/components/home/hex-hub';
 import { useCityStatus } from '@/shared/useCityStatus';
 
 const BANNER_STATUSES = new Set([
@@ -57,7 +58,7 @@ export default function HomeScreen() {
   const cityDisplayName = user?.city?.trim() || brand.cityName;
 
   const [featuredCommerce, setFeaturedCommerce] = useState<Commerce | null>(null);
-  const [latestEvent, setLatestEvent] = useState<LocalEvent | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<LocalEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -76,7 +77,7 @@ export default function HomeScreen() {
     setFeaturedCommerce(
       commerces.find(item => Boolean(item.hasPromotion)) || commerces[0] || null
     );
-    setLatestEvent(eventsResult.data?.[0] || null);
+    setUpcomingEvents((eventsResult.data || []).slice(0, 3));
 
     const failures = [commerceResult.error, eventsResult.error].filter(Boolean);
     if (failures.length === 2) {
@@ -106,17 +107,14 @@ export default function HomeScreen() {
     userPostalCode && !cityLoading && BANNER_STATUSES.has(cityStatus)
   );
 
-  const modules = [
+  // Six modules réels (colonne gauche, puis colonne droite), comme sur la maquette.
+  const hubItems = [
     { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
-    { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
-    { key: 'shops', label: 'Commerces', icon: 'storefront-outline', route: '/(tabs)/shops' },
+    { key: 'shops', label: 'Annuaire', icon: 'storefront-outline', route: '/(tabs)/shops' },
     { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/sport' },
-    { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
+    { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
     { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
-    { key: 'profile', label: 'Mon profil', icon: 'person-outline', route: '/(tabs)/profile' },
-    isLoggedIn
-      ? { key: 'account', label: 'Mon compte', icon: 'shield-checkmark-outline', route: '/(tabs)/profile' }
-      : { key: 'login', label: 'Connexion', icon: 'log-in-outline', route: '/login' },
+    { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
   ] as const;
 
   return (
@@ -190,24 +188,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={s.moduleGrid}>
-        {modules.map((module, index) => (
-          <TouchableOpacity
-            key={module.key}
-            style={s.moduleCard}
-            activeOpacity={0.78}
-            onPress={() => router.push(module.route as any)}
-            accessibilityRole="button"
-            accessibilityLabel={module.label}
-          >
-            <View style={[s.moduleIcon, index % 3 === 1 && s.moduleIconAlt]}>
-              <Ionicons name={module.icon as any} size={23} color={theme.colors.cyan} />
-            </View>
-            <Text style={s.moduleLabel}>{module.label}</Text>
-            <View style={s.moduleLine} />
-          </TouchableOpacity>
-        ))}
-      </View>
+      <HexHub items={hubItems} onPress={route => router.push(route as any)} />
 
       {showCityBanner && (
         <View style={s.cityBannerWrap}>
@@ -263,32 +244,30 @@ export default function HomeScreen() {
 
       <SectionHeader
         theme={theme}
-        title="À l’agenda"
-        action="Voir les événements"
+        title="Événements à venir"
+        action="Voir tout"
         onPress={() => router.push('/(tabs)/events' as any)}
       />
-      {latestEvent ? (
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/events' as any)}
-          activeOpacity={0.82}
-          accessibilityRole="button"
-        >
-          <GlassCard style={s.featureCard as any}>
-            <View style={s.featureIcon}>
-              <Ionicons name="calendar-outline" size={25} color={theme.colors.cyan} />
-            </View>
-            <View style={s.featureCopy}>
-              <Text style={s.featureTitle}>{latestEvent.title}</Text>
-              <Text style={s.featureSubtitle}>
-                {latestEvent.dateStart
-                  ? new Date(latestEvent.dateStart).toLocaleDateString('fr-BE')
-                  : 'Date à confirmer'}
-                {latestEvent.location ? ` · ${latestEvent.location}` : ''}
+      {upcomingEvents.length > 0 ? (
+        <View style={s.eventStrip}>
+          {upcomingEvents.map(event => (
+            <TouchableOpacity
+              key={String(event.id)}
+              style={s.eventTile}
+              activeOpacity={0.82}
+              onPress={() => router.push('/(tabs)/events' as any)}
+              accessibilityRole="button"
+              accessibilityLabel={event.title}
+            >
+              <Ionicons name="calendar-outline" size={20} color={theme.colors.cyan} />
+              <Text style={s.eventTileTitle} numberOfLines={2}>{event.title}</Text>
+              <Text style={s.eventTileMeta} numberOfLines={1}>
+                {event.dateStart ? new Date(event.dateStart).toLocaleDateString('fr-BE') : 'Date à confirmer'}
               </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.cyan} />
-          </GlassCard>
-        </TouchableOpacity>
+              {event.location ? <Text style={s.eventTileMeta} numberOfLines={1}>{event.location}</Text> : null}
+            </TouchableOpacity>
+          ))}
+        </View>
       ) : (
         <EmptyCard
           theme={theme}
@@ -442,6 +421,13 @@ function makeStyles(theme: ThemeTokens) {
     },
     emptyTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '800' },
     emptyText: { color: theme.colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 3 },
+    eventStrip: { flexDirection: 'row', gap: 10 },
+    eventTile: {
+      flex: 1, minHeight: 112, padding: 12, gap: 6, borderRadius: theme.radius.md,
+      borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSolid,
+    },
+    eventTileTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '800' },
+    eventTileMeta: { color: theme.colors.textSecondary, fontSize: 11 },
     version: { color: theme.colors.textMuted, fontSize: 9, textAlign: 'center', marginTop: 34 },
   });
 }
