@@ -54,3 +54,25 @@ export function parseDateTimeFr(text: string): string | null {
     date.getHours() === hour && date.getMinutes() === minute;
   return valid ? date.toISOString() : null;
 }
+
+export type ListingKind = 'sell' | 'give' | 'lend' | 'wanted' | 'help';
+
+export const LISTING_KINDS: { key: ListingKind; label: string; icon: string; hint: string }[] = [
+  { key: 'sell', label: 'Vendre', icon: 'pricetag-outline', hint: 'Un objet d’occasion à vendre' },
+  { key: 'give', label: 'Donner', icon: 'gift-outline', hint: 'Un objet offert' },
+  { key: 'lend', label: 'Prêter / louer', icon: 'hammer-outline', hint: 'Échelle, visseuse… gratuit ou par jour' },
+  { key: 'wanted', label: 'Chercher', icon: 'search-outline', hint: 'Je cherche un objet' },
+  { key: 'help', label: 'Entraide', icon: 'hand-left-outline', hint: 'Un coup de main entre voisins' },
+];
+
+export function listingKindLabel(kind: string): string {
+  return LISTING_KINDS.find(item => item.key === kind)?.label ?? 'Annonce';
+}
+
+/** Prix affiché d'une annonce : « 25,00 € », « 5,00 € / jour », « Gratuit » ou « À discuter ». */
+export function listingPriceLabel(kind: string, priceCents: number | null | undefined, priceUnit?: string | null): string {
+  if (priceCents === null || priceCents === undefined) {
+    return kind === 'give' || kind === 'lend' || kind === 'help' ? 'Gratuit' : 'À discuter';
+  }
+  return priceUnit === 'per_day' ? `${formatEuros(priceCents)} / jour` : formatEuros(priceCents);
+}

@@ -20,6 +20,7 @@ import { merchantRouter } from './routers/merchant';
 import { ordersRouter } from './routers/orders';
 import { sportRouter } from './routers/sport';
 import { eventFeedsRouter } from './routers/eventFeeds';
+import { communityRouter } from './routers/community';
 import { startEventFeedScheduler } from './lib/eventFeedSync';
 import { db } from './db';
 import { assertConfig } from './lib/config';
@@ -44,6 +45,7 @@ export const appRouter = router({
   orders: ordersRouter,
   sport: sportRouter,
   eventFeeds: eventFeedsRouter,
+  community: communityRouter,
 });
 
 export type AppRouter = typeof appRouter;

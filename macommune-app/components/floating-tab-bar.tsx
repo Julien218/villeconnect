@@ -7,17 +7,17 @@ import { ThemeTokens } from '@/shared/theme';
 import { LivingC } from './control-center/living-c';
 import { GlowOrb } from './control-center/glow-orb';
 
-const VISIBLE_TABS = ['index', 'shops', 'events', 'profile'] as const;
+const VISIBLE_TABS = ['index', 'community', 'messages', 'profile'] as const;
 const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   index: 'home',
-  shops: 'storefront',
-  events: 'calendar',
+  community: 'people',
+  messages: 'chatbubble-ellipses',
   profile: 'person',
 };
 const LABELS: Record<string, string> = {
   index: 'Accueil',
-  shops: 'Commerces',
-  events: 'Agenda',
+  community: 'Citoyens',
+  messages: 'Messages',
   profile: 'Profil',
 };
 

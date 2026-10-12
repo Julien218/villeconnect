@@ -89,6 +89,18 @@ Quand une commune ou une ASBL publie un agenda au format iCal (`.ics`), VilleCon
 
 Sur l'accueil, les modules E-guichet et Travaux ouvrent les liens officiels de la commune enregistrés dans `city_service_links` (types `eguichet` et `works`, `https` uniquement). Sans lien enregistré, l'accueil affiche Services et Carburant à leur place. Aucune donnée de la commune n'est copiée.
 
+## Citoyens : annonces entre voisins et messagerie
+
+Onglet **Citoyens** : annonces par type (vendre, donner, prêter / louer, chercher, entraide), filtrées par commune. Onglet **Messages** : conversations privées, toujours liées à une annonce.
+
+- **Pas de paiement entre voisins** dans cette version : arrangement direct (gratuit ou en main propre). Une caution en ligne pour la location est une étape ultérieure.
+- **Sécurité** : compte avec email vérifié obligatoire ; numéros de téléphone et emails masqués dans les annonces ; objets interdits refusés (armes, médicaments, animaux…) ; 5 annonces par jour au maximum ; signalement (3 signalements distincts remettent l'annonce en vérification), blocage d'un utilisateur, exclusion par l'administration ; annonces expirées au bout de 30 jours.
+- **Publication** : les premières annonces d'un auteur sont vérifiées ; après 2 annonces validées sans retrait, il est « de confiance » et publie directement.
+- **Modération par IA** (optionnelle, `server/src/lib/aiModeration.ts`) : avec `COMMUNITY_AI=1` et une clé `ANTHROPIC_API_KEY`, chaque nouvelle annonce est évaluée. L'IA peut **refuser** une annonce clairement interdite ou l'envoyer en **vérification humaine** en cas de doute. Elle ne **publie** directement qu'avec `COMMUNITY_AI_AUTOPUBLISH=1`. En cas d'erreur, de délai dépassé ou de réponse inattendue, l'annonce passe en vérification humaine, jamais en publication. L'avis de l'IA est visible dans l'écran de vérification (profil administrateur → « Annonces à vérifier »).
+- **Confidentialité** : le texte des annonces est envoyé à l'API d'Anthropic pour cette évaluation. À indiquer dans la politique de confidentialité. Les **messages privés ne sont pas analysés** par l'IA.
+- Mise en route : migration `020_community.sql` (après sauvegarde).
+- Limite connue : le rôle `city_admin` n'est pas limité à sa commune ; il n'existe pas encore de signalement d'un message précis.
+
 ## Commandes, retrait en commerce et paiement
 
 Les citoyens commandent chez un commerce, paient en ligne (Bancontact ou carte) et retirent leur commande avec un code. VilleConnect garde **5 %** (`PLATFORM_FEE_PERCENT`), le reste va directement au commerçant.

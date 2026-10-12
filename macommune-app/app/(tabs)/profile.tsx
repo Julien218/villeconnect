@@ -291,6 +291,24 @@ export default function ProfileScreen() {
             <Text style={s.sectionButtonText}>Flux d’événements (import)</Text>
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          onPress={() => router.push('/community/mine' as any)}
+          style={s.sectionButton}
+          accessibilityRole="button"
+          accessibilityLabel="Ouvrir mes annonces"
+        >
+          <Text style={s.sectionButtonText}>Mes annonces</Text>
+        </TouchableOpacity>
+        {['city_admin', 'admin', 'super_admin'].includes(String(user.role)) && (
+          <TouchableOpacity
+            onPress={() => router.push('/admin/community' as any)}
+            style={s.sectionButton}
+            accessibilityRole="button"
+            accessibilityLabel="Vérifier les annonces en attente"
+          >
+            <Text style={s.sectionButtonText}>Annonces à vérifier</Text>
+          </TouchableOpacity>
+        )}
         {['merchant', 'admin', 'super_admin'].includes(String(user.role)) && (
           <TouchableOpacity
             onPress={() => router.push('/pro' as any)}

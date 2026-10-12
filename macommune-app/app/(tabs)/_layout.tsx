@@ -17,6 +17,8 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="community" options={{ headerShown: true, headerTitle: 'Citoyens' }} />
+      <Tabs.Screen name="messages" options={{ headerShown: true, headerTitle: 'Messages' }} />
       <Tabs.Screen name="events" options={{ headerShown: true, headerTitle: 'Événements' }} />
       <Tabs.Screen name="shops" options={{ headerShown: true, headerTitle: 'Commerces locaux' }} />
       <Tabs.Screen name="fuel" options={{ headerShown: true, headerTitle: 'Prix carburant' }} />
