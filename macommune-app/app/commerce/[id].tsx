@@ -2,7 +2,7 @@
 // Vitrine d'un commerce : produits, panier, commande avec retrait ou livraison et paiement en ligne.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Linking, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
+  ActivityIndicator, Image, Linking, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ interface Product {
   name: string;
   description?: string | null;
   priceCents: number;
+  imageUrl?: string | null;
   available: boolean;
 }
 
@@ -210,6 +211,9 @@ export default function CommerceScreen() {
             const quantity = cart[product.id] || 0;
             return (
               <GlassCard key={product.id} style={s.productCard as any}>
+                {product.imageUrl ? (
+                  <Image source={{ uri: product.imageUrl }} style={s.productPhoto} accessibilityLabel={`Photo : ${product.name}`} />
+                ) : null}
                 <View style={{ flex: 1 }}>
                   <Text style={s.productName}>{product.name}</Text>
                   {product.description ? <Text style={s.muted} numberOfLines={3}>{product.description}</Text> : null}
@@ -350,6 +354,7 @@ function makeStyles(theme: ThemeTokens) {
     center: { paddingVertical: 60, alignItems: 'center' },
     card: { padding: 16, gap: 10 },
     productCard: { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    productPhoto: { width: 72, height: 72, borderRadius: theme.radius.md, backgroundColor: theme.colors.surface },
     eyebrow: { color: theme.colors.cyan, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
     title: { color: theme.colors.textPrimary, fontSize: 19, fontWeight: '900' },
     muted: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },

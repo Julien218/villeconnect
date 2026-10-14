@@ -102,6 +102,28 @@ Les citoyens commandent chez un commerce, paient en ligne (Bancontact ou carte) 
 
 **Pas encore fait** : TVA sur la commission, remboursement depuis l'app. Le retour de paiement utilise `WEB_APP_URL` (`/orders/<id>`) : pour l'app native, il faudra un lien universel.
 
+## Photos des produits (Cloudflare R2)
+
+Le commerçant ajoute une photo depuis l'onglet « Produits » de son espace pro. L'application réduit
+l'image sur le téléphone (1200 px, JPEG, environ 200 à 300 Ko), demande au serveur une adresse
+d'envoi valable 5 minutes pour un seul fichier de cette taille, puis envoie la photo directement à R2 :
+le serveur Railway ne transporte jamais d'image. Une photo du compartiment ne peut être utilisée que
+par le commerce qui l'a envoyée.
+
+Mise en route (une seule fois) :
+
+1. Cloudflare → R2 → créer un compartiment (ex. `villeconnect-photos`).
+2. Réglages du compartiment → accès public : domaine personnalisé (recommandé, ex. `photos.villeconnectos.com`)
+   ou adresse `r2.dev`.
+3. Réglages du compartiment → stratégie CORS, pour l'application web :
+   `[{"AllowedOrigins":["https://villeconnectos.com","https://www.villeconnectos.com","https://app.villeconnectos.com"],"AllowedMethods":["PUT"],"AllowedHeaders":["content-type"],"MaxAgeSeconds":3600}]`
+4. R2 → « Gérer les jetons d'API » → jeton « Object Read & Write » limité à ce compartiment.
+5. Dans Railway (service `villeconnect`), renseigner `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
+   `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` (voir `server/.env.example`). Le serveur refuse
+   de démarrer si la configuration est incomplète ; sans aucune de ces valeurs, l'envoi de photos est simplement désactivé.
+
+Sur téléphone, le choix de photo demande une nouvelle version de l'application (module natif `expo-image-picker`).
+
 ## Rubrique Sport
 
 L'écran `/sport` (tuile « Sport » de l'accueil) regroupe, pour la commune de l'utilisateur :

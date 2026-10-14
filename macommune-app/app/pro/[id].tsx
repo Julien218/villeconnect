@@ -2,7 +2,7 @@
 // Gestion d'un commerce : commandes (retrait ou livraison) par code, produits, livraison, paiement en ligne (Stripe).
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Linking, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Image, Linking, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { trpcMutation, trpcQuery } from '@/shared/api-client';
@@ -12,6 +12,7 @@ import { ThemeTokens } from '@/shared/theme';
 import { formatEuros, orderStatusLabel, parseEuroToCents, OrderStatus } from '@/shared/format';
 import { GlassCard } from '@/components/glass-card';
 import { AuthGate } from '@/components/auth-gate';
+import { pickAndUploadProductPhoto } from '@/shared/product-photo';
 
 type Tab = 'orders' | 'products' | 'delivery' | 'payment';
 
@@ -35,6 +36,7 @@ interface ProProduct {
   description?: string | null;
   priceCents: number;
   stock: number | null;
+  imageUrl?: string | null;
   isActive: boolean;
 }
 interface DeliverySettings {
@@ -65,6 +67,8 @@ export default function ProCommerce() {
   const [pName, setPName] = useState('');
   const [pPrice, setPPrice] = useState('');
   const [pStock, setPStock] = useState('');
+  const [pPhoto, setPPhoto] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState<number | 'new' | null>(null);
   // Livraison
   const [dEnabled, setDEnabled] = useState(false);
   const [dFee, setDFee] = useState('');
@@ -147,18 +151,38 @@ export default function ProCommerce() {
       return;
     }
     setBusy(true);
-    const { error } = await trpcMutation('merchant.productSave', { commerceId, name: pName.trim(), priceCents, stock, isActive: true }, { authenticated: true });
+    const { error } = await trpcMutation('merchant.productSave', {
+      commerceId, name: pName.trim(), priceCents, stock, imageUrl: pPhoto || undefined, isActive: true,
+    }, { authenticated: true });
     setBusy(false);
     if (error) setMessage({ text: error, ok: false });
-    else { setPName(''); setPPrice(''); setPStock(''); setMessage({ text: 'Produit ajouté.', ok: true }); loadProducts(); }
+    else { setPName(''); setPPrice(''); setPStock(''); setPPhoto(null); setMessage({ text: 'Produit ajouté.', ok: true }); loadProducts(); }
   };
 
-  const toggleProduct = async (product: ProProduct, isActive: boolean) => {
+  const saveProduct = async (product: ProProduct, changes: { isActive?: boolean; imageUrl?: string | null }) => {
+    const imageUrl = changes.imageUrl !== undefined ? changes.imageUrl : product.imageUrl;
     const { error } = await trpcMutation('merchant.productSave', {
       commerceId, id: product.id, name: product.name, description: product.description || undefined,
-      priceCents: product.priceCents, stock: product.stock, isActive,
+      priceCents: product.priceCents, stock: product.stock, imageUrl: imageUrl || undefined,
+      isActive: changes.isActive ?? product.isActive,
     }, { authenticated: true });
     if (error) setMessage({ text: error, ok: false }); else loadProducts();
+  };
+
+  // Photo : réduite sur l'appareil puis envoyée directement au stockage d'images.
+  const choosePhoto = async (target: ProProduct | 'new') => {
+    setPhotoBusy(target === 'new' ? 'new' : target.id);
+    setMessage(null);
+    try {
+      const { url, error } = await pickAndUploadProductPhoto(commerceId);
+      if (error) setMessage({ text: error, ok: false });
+      else if (url && target === 'new') setPPhoto(url);
+      else if (url && target !== 'new') { await saveProduct(target, { imageUrl: url }); setMessage({ text: 'Photo enregistrée.', ok: true }); }
+    } catch {
+      setMessage({ text: 'Cette photo n’a pas pu être préparée. Essayez-en une autre.', ok: false });
+    } finally {
+      setPhotoBusy(null);
+    }
   };
 
   const saveDelivery = async () => {
@@ -261,18 +285,32 @@ export default function ProCommerce() {
             <TextInput style={s.input} value={pName} onChangeText={setPName} maxLength={190} placeholder="Nom" placeholderTextColor={theme.colors.textMuted} />
             <TextInput style={s.input} value={pPrice} onChangeText={setPPrice} keyboardType="decimal-pad" placeholder="Prix en € (ex. 4,50)" placeholderTextColor={theme.colors.textMuted} />
             <TextInput style={s.input} value={pStock} onChangeText={setPStock} keyboardType="number-pad" placeholder="Stock (vide = illimité)" placeholderTextColor={theme.colors.textMuted} />
+            <View style={s.photoRow}>
+              {pPhoto
+                ? <Image source={{ uri: pPhoto }} style={s.thumb} accessibilityLabel="Photo du nouveau produit" />
+                : <View style={[s.thumb, s.thumbEmpty]}><Text style={s.muted}>Pas de photo</Text></View>}
+              <TouchableOpacity onPress={() => choosePhoto('new')} disabled={photoBusy !== null} style={[s.btnGhost, photoBusy !== null && s.off]} accessibilityRole="button">
+                {photoBusy === 'new' ? <ActivityIndicator color={theme.colors.electric} /> : <Text style={s.btnGhostText}>{pPhoto ? 'Changer la photo' : 'Ajouter une photo'}</Text>}
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={addProduct} disabled={busy} style={[s.btn, busy && s.off]} accessibilityRole="button">
               <Text style={s.btnText}>Ajouter</Text>
             </TouchableOpacity>
           </GlassCard>
           {products.map(product => (
             <GlassCard key={product.id} style={s.productCard as any}>
+              <TouchableOpacity onPress={() => choosePhoto(product)} disabled={photoBusy !== null} accessibilityRole="button" accessibilityLabel={product.imageUrl ? `Changer la photo de ${product.name}` : `Ajouter une photo à ${product.name}`}>
+                {product.imageUrl
+                  ? <Image source={{ uri: product.imageUrl }} style={s.thumb} />
+                  : <View style={[s.thumb, s.thumbEmpty]}><Text style={s.thumbText}>+ Photo</Text></View>}
+                {photoBusy === product.id && <View style={[s.thumb, s.thumbBusy]}><ActivityIndicator color="#FFFFFF" /></View>}
+              </TouchableOpacity>
               <View style={{ flex: 1 }}>
                 <Text style={s.title}>{product.name}</Text>
                 <Text style={s.price}>{formatEuros(product.priceCents)}</Text>
                 <Text style={s.muted}>{product.stock === null ? 'Stock illimité' : `Stock : ${product.stock}`}</Text>
               </View>
-              <Switch value={product.isActive} onValueChange={v => toggleProduct(product, v)} accessibilityLabel={`Afficher ${product.name} en vitrine`} />
+              <Switch value={product.isActive} onValueChange={v => saveProduct(product, { isActive: v })} accessibilityLabel={`Afficher ${product.name} en vitrine`} />
             </GlassCard>
           ))}
         </>
@@ -355,6 +393,13 @@ function makeStyles(theme: ThemeTokens) {
     btn: { minHeight: 44, borderRadius: theme.radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.electric },
     btnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
     off: { opacity: 0.5 },
+    photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    thumb: { width: 64, height: 64, borderRadius: theme.radius.md, backgroundColor: theme.colors.surface },
+    thumbEmpty: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: theme.colors.border },
+    thumbText: { color: theme.colors.electric, fontSize: 11, fontWeight: '800' },
+    thumbBusy: { position: 'absolute', top: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)' },
+    btnGhost: { flex: 1, minHeight: 44, borderRadius: theme.radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.colors.electric },
+    btnGhostText: { color: theme.colors.electric, fontSize: 13, fontWeight: '900' },
     linkBtn: { minHeight: 40, alignItems: 'center', justifyContent: 'center' },
     linkText: { color: theme.colors.cyan, fontSize: 12, fontWeight: '800' },
   });

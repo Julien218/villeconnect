@@ -30,6 +30,16 @@ export function findConfigProblems(env: Record<string, string | undefined> = pro
     if (!env.WEB_APP_URL || !env.WEB_APP_URL.trim()) problems.push('WEB_APP_URL est absente alors que Stripe est activé');
   }
 
+  // Photos (Cloudflare R2) : optionnel, mais tout ou rien.
+  const r2 = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_URL'];
+  const r2Set = r2.filter(name => env[name] && env[name]!.trim());
+  if (r2Set.length > 0 && r2Set.length < r2.length) {
+    problems.push(`Photos R2 incomplètes : ${r2.filter(n => !r2Set.includes(n)).join(', ')} absente(s)`);
+  }
+  if (env.R2_PUBLIC_URL && !/^https:\/\//.test(env.R2_PUBLIC_URL.trim())) {
+    problems.push('R2_PUBLIC_URL doit commencer par https://');
+  }
+
   if (isProduction) {
     const salt = secretProblem('CITY_HASH_SALT', env.CITY_HASH_SALT);
     if (salt) problems.push(salt);
