@@ -44,6 +44,17 @@ test('l’envoi d’une photo vise le bon compartiment, le bon commerce et signe
   assert.equal(up.publicUrl, 'https://photos.example.be' + url.pathname.replace('/villeconnect-photos', ''));
 });
 
+test('les espaces collés par erreur dans les variables sont ignorés', () => {
+  const now = new Date('2026-10-14T10:00:00Z');
+  const messy = { ...ENV, R2_BUCKET: ' villeconnect-photos\n', R2_SECRET_ACCESS_KEY: 'secretexample\n', R2_ACCOUNT_ID: 'acc123 ' };
+  const clean = new URL(createProductImageUpload(7, 'image/png', 10, ENV, now).uploadUrl);
+  const dirty = new URL(createProductImageUpload(7, 'image/png', 10, messy, now).uploadUrl);
+  assert.equal(dirty.host, clean.host);
+  assert.match(dirty.pathname, /^\/villeconnect-photos\/products\/7\//);
+  assert.equal(dirty.searchParams.get('X-Amz-Credential'), clean.searchParams.get('X-Amz-Credential'));
+  assert.equal(isR2Configured({ ...ENV, R2_BUCKET: '   ' }), false);
+});
+
 test('une photo du compartiment ne peut être reprise que par son commerce', () => {
   const own = 'https://photos.example.be/products/7/0f8fad5b-d9cb-469f-a165-70867728950e.jpg';
   assert.equal(isAllowedProductImage(own, 7, ENV), true);

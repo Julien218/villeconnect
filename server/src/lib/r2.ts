@@ -13,9 +13,8 @@ const UPLOAD_EXPIRES_SECONDS = 300;
 type Env = Record<string, string | undefined>;
 
 export function isR2Configured(env: Env = process.env): boolean {
-  return Boolean(
-    env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET && env.R2_PUBLIC_URL
-  );
+  return ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_URL']
+    .every(name => Boolean((env[name] || '').trim()));
 }
 
 /** Adresse publique des photos, sans « / » final (ex. https://photos.villeconnectos.com). */
@@ -104,15 +103,17 @@ export function createProductImageUpload(
   env: Env = process.env,
   now: Date = new Date()
 ): ProductImageUpload {
+  // Valeurs nettoyées : un espace ou un retour à la ligne collé par erreur dans Railway casserait la signature.
+  const v = (name: string) => (env[name] || '').trim();
   const key = `products/${commerceId}/${randomUUID()}.${EXTENSIONS[contentType]}`;
   const headers = { 'content-type': contentType, 'content-length': String(sizeBytes) };
   const uploadUrl = presignUrl({
     method: 'PUT',
-    host: `${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    path: `/${env.R2_BUCKET}/${key}`,
+    host: `${v('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+    path: `/${v('R2_BUCKET')}/${key}`,
     region: 'auto',
-    accessKeyId: env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY || '',
+    accessKeyId: v('R2_ACCESS_KEY_ID'),
+    secretAccessKey: v('R2_SECRET_ACCESS_KEY'),
     amzDate: toAmzDate(now),
     expiresSeconds: UPLOAD_EXPIRES_SECONDS,
     headers,
