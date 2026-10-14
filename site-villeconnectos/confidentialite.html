@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confidentialité — VilleConnect OS</title>
+<meta name="description" content="Comment VilleConnect OS traite vos données personnelles : liste d'attente, compte, commandes, paiements, vos droits.">
+<link rel="canonical" href="https://villeconnectos.com/confidentialite">
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#061529;--ink:#0b1b33;--muted:#53627a;--line:#e3e9f2;--accent:#0060ff;--bg:#f6f8fc}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,Arial,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.shell{width:min(860px,calc(100% - 32px));margin-inline:auto}
+header{background:var(--navy);color:#fff}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:800}
+.brand img{width:36px;height:36px;object-fit:contain}
+.back{color:#aab8cf;text-decoration:none;font-size:14px}
+.hero{padding:34px 0 40px}
+.eyebrow{color:#7fb2ff;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.1;margin:10px 0 12px;letter-spacing:-.03em}
+.hero p{color:#c4d0e3;margin:0;max-width:640px}
+main{padding:32px 0 56px;display:grid;gap:16px}
+section{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 24px}
+h2{font-size:19px;margin:0 0 8px}
+h3{font-size:15px;margin:16px 0 4px}
+p,li{color:var(--muted);font-size:15px}
+ul{padding-left:20px;margin:6px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted)}
+th{color:var(--ink);font-weight:700}
+.table-wrap{overflow-x:auto}
+footer{background:var(--navy);color:#aab8cf;font-size:13px;padding:28px 0}
+footer .links{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:10px}
+footer a{color:#fff;text-decoration:none}
+footer small{color:#7d8ca6;display:block;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="shell nav">
+    <a class="brand" href="/"><img src="/brand/icon-192.png" alt="" width="36" height="36">VilleConnect OS</a>
+    <a class="back" href="/">← Retour à l’accueil</a>
+  </div>
+  <div class="shell hero">
+    <div class="eyebrow">Vos données</div>
+    <h1>Politique de confidentialité</h1>
+    <p>Ce que nous collectons, pourquoi, avec qui c’est partagé et comment exercer vos droits. Dernière mise à jour : 14 octobre 2026.</p>
+  </div>
+</header>
+
+<main class="shell">
+  <section>
+    <h2>1. Qui est responsable de vos données ?</h2>
+    <p>Le responsable du traitement est <strong>Julien Pagin</strong>, entreprise en personne physique exerçant sous le nom commercial <strong>Js-Innov.IA</strong>, éditeur de VilleConnect OS.</p>
+    <ul>
+      <li>Adresse : {{ADRESSE_POSTALE}}</li>
+      <li>Numéro d’entreprise / TVA : BE 0877.926.214</li>
+      <li>E-mail : <a href="mailto:contact@villeconnectos.com">contact@villeconnectos.com</a></li>
+      <li>Téléphone : <a href="tel:+32494119090">0494 11 90 90</a></li>
+    </ul>
+    <p>Pour toute question sur vos données ou pour exercer vos droits, écrivez-nous à l’adresse ci-dessus.</p>
+  </section>
+
+  <section>
+    <h2>2. Quelles données, pour quoi faire ?</h2>
+    <div class="table-wrap">
+    <table>
+      <tr><th>Situation</th><th>Données</th><th>Finalité</th><th>Base légale</th></tr>
+      <tr><td>Liste d’attente (formulaire « Être prévenu »)</td><td>e-mail, code postal, ville, profil (citoyen, commerçant…)</td><td>vous prévenir de l’arrivée de VilleConnect dans votre commune</td><td>votre consentement</td></tr>
+      <tr><td>Compte dans l’application</td><td>e-mail, nom d’usage, code postal et ville, mot de passe (stocké chiffré, jamais lisible), informations de connexion</td><td>fournir le service, sécuriser votre compte</td><td>exécution du contrat</td></tr>
+      <tr><td>Commande auprès d’un commerce</td><td>articles, montants, mode de retrait ou de livraison ; si livraison : adresse, code postal, ville et téléphone</td><td>transmettre la commande au commerçant, permettre le retrait ou la livraison</td><td>exécution du contrat</td></tr>
+      <tr><td>Paiement en ligne</td><td>géré par Stripe : nous ne voyons ni ne stockons jamais votre numéro de carte ou vos identifiants Bancontact</td><td>payer le commerçant</td><td>exécution du contrat</td></tr>
+      <tr><td>Commerçants et organisateurs</td><td>coordonnées professionnelles, fiche du commerce, produits et photos, événements ou fiches sportives proposés</td><td>publier la vitrine et les informations après validation</td><td>exécution du contrat / consentement à la publication</td></tr>
+      <tr><td>Sécurité</td><td>journaux techniques (adresse IP, date, action)</td><td>prévenir les abus et la fraude</td><td>intérêt légitime</td></tr>
+    </table>
+    </div>
+    <p>Nous ne vendons aucune donnée et n’utilisons aucun cookie publicitaire ou de mesure d’audience.</p>
+  </section>
+
+  <section>
+    <h2>3. Qui reçoit vos données ?</h2>
+    <ul>
+      <li><strong>Le commerçant</strong> chez qui vous commandez : il reçoit votre commande et, en cas de livraison, l’adresse et le téléphone nécessaires.</li>
+      <li><strong>Stripe</strong> (paiements) : le paiement est encaissé directement par le commerçant sur son compte Stripe.</li>
+      <li><strong>Railway</strong> (hébergement du serveur et de la base de données, en Europe).</li>
+      <li><strong>Cloudflare</strong> (site internet, protection, stockage des photos de produits).</li>
+      <li><strong>Resend</strong> (envoi des e-mails de confirmation et de mot de passe oublié).</li>
+      <li><strong>Google Fonts</strong> (polices d’écriture du site : votre navigateur contacte les serveurs de Google).</li>
+    </ul>
+    <p>Certains de ces prestataires sont établis hors de l’Union européenne, notamment aux États-Unis. Ces transferts sont encadrés par les garanties prévues par le RGPD (clauses contractuelles types de la Commission européenne ou cadre UE–États-Unis de protection des données).</p>
+  </section>
+
+  <section>
+    <h2>4. Combien de temps ?</h2>
+    <ul>
+      <li>Liste d’attente : jusqu’à votre désinscription, et au plus 3 ans après l’inscription.</li>
+      <li>Compte : tant qu’il est actif ; vous pouvez le supprimer vous-même depuis l’écran Profil de l’application.</li>
+      <li>Commandes et pièces liées aux paiements : la durée imposée par la législation comptable et fiscale belge.</li>
+      <li>Journaux de sécurité : 12 mois.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Vos droits</h2>
+    <p>Vous pouvez à tout moment demander l’accès à vos données, leur rectification, leur effacement, leur portabilité, la limitation du traitement, vous opposer à un traitement fondé sur l’intérêt légitime, et retirer votre consentement. Depuis l’application, l’écran Profil permet d’exporter vos données et de supprimer votre compte. Pour le reste, écrivez à <a href="mailto:contact@villeconnectos.com">contact@villeconnectos.com</a> ; nous répondons dans un délai d’un mois.</p>
+    <p>Si vous estimez que vos droits ne sont pas respectés, vous pouvez introduire une réclamation auprès de l’<strong>Autorité de protection des données</strong>, rue de la Presse 35, 1000 Bruxelles — <a href="https://www.autoriteprotectiondonnees.be" rel="noopener">www.autoriteprotectiondonnees.be</a>.</p>
+  </section>
+
+  <section>
+    <h2>6. Sécurité</h2>
+    <p>Les échanges sont chiffrés (HTTPS), les mots de passe sont stockés sous forme chiffrée irréversible et l’accès aux données est limité aux personnes qui en ont besoin. Les commerçants n’accèdent qu’aux commandes de leur propre commerce.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="shell">
+    <div class="links"><a href="/">Accueil</a><a href="/confidentialite">Confidentialité</a><a href="/mentions-legales">Mentions légales</a><a href="https://app.villeconnectos.com">Ouvrir l’application</a></div>
+    <small>© 2026 Js-Innov.IA — Julien Pagin. TVA BE 0877.926.214. VilleConnect OS et son logo sont des marques de Js-Innov.IA.</small>
+  </div>
+</footer>
+</body>
+</html>
