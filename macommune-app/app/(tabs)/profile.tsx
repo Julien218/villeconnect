@@ -8,9 +8,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -20,6 +20,7 @@ import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
 import { AuthGate } from '@/components/auth-gate';
 import { ThemePicker } from '@/components/theme-picker';
+import { CustomColorPicker } from '@/components/custom-color-picker';
 import { useAuth } from '@/shared/auth-context';
 import { getBranding } from '@/shared/branding';
 
@@ -305,6 +306,7 @@ export default function ProfileScreen() {
         </View>
         <View style={s.pickerWrap}>
           <ThemePicker />
+          <CustomColorPicker />
         </View>
       </GlassCard>
 
@@ -369,6 +371,7 @@ export default function ProfileScreen() {
         />
 
         <TouchableOpacity
+          neonColor={theme.colors.danger}
           style={[s.deleteButton, erasing && s.disabledButton]}
           onPress={eraseAccount}
           disabled={erasing}
@@ -381,7 +384,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </GlassCard>
 
-      <TouchableOpacity onPress={confirmLogout} style={s.logoutBtn} accessibilityRole="button">
+      <TouchableOpacity neonColor={theme.colors.danger} onPress={confirmLogout} style={s.logoutBtn} accessibilityRole="button">
         <Ionicons name="log-out-outline" size={18} color={theme.colors.danger} />
         <Text style={s.logoutText}>Se déconnecter</Text>
       </TouchableOpacity>
@@ -454,7 +457,7 @@ function makeStyles(theme: ThemeTokens) {
       gap: 8,
     },
     message: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 17, flex: 1 },
-    fullWidthButton: { width: '100%', marginTop: 18 },
+    fullWidthButton: { width: '100%', marginTop: 18, borderRadius: theme.radius.pill },
     primaryBtn: { borderRadius: theme.radius.pill, paddingVertical: 14, alignItems: 'center' },
     primaryBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
     sectionHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },

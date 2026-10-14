@@ -1,18 +1,19 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { trpcQuery } from '@/shared/api-client';
-import { useAuth } from '@/shared/auth-context';
+import { useFuelLocation } from '@/shared/use-fuel-location';
+import { FuelLocationControls } from '@/components/fuel/location-controls';
 import { useTheme } from '@/shared/theme-context';
 import { ThemeTokens } from '@/shared/theme';
 import { GlassCard } from '@/components/glass-card';
@@ -29,6 +30,7 @@ interface FuelStation {
   sourceName: string;
   sourceUrl?: string | null;
   sourceUpdatedAt: string;
+  distanceKm?: number | null;
 }
 
 type FuelType = 'DIESEL' | 'E5' | 'E10';
@@ -36,8 +38,8 @@ type DataStatus = 'available' | 'empty' | 'unavailable';
 
 const TYPES: Array<{ key: FuelType; label: string }> = [
   { key: 'DIESEL', label: 'Diesel' },
-  { key: 'E5', label: 'Essence 95' },
-  { key: 'E10', label: 'E10' },
+  { key: 'E5', label: 'Essence E5' },
+  { key: 'E10', label: 'Essence E10' },
 ];
 
 function priceFor(station: FuelStation, type: FuelType) {
@@ -52,47 +54,59 @@ function formatPrice(value?: number | null) {
 
 export default function FuelScreen() {
   const { theme } = useTheme();
-  const { user } = useAuth();
   const s = makeStyles(theme);
-  const postalCode = user?.postalCode?.trim() || '7370';
-
+  const { position, locating, locationError, locate } = useFuelLocation();
+  const [radiusKm, setRadiusKm] = useState(10);
+  const [reload, setReload] = useState(0);
   const [stations, setStations] = useState<FuelStation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<FuelType>('DIESEL');
   const [status, setStatus] = useState<DataStatus>('empty');
   const [sourceUpdatedAt, setSourceUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadedKey, setLoadedKey] = useState('');
+  const queryKey = JSON.stringify([position, radiusKm, selected, reload]);
+  const ready = !!position && !locating && !loading && loadedKey === queryKey;
 
-  const load = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
-
-    const { data, error: apiError } = await trpcQuery<{
-      items: FuelStation[];
-      status: DataStatus;
-      sourceUpdatedAt: string | null;
-    }>('fuel.getStations', { postalCode, fuelType: selected, limit: 20 });
-
-    if (apiError || !data) {
-      setStations([]);
-      setStatus('unavailable');
-      setSourceUpdatedAt(null);
-      setError(apiError || 'Le service carburant ne répond pas.');
-    } else {
-      setStations(data.items || []);
-      setStatus(data.status);
-      setSourceUpdatedAt(data.sourceUpdatedAt);
-    }
-
-    setLoading(false);
-    setRefreshing(false);
-  }, [postalCode, selected]);
+  const load = (isRefresh = false) => {
+    if (!position) { void locate(); return; }
+    setRefreshing(isRefresh);
+    setReload(value => value + 1);
+  };
 
   useEffect(() => {
-    load();
-  }, [load]);
+    // Do not substitute the pilot commune when location is refused/unavailable.
+    if (!position) {
+      setStations([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    const fetchStations = async () => {
+      const { data, error: apiError } = await trpcQuery<{
+        items: FuelStation[];
+        status: DataStatus;
+        sourceUpdatedAt: string | null;
+      }>('fuel.getStations', {
+        latitude: position.latitude, longitude: position.longitude,
+        radiusKm, fuelType: selected, limit: 20,
+      });
+      if (cancelled) return;
+      setStations(data?.items || []);
+      setStatus(apiError || !data ? 'unavailable' : data.status);
+      setSourceUpdatedAt(data?.sourceUpdatedAt || null);
+      setError(apiError || (!data ? 'Le service carburant ne répond pas.' : null));
+      setLoadedKey(queryKey);
+      setLoading(false);
+      setRefreshing(false);
+    };
+    void fetchStations();
+    return () => { cancelled = true; };
+  }, [position, radiusKm, selected, reload, queryKey]);
 
   const sorted = useMemo(() => (
     [...stations].sort((a, b) => (priceFor(a, selected) ?? 999) - (priceFor(b, selected) ?? 999))
@@ -129,9 +143,12 @@ export default function FuelScreen() {
         <View style={{ flex: 1 }}>
           <Text style={s.eyebrow}>FUEL SAVER</Text>
           <Text style={s.title}>Prix carburant vérifiés</Text>
-          <Text style={s.subtitle}>Zone {postalCode} · données horodatées uniquement</Text>
+          <Text style={s.subtitle}>Autour de vous · prix croissants · données horodatées</Text>
         </View>
       </LinearGradient>
+
+      <FuelLocationControls position={position} locating={locating} error={locationError}
+        radiusKm={radiusKm} onRadius={setRadiusKm} onLocate={() => { void locate(); }} />
 
       <View style={s.tabs}>
         {TYPES.map(type => (
@@ -147,14 +164,14 @@ export default function FuelScreen() {
         ))}
       </View>
 
-      {loading && (
+      {!!position && !ready && (
         <View style={s.stateBox}>
           <ActivityIndicator color={theme.colors.cyan} size="large" />
           <Text style={s.stateText}>Chargement des prix disponibles…</Text>
         </View>
       )}
 
-      {!loading && (status === 'unavailable' || error) && (
+      {ready && (status === 'unavailable' || error) && (
         <GlassCard style={s.stateCard as any}>
           <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.warning} />
           <Text style={s.stateTitle}>Service temporairement indisponible</Text>
@@ -166,17 +183,19 @@ export default function FuelScreen() {
         </GlassCard>
       )}
 
-      {!loading && status === 'empty' && !error && (
+      {ready && status === 'empty' && !error && (
         <GlassCard style={s.stateCard as any}>
           <Ionicons name="information-circle-outline" size={36} color={theme.colors.cyan} />
           <Text style={s.stateTitle}>Aucun prix publié</Text>
           <Text style={s.stateText}>
-            Aucune station disposant d’un prix traçable pour {postalCode} n’est encore disponible.
+            Aucun prix pour ce carburant dans un rayon de {radiusKm} km. Essayez un rayon plus large ou un autre carburant. Seules les stations avec coordonnées et prix publiés sont affichées.
           </Text>
         </GlassCard>
       )}
 
-      {!loading && status === 'available' && best && bestPrice != null && (
+      <Text style={s.freshness}>Prix disponibles dans l’application uniquement. La connexion à CARBU.COM reste à activer ; les prix peuvent évoluer avant votre arrivée.</Text>
+
+      {ready && status === 'available' && best && bestPrice != null && (
         <>
           <LinearGradient
             colors={[theme.colors.navyGrad2, theme.colors.cyanGrad1, theme.colors.cyanGrad2]}
@@ -192,7 +211,7 @@ export default function FuelScreen() {
             <Text style={s.heroPrice}>{bestPrice.toFixed(3)} €/L</Text>
             <View style={s.locationRow}>
               <Ionicons name="location-outline" size={14} color="rgba(255,255,255,.78)" />
-              <Text style={s.heroAddress}>{best.address}</Text>
+              <Text style={s.heroAddress}>{best.address}{best.distanceKm != null ? ` · ${best.distanceKm.toFixed(1)} km` : ''}</Text>
             </View>
             {estimatedSaving != null && estimatedSaving > 0 && (
               <View style={s.savingBox}>
@@ -224,6 +243,8 @@ export default function FuelScreen() {
                     )}
                   </View>
                   <Text style={s.stationAddress} numberOfLines={2}>{station.address}</Text>
+                  {station.distanceKm != null && <Text style={s.distance}>{station.distanceKm.toFixed(1)} km à vol d’oiseau</Text>}
+                  <Text style={s.sourceText}>Relevé : {new Date(station.sourceUpdatedAt).toLocaleString('fr-BE')}</Text>
                   <View style={s.sourceRow}>
                     <Ionicons name="document-text-outline" size={12} color={theme.colors.textMuted} />
                     <Text style={s.sourceText} numberOfLines={1}>Source : {station.sourceName}</Text>
@@ -333,6 +354,7 @@ function makeStyles(theme: ThemeTokens) {
     stationName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '900', flexShrink: 1 },
     bestBadge: { borderRadius: 6, backgroundColor: theme.colors.success + '22', paddingHorizontal: 6, paddingVertical: 2 },
     bestBadgeText: { color: theme.colors.success, fontSize: 8, fontWeight: '900' },
+    distance: { color: theme.colors.cyan, fontSize: 12, fontWeight: '700', marginTop: 5, marginBottom: 5 },
     stationAddress: { color: theme.colors.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 4 },
     sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
     sourceText: { color: theme.colors.textMuted, fontSize: 9, flex: 1 },

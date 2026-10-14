@@ -1,7 +1,8 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 // VilleConnect OS — Menu radial premium ouvert par appui long (500ms) sur le C.
 // Actions rapides disposées en éventail au-dessus du bouton, animation fluide (Moti).
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Modal, View, Text, StyleSheet, Dimensions, TouchableOpacity as BackdropTouchable } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { MotiView, AnimatePresence } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme-context';
@@ -31,7 +32,7 @@ export function RadialQuickMenu({ visible, originX, originY, onClose, onSelect }
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <AnimatePresence>
         {visible && (
-          <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={onClose}>
+          <BackdropTouchable activeOpacity={1} style={StyleSheet.absoluteFill} onPress={onClose}>
             <MotiView
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -64,7 +65,7 @@ export function RadialQuickMenu({ visible, originX, originY, onClose, onSelect }
                 );
               })}
             </MotiView>
-          </TouchableOpacity>
+          </BackdropTouchable>
         )}
       </AnimatePresence>
     </Modal>

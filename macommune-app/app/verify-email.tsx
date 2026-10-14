@@ -1,7 +1,8 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 // Écran atteint via le lien de l'email de confirmation : {WEB_APP_URL}/verify-email?token=...
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/shared/theme-context';
@@ -49,7 +50,7 @@ export default function VerifyEmailScreen() {
             <Text style={s.emoji}>✅</Text>
             <Text style={s.title}>Adresse email confirmée !</Text>
             <Text style={s.text}>Ton compte est maintenant actif. Tu peux te connecter.</Text>
-            <TouchableOpacity onPress={() => router.replace('/login')} style={{ width: '100%', marginTop: 18 }}>
+            <TouchableOpacity onPress={() => router.replace('/login')} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 18 }}>
               <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
                 <Text style={s.primaryBtnText}>Se connecter</Text>
               </LinearGradient>
@@ -61,7 +62,7 @@ export default function VerifyEmailScreen() {
             <Text style={s.emoji}>⚠️</Text>
             <Text style={s.title}>Impossible de confirmer</Text>
             <Text style={s.text}>{message}</Text>
-            <TouchableOpacity onPress={() => router.replace('/register')} style={{ width: '100%', marginTop: 18 }}>
+            <TouchableOpacity onPress={() => router.replace('/register')} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 18 }}>
               <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
                 <Text style={s.primaryBtnText}>Retour à l'inscription</Text>
               </LinearGradient>

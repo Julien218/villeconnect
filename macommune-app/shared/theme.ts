@@ -162,6 +162,44 @@ export const lightTheme: ThemeTokens = {
   statusBarStyle: 'dark',
 };
 
+function mixHex(base: string, target: string, amount: number): string {
+  const parse = (hex: string) => [
+    Number.parseInt(hex.slice(1, 3), 16),
+    Number.parseInt(hex.slice(3, 5), 16),
+    Number.parseInt(hex.slice(5, 7), 16),
+  ];
+  const [br, bg, bb] = parse(base);
+  const [tr, tg, tb] = parse(target);
+  const channel = (from: number, to: number) => Math.round(from + (to - from) * amount)
+    .toString(16).padStart(2, '0');
+  return `#${channel(br, tr)}${channel(bg, tg)}${channel(bb, tb)}`.toUpperCase();
+}
+
+export function withAccentColor(theme: ThemeTokens, accentColor: string | null): ThemeTokens {
+  if (!accentColor) return theme;
+
+  const softRgb = [1, 3, 5].map((start) => Number.parseInt(accentColor.slice(start, start + 2), 16)).join(',');
+  const paleTarget = theme.mode === 'dark' ? '#FFFFFF' : '#000000';
+
+  return {
+    ...theme,
+    colors: {
+      ...theme.colors,
+      cyan: accentColor,
+      electric: accentColor,
+      teal: mixHex(accentColor, paleTarget, theme.mode === 'dark' ? 0.2 : 0.12),
+      cyanSoft: `rgba(${softRgb},0.15)`,
+      borderCyan: `rgba(${softRgb},0.38)`,
+      cyanGrad1: mixHex(accentColor, '#000000', 0.42),
+      cyanGrad2: accentColor,
+    },
+    shadow: {
+      ...theme.shadow,
+      glow: { ...theme.shadow.glow, shadowColor: accentColor },
+    },
+  };
+}
+
 export interface ThemeModuleColors { bg: string; fg: string; }
 export interface ThemeBadgeColors { bg: string; fg: string; }
 export interface ThemeTokens {

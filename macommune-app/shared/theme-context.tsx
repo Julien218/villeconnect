@@ -6,16 +6,20 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { darkTheme, lightTheme, ThemeMode, ColorScheme, ThemeTokens } from './theme';
+import { darkTheme, lightTheme, ThemeMode, ColorScheme, ThemeTokens, withAccentColor } from './theme';
 import { useAuth } from './auth-context';
 
 const STORAGE_KEY = 'macommune_theme_preference';
+const ACCENT_STORAGE_KEY = 'macommune_custom_accent';
+const HEX_COLOR = /^#[0-9A-F]{6}$/;
 
 interface ThemeContextValue {
   mode: ThemeMode;                 // choix de l'utilisateur : light / dark / auto
   scheme: ColorScheme;              // rendu résolu actuel : light / dark
   theme: ThemeTokens;               // jetons de design pour le rendu résolu
   setMode: (mode: ThemeMode) => Promise<void>;
+  accentColor: string | null;
+  setAccentColor: (color: string | null) => Promise<void>;
   isReady: boolean;
 }
 
@@ -23,6 +27,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('auto');
+  const [accentColor, setAccentColorState] = useState<string | null>(null);
   const [systemScheme, setSystemScheme] = useState<ColorScheme>(
     (Appearance.getColorScheme() as ColorScheme) || 'dark'
   );
@@ -43,9 +48,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        const [stored, storedAccent] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY),
+          AsyncStorage.getItem(ACCENT_STORAGE_KEY),
+        ]);
         if (stored === 'light' || stored === 'dark' || stored === 'auto') {
           setModeState(stored);
+        }
+        if (storedAccent && HEX_COLOR.test(storedAccent)) {
+          setAccentColorState(storedAccent);
         }
       } finally {
         setIsReady(true);
@@ -75,12 +86,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [auth]);
 
+  const setAccentColor = useCallback(async (color: string | null) => {
+    const next = color?.toUpperCase() || null;
+    if (next && !HEX_COLOR.test(next)) return;
+
+    setAccentColorState(next);
+    try {
+      if (next) await AsyncStorage.setItem(ACCENT_STORAGE_KEY, next);
+      else await AsyncStorage.removeItem(ACCENT_STORAGE_KEY);
+    } catch { /* non bloquant */ }
+  }, []);
+
   const scheme: ColorScheme = mode === 'auto' ? systemScheme : mode;
-  const tokens = scheme === 'light' ? lightTheme : darkTheme;
+  const baseTheme = scheme === 'light' ? lightTheme : darkTheme;
+  const tokens = useMemo(() => withAccentColor(baseTheme, accentColor), [baseTheme, accentColor]);
 
   const value = useMemo<ThemeContextValue>(() => ({
-    mode, scheme, theme: tokens, setMode, isReady,
-  }), [mode, scheme, tokens, setMode, isReady]);
+    mode, scheme, theme: tokens, setMode, accentColor, setAccentColor, isReady,
+  }), [mode, scheme, tokens, setMode, accentColor, setAccentColor, isReady]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

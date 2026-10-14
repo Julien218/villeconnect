@@ -4,8 +4,9 @@
 
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Linking, ScrollView,
+  View, Text, StyleSheet, Linking, ScrollView,
 } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useTheme } from '@/shared/theme-context';

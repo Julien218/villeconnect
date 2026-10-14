@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '@/shared/theme-context';
@@ -53,7 +54,7 @@ export default function LoginScreen() {
             <Text style={s.forgotText}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.85} onPress={submit} disabled={loading} style={{ width: '100%', marginTop: 8 }} testID="login-submit">
+          <TouchableOpacity activeOpacity={0.85} onPress={submit} disabled={loading} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 8 }} testID="login-submit">
             <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Se connecter</Text>}
             </LinearGradient>

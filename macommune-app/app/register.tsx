@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '@/shared/theme-context';
@@ -54,7 +55,7 @@ export default function RegisterScreen() {
         <AuthHeader title="Vérifie ta boîte email" subtitle={`Un email de confirmation a été envoyé à ${email}. Clique sur le lien pour activer ton compte.`} />
         <GlassCard style={s.card}>
           <Text style={s.info}>📬 Pense à vérifier tes spams si tu ne vois rien arriver.</Text>
-          <TouchableOpacity onPress={() => router.replace('/login')} style={{ width: '100%', marginTop: 18 }}>
+          <TouchableOpacity onPress={() => router.replace('/login')} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 18 }}>
             <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
               <Text style={s.primaryBtnText}>Aller à la connexion</Text>
             </LinearGradient>
@@ -102,7 +103,7 @@ export default function RegisterScreen() {
           <Text style={s.label}>Apparence de l'application</Text>
           <ThemePicker compact />
 
-          <TouchableOpacity activeOpacity={0.85} onPress={submit} disabled={loading} style={{ width: '100%', marginTop: 20 }} testID="register-submit">
+          <TouchableOpacity activeOpacity={0.85} onPress={submit} disabled={loading} style={{ borderRadius: theme.radius.pill, width: '100%', marginTop: 20 }} testID="register-submit">
             <LinearGradient colors={[theme.colors.electric, theme.colors.cyan]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.primaryBtn}>
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Créer mon compte</Text>}
             </LinearGradient>

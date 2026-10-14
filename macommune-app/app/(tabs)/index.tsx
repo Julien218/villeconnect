@@ -2,26 +2,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  ImageBackground,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { trpcQuery } from '@/shared/api-client';
-import { useTheme } from '@/shared/theme-context';
-import { ThemeTokens } from '@/shared/theme';
+import { darkTheme, ThemeTokens } from '@/shared/theme';
 import { getBranding } from '@/shared/branding';
 import { GlassCard } from '@/components/glass-card';
 import { useAuth } from '@/shared/auth-context';
 import { CityStatusBanner } from '@/components/CityStatusBanner';
 import { useCityStatus } from '@/shared/useCityStatus';
+import { NightHome } from '@/components/home/night-home';
+import { ServiceLogo, type ServiceLogoName } from '@/components/home/service-logo';
+import { NeonPulseButton } from '@/components/neon-pulse-button';
 
 const BANNER_STATUSES = new Set([
   'unknown',
@@ -49,7 +49,7 @@ interface LocalEvent {
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoggedIn, user } = useAuth();
-  const { theme } = useTheme();
+  const theme = darkTheme;
   const s = makeStyles(theme);
 
   const postalCode = user?.postalCode?.trim() || '7370';
@@ -57,6 +57,7 @@ export default function HomeScreen() {
   const cityDisplayName = user?.city?.trim() || brand.cityName;
 
   const [featuredCommerce, setFeaturedCommerce] = useState<Commerce | null>(null);
+  const [localEvents, setLocalEvents] = useState<LocalEvent[]>([]);
   const [latestEvent, setLatestEvent] = useState<LocalEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,6 +78,7 @@ export default function HomeScreen() {
       commerces.find(item => Boolean(item.hasPromotion)) || commerces[0] || null
     );
     setLatestEvent(eventsResult.data?.[0] || null);
+    setLocalEvents(eventsResult.data || []);
 
     const failures = [commerceResult.error, eventsResult.error].filter(Boolean);
     if (failures.length === 2) {
@@ -106,18 +108,18 @@ export default function HomeScreen() {
     userPostalCode && !cityLoading && BANNER_STATUSES.has(cityStatus)
   );
 
-  const modules = [
-    { key: 'events', label: 'Actualités', icon: 'newspaper-outline', route: '/(tabs)/events' },
-    { key: 'agenda', label: 'Agenda', icon: 'calendar-outline', route: '/(tabs)/events' },
-    { key: 'shops', label: 'Commerces', icon: 'storefront-outline', route: '/(tabs)/shops' },
-    { key: 'sport', label: 'Sport', icon: 'trophy-outline', route: '/sport' },
-    { key: 'fuel', label: 'Carburant', icon: 'car-sport-outline', route: '/(tabs)/fuel' },
-    { key: 'services', label: 'Services', icon: 'grid-outline', route: '/services' },
-    { key: 'profile', label: 'Mon profil', icon: 'person-outline', route: '/(tabs)/profile' },
+  const modules: { key: ServiceLogoName; label: string; route: string }[] = [
+    { key: 'events', label: 'Actualités', route: '/(tabs)/events' },
+    { key: 'agenda', label: 'Agenda', route: '/(tabs)/events' },
+    { key: 'shops', label: 'Commerces', route: '/(tabs)/shops' },
+    { key: 'sport', label: 'Sport', route: '/sport' },
+    { key: 'fuel', label: 'Carburant', route: '/(tabs)/fuel' },
+    { key: 'services', label: 'Services', route: '/services' },
+    { key: 'profile', label: 'Mon profil', route: '/(tabs)/profile' },
     isLoggedIn
-      ? { key: 'account', label: 'Mon compte', icon: 'shield-checkmark-outline', route: '/(tabs)/profile' }
-      : { key: 'login', label: 'Connexion', icon: 'log-in-outline', route: '/login' },
-  ] as const;
+      ? { key: 'account', label: 'Mon compte', route: '/(tabs)/profile' }
+      : { key: 'login', label: 'Connexion', route: '/login' },
+  ];
 
   return (
     <ScrollView
@@ -132,45 +134,8 @@ export default function HomeScreen() {
         />
       }
     >
-      <ImageBackground
-        source={require('@/assets/city-skyline-header.png')}
-        style={s.hero}
-        imageStyle={s.heroImage}
-      >
-        <LinearGradient
-          colors={['rgba(3,8,23,0.18)', 'rgba(3,8,23,0.72)', theme.colors.bgDeep]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={s.heroTop}>
-          <View>
-            <Text style={s.hello}>Bonjour</Text>
-            <Text style={s.cityName}>{cityDisplayName}</Text>
-            <Text style={s.cityTagline}>Votre ville, connectée au quotidien.</Text>
-          </View>
-          <TouchableOpacity
-            style={s.profileButton}
-            onPress={() => router.push(isLoggedIn ? '/(tabs)/profile' as any : '/login' as any)}
-            accessibilityRole="button"
-            accessibilityLabel={isLoggedIn ? 'Ouvrir mon profil' : 'Se connecter'}
-          >
-            <Ionicons
-              name={isLoggedIn ? 'person' : 'log-in-outline'}
-              size={20}
-              color={theme.colors.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={s.heroBrand}>
-          <View style={s.logoHalo}>
-            <Image source={require('@/assets/logo-official-small.png')} style={s.logo} />
-          </View>
-          <View style={s.heroBrandCopy}>
-            <Text style={s.platformName}>VILLECONNECT OS</Text>
-            <Text style={s.platformStatus}>Plateforme locale active · {postalCode}</Text>
-          </View>
-        </View>
-      </ImageBackground>
+      <NightHome city={cityDisplayName} events={localEvents} />
+      <Text style={s.localSpace}>VOTRE ESPACE {brand.appName.toUpperCase()}</Text>
 
       {dataError && (
         <TouchableOpacity
@@ -190,22 +155,20 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={s.moduleGrid}>
-        {modules.map((module, index) => (
-          <TouchableOpacity
+      <View style={s.moduleGrid} testID="connected-services">
+        {modules.map(module => (
+          <NeonPulseButton
             key={module.key}
             style={s.moduleCard}
-            activeOpacity={0.78}
+            activeOpacity={0.95}
             onPress={() => router.push(module.route as any)}
             accessibilityRole="button"
             accessibilityLabel={module.label}
           >
-            <View style={[s.moduleIcon, index % 3 === 1 && s.moduleIconAlt]}>
-              <Ionicons name={module.icon as any} size={23} color={theme.colors.cyan} />
-            </View>
+            <ServiceLogo name={module.key} />
             <Text style={s.moduleLabel}>{module.label}</Text>
             <View style={s.moduleLine} />
-          </TouchableOpacity>
+          </NeonPulseButton>
         ))}
       </View>
 
@@ -352,42 +315,11 @@ function EmptyCard({
 
 function makeStyles(theme: ThemeTokens) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: theme.colors.bgDeep },
+    screen: { flex: 1, width: '100%', maxWidth: 473, alignSelf: 'center', backgroundColor: '#02070D' },
+    localSpace: { color: '#8194AB', fontSize: 10, letterSpacing: 2, marginTop: 36, marginBottom: 18, textAlign: 'center' },
     content: { paddingBottom: 125 },
-    hero: {
-      height: 330,
-      paddingTop: 56,
-      paddingHorizontal: 20,
-      justifyContent: 'space-between',
-      paddingBottom: 58,
-      overflow: 'hidden',
-    },
-    heroImage: { opacity: 0.62 },
-    heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-    hello: { color: theme.colors.cyan, fontSize: 15, fontWeight: '600' },
-    // Le haut du bandeau est toujours sur la photo assombrie : texte clair quel que soit le thème.
-    cityName: { color: '#FFFFFF', fontSize: 38, fontWeight: '900', marginTop: 2 },
-    cityTagline: { color: 'rgba(255,255,255,0.82)', fontSize: 16, lineHeight: 23, marginTop: 5 },
-    profileButton: {
-      width: 48, height: 48, borderRadius: 24,
-      borderWidth: 1, borderColor: theme.colors.cyan + '55',
-      backgroundColor: 'rgba(3,8,23,0.62)',
-      alignItems: 'center', justifyContent: 'center',
-    },
-    heroBrand: { flexDirection: 'row', alignItems: 'center', gap: 13 },
-    logoHalo: {
-      width: 66, height: 66, borderRadius: 33,
-      borderWidth: 1, borderColor: theme.colors.cyan + '88',
-      backgroundColor: 'rgba(0,96,255,0.22)',
-      alignItems: 'center', justifyContent: 'center',
-      shadowColor: theme.colors.cyan, shadowOpacity: 0.45, shadowRadius: 18,
-    },
-    logo: { width: 52, height: 52, resizeMode: 'contain' },
-    heroBrandCopy: { flex: 1 },
-    platformName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '900', letterSpacing: 1.2 },
-    platformStatus: { color: theme.colors.cyan, fontSize: 11, marginTop: 4 },
     errorBanner: {
-      marginHorizontal: 16, marginTop: -24, marginBottom: 10,
+      marginHorizontal: 16, marginTop: 0, marginBottom: 10,
       padding: 13, borderRadius: 14, flexDirection: 'row', gap: 9,
       borderWidth: 1, borderColor: theme.colors.warning + '55',
       backgroundColor: theme.colors.surfaceSolid,
@@ -401,16 +333,9 @@ function makeStyles(theme: ThemeTokens) {
       marginHorizontal: 12,
     },
     moduleCard: {
-      width: '25%', minHeight: 112, alignItems: 'center',
-      justifyContent: 'center', paddingHorizontal: 4, gap: 8,
+      width: '25%', minHeight: 142, alignItems: 'center',
+      justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 10, gap: 6,
     },
-    moduleIcon: {
-      width: 58, height: 58, borderRadius: 19,
-      borderWidth: 1, borderColor: theme.colors.cyan + '55',
-      backgroundColor: theme.colors.cyanSoft,
-      alignItems: 'center', justifyContent: 'center',
-    },
-    moduleIconAlt: { borderRadius: 29, backgroundColor: theme.colors.surfaceSolid },
     moduleLabel: { color: theme.colors.textPrimary, fontSize: 11, fontWeight: '700', textAlign: 'center' },
     moduleLine: { width: 18, height: 2, borderRadius: 2, backgroundColor: theme.colors.cyan },
     cityBannerWrap: { marginHorizontal: 16, marginTop: 20 },

@@ -22,9 +22,22 @@ export const fuelRouter = router({
       postalCode: z.string().trim().min(3).max(12).default('7370'),
       fuelType: z.enum(['E10', 'E5', 'DIESEL']).default('E10'),
       limit: z.number().int().min(1).max(25).default(10),
+      latitude: z.number().finite().min(-90).max(90).optional(),
+      longitude: z.number().finite().min(-180).max(180).optional(),
+      radiusKm: z.number().int().min(1).max(50).default(10),
+    }).refine(input => (input.latitude === undefined) === (input.longitude === undefined), {
+      message: 'Latitude et longitude doivent être fournies ensemble.',
     }))
     .query(async ({ input }) => {
       const column = FUEL_COLUMNS[input.fuelType];
+      const nearby = input.latitude !== undefined && input.longitude !== undefined;
+      // Haversine distance in km; filter before sorting/limiting so the cheapest
+      // eligible station is not lost to a nearest-stations or postal-code cutoff.
+      const distance = nearby ? `6371 * 2 * ASIN(SQRT(LEAST(1,
+        POWER(SIN(RADIANS(latitude - ?) / 2), 2) +
+        COS(RADIANS(?)) * COS(RADIANS(latitude)) *
+        POWER(SIN(RADIANS(longitude - ?) / 2), 2)
+      )))` : 'NULL';
       try {
         const [rows] = await db.execute(
           `SELECT id, external_id AS externalId, name, address,
@@ -33,17 +46,23 @@ export const fuelRouter = router({
                   price_e10 AS priceE10, price_e5 AS priceE5,
                   price_diesel AS priceDiesel,
                   source_name AS sourceName, source_url AS sourceUrl,
-                  source_updated_at AS sourceUpdatedAt
+                  source_updated_at AS sourceUpdatedAt,
+                  ${distance} AS distanceKm
            FROM fuel_stations
-           WHERE postal_code = ? AND is_active = 1 AND ${column} IS NOT NULL
-           ORDER BY ${column} ASC, source_updated_at DESC
+           WHERE ${nearby ? 'latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180' : 'postal_code = ?'}
+             AND is_active = 1 AND ${column} IS NOT NULL
+           ${nearby ? 'HAVING distanceKm <= ?' : ''}
+           ORDER BY ${column} ASC, distanceKm ASC, source_updated_at DESC
            LIMIT ${input.limit}`,
-          [input.postalCode]
+          nearby
+            ? [input.latitude!, input.latitude!, input.longitude!, input.radiusKm]
+            : [input.postalCode]
         ) as any[];
 
         const items = (rows as any[]).map(row => ({
           ...row,
           id: String(row.id),
+          distanceKm: row.distanceKm == null ? null : Number(row.distanceKm),
           latitude: row.latitude == null ? null : Number(row.latitude),
           longitude: row.longitude == null ? null : Number(row.longitude),
           priceE10: row.priceE10 == null ? null : Number(row.priceE10),

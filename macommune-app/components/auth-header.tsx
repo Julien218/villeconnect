@@ -1,7 +1,8 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 // Header réutilisable pour les écrans d'authentification — logo officiel (jamais modifié) + retour.
 // S'adapte automatiquement au thème actif (clair / sombre / automatique).
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme-context';

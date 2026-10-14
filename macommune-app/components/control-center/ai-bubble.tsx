@@ -4,7 +4,8 @@
 // préférences de l'utilisateur. Le texte est généré ici à partir des données déjà
 // chargées par l'écran d'accueil (pas d'appel IA supplémentaire nécessaire pour ce
 // résumé factuel — un vrai backend conversationnel reste branchable sur le même point d'entrée).
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, } from 'react-native';
+import { NeonTouchableOpacity as TouchableOpacity } from '@/components/neon-button';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme-context';
