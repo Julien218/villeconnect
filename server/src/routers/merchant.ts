@@ -9,6 +9,9 @@ import { MAX_ORDER_CENTS, normalizePickupCode, parsePostalCodes } from '../lib/m
 import {
   StripeApiError, createAccountLink, createStandardAccount, isStripeConfigured, retrieveAccount,
 } from '../lib/stripe';
+import {
+  R2_IMAGE_TYPES, R2_MAX_IMAGE_BYTES, createProductImageUpload, isAllowedProductImage, isR2Configured,
+} from '../lib/r2';
 
 type Actor = { id: number; role: string };
 
@@ -59,7 +62,9 @@ const productInput = z.object({
   description: z.string().trim().max(1000).optional(),
   priceCents: z.number().int().min(50).max(MAX_ORDER_CENTS),
   stock: z.number().int().min(0).max(100000).nullable().optional(),
-  imageUrl: z.string().trim().url().max(1000).optional(),
+  imageUrl: z.string().trim().url().max(1000)
+    .refine(url => url.startsWith('https://'), 'L’adresse de la photo doit commencer par https://')
+    .optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -160,10 +165,31 @@ export const merchantRouter = router({
       return (rows as any[]).map(row => ({ ...row, isActive: Boolean(row.isActive) }));
     }),
 
+  // Adresse d'envoi temporaire pour une photo : l'application envoie l'image directement à R2.
+  productImageUpload: merchantProcedure
+    .input(z.object({
+      commerceId,
+      contentType: z.enum(R2_IMAGE_TYPES),
+      sizeBytes: z.number().int().min(1).max(R2_MAX_IMAGE_BYTES),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await requireMembership(ctx.user, input.commerceId);
+      if (!isR2Configured()) {
+        throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'L’envoi de photos n’est pas encore activé.' });
+      }
+      if (!checkRateLimit(`product-image:${ctx.user.id}`, 60, 60 * 60 * 1000)) {
+        throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Trop de photos envoyées. Réessayez plus tard.' });
+      }
+      return createProductImageUpload(input.commerceId, input.contentType, input.sizeBytes);
+    }),
+
   productSave: merchantProcedure
     .input(productInput)
     .mutation(async ({ ctx, input }) => {
       await requireMembership(ctx.user, input.commerceId);
+      if (input.imageUrl && !isAllowedProductImage(input.imageUrl, input.commerceId)) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cette photo n’appartient pas à ce commerce.' });
+      }
       const stock = input.stock === undefined ? null : input.stock;
       if (input.id) {
         const [result] = await db.execute(

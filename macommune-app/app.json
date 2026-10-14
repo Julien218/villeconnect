@@ -48,6 +48,14 @@
           "isAndroidBackgroundLocationEnabled": false,
           "isAndroidForegroundServiceEnabled": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autorisez Ma Commune à accéder à vos photos pour illustrer les produits de votre commerce.",
+          "cameraPermission": "Autorisez Ma Commune à utiliser l’appareil photo pour photographier les produits de votre commerce.",
+          "microphonePermission": false
+        }
       ]
     ],
     "updates": {
