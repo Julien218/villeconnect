@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, merchantProcedure, router } from '../trpc';
 import { db } from '../db';
+import { webAppUrl } from '../lib/webAppUrl';
 import { checkRateLimit } from '../lib/auth';
 import { MAX_ORDER_CENTS, normalizePickupCode, parsePostalCodes } from '../lib/money';
 import {
@@ -34,7 +35,7 @@ async function requireMembership(actor: Actor, id: number, ownerOnly = false): P
 }
 
 function webBase(): string {
-  const base = (process.env.WEB_APP_URL || '').trim().replace(/\/$/, '');
+  const base = webAppUrl();
   if (!base) {
     throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Adresse de l’application non configurée.' });
   }

@@ -15,15 +15,15 @@ const { execSync } = require('child_process');
 
 const EXCEPTIONS = [
   {
-    id: 'GHSA-vfj7-8cjw-p6xm',
-    paquet: 'braces',
-    raison: "Aucune version corrigée publiée (3.0.3 = dernière). Utilisé par metro-file-map (outil de build), absent de l'app livrée.",
-    expire: '2027-01-11',
-  },
-  {
     id: 'GHSA-86w9-cpqp-85rv',
     paquet: 'node-forge',
     raison: "Aucune version corrigée publiée (1.4.0 = dernière). Utilisé par @expo/cli et la signature de code d'expo-updates, côté outillage.",
+    expire: '2027-01-11',
+  },
+  {
+    id: 'GHSA-mrhx-c7xc-m3w5',
+    paquet: 'zod',
+    raison: "Corrigé seulement en zod 4 ; la branche 3 (3.25.76 = dernière) n'a pas de correctif. Tiré par @expo/cli (outil de build, qui exige zod ^3.25.76 jusqu'à la dernière version), absent de l'app et du site livrés. Le serveur, lui, est passé en zod 4.",
     expire: '2027-01-11',
   },
 ];
