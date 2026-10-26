@@ -124,6 +124,16 @@ Mise en route (une seule fois) :
 
 Sur téléphone, le choix de photo demande une nouvelle version de l'application (module natif `expo-image-picker`).
 
+## E-mails : une seule mise en page
+
+Tous les e-mails envoyés par VilleConnect OS passent par `server/src/lib/emailLayout.ts` (`renderEmail`) :
+en-tête bleu nuit avec le logo, liseré bleu → cyan, bouton bleu électrique **doublé d'un lien en clair**,
+pied de page avec l'éditeur, l'adresse, la TVA et les liens Confidentialité / Mentions légales, et une version texte.
+Pour un nouvel e-mail, réutiliser `renderEmail` — ne pas écrire de HTML à part.
+
+Les liens pointent vers `WEB_APP_URL` (`https://app.villeconnectos.com`). Une valeur qui n'est pas une adresse
+https est ignorée (avertissement dans les journaux) au profit de l'adresse officielle.
+
 ## Rubrique Sport
 
 L'écran `/sport` (tuile « Sport » de l'accueil) regroupe, pour la commune de l'utilisateur :

@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../db';
+import { renderEmail } from './emailLayout';
+import { webAppUrl } from './webAppUrl';
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL_DAYS = 30;
@@ -213,7 +215,7 @@ setInterval(() => {
 // ── Email transactionnel (Resend) ────────────────────────────────────────────
 const RESEND_FROM = 'VilleConnect OS <noreply@villeconnectos.com>';
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendEmail(to: string, subject: string, email: { html: string; text: string }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error('[email] RESEND_API_KEY absente — email non envoyé (sujet:', subject, ')');
@@ -226,7 +228,10 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from: RESEND_FROM, to: [to], subject, html }),
+      body: JSON.stringify({
+        from: RESEND_FROM, to: [to], subject, html: email.html, text: email.text,
+        reply_to: 'contact@villeconnectos.com',
+      }),
     });
     if (!res.ok) {
       const body = await res.text();
@@ -240,32 +245,36 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   }
 }
 
-const WEB_APP_URL = process.env.WEB_APP_URL || 'https://app.villeconnectos.com';
+export function verificationEmail(token: string) {
+  return renderEmail({
+    preheader: 'Plus qu’un clic pour activer votre compte VilleConnect OS.',
+    title: 'Bienvenue sur VilleConnect OS',
+    paragraphs: [
+      'Merci pour votre inscription. Confirmez votre adresse e-mail pour activer votre compte : commandes chez vos commerces locaux, agenda, sport et services de votre commune.',
+    ],
+    button: { label: 'Confirmer mon adresse e-mail', url: `${webAppUrl()}/verify-email?token=${encodeURIComponent(token)}` },
+    note: 'Ce lien expire dans 24 heures. Si vous n’êtes pas à l’origine de cette inscription, ignorez simplement cet e-mail.',
+    reason: 'Vous recevez cet e-mail parce qu’un compte VilleConnect OS vient d’être créé avec cette adresse.',
+  });
+}
+
+export function passwordResetEmail(token: string) {
+  return renderEmail({
+    preheader: 'Choisissez un nouveau mot de passe pour votre compte VilleConnect OS.',
+    title: 'Réinitialisation de votre mot de passe',
+    paragraphs: [
+      'Une demande de réinitialisation du mot de passe a été faite pour ce compte. Cliquez ci-dessous pour en choisir un nouveau.',
+    ],
+    button: { label: 'Choisir un nouveau mot de passe', url: `${webAppUrl()}/reset-password?token=${encodeURIComponent(token)}` },
+    note: 'Ce lien expire dans 30 minutes. Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail : votre mot de passe reste inchangé.',
+    reason: 'Vous recevez cet e-mail parce qu’une réinitialisation de mot de passe a été demandée pour votre compte VilleConnect OS.',
+  });
+}
 
 export async function sendVerificationEmail(to: string, token: string): Promise<boolean> {
-  const link = `${WEB_APP_URL}/verify-email?token=${encodeURIComponent(token)}`;
-  return sendEmail(
-    to,
-    'Confirmez votre adresse email — VilleConnect OS',
-    `<div style="font-family:sans-serif;max-width:480px;margin:auto">
-       <h2 style="color:#0A0F1E">Bienvenue sur VilleConnect OS 👋</h2>
-       <p>Cliquez sur le lien ci-dessous pour confirmer votre adresse email :</p>
-       <p><a href="${link}" style="background:#06B6D4;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">Confirmer mon email</a></p>
-       <p style="color:#666;font-size:12px">Ce lien expire dans 24 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.</p>
-     </div>`
-  );
+  return sendEmail(to, 'Confirmez votre adresse e-mail — VilleConnect OS', verificationEmail(token));
 }
 
 export async function sendPasswordResetEmail(to: string, token: string): Promise<boolean> {
-  const link = `${WEB_APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
-  return sendEmail(
-    to,
-    'Réinitialisation de votre mot de passe — VilleConnect OS',
-    `<div style="font-family:sans-serif;max-width:480px;margin:auto">
-       <h2 style="color:#0A0F1E">Réinitialisation de mot de passe</h2>
-       <p>Une demande de réinitialisation a été effectuée pour ce compte. Cliquez ci-dessous pour choisir un nouveau mot de passe :</p>
-       <p><a href="${link}" style="background:#06B6D4;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">Réinitialiser mon mot de passe</a></p>
-       <p style="color:#666;font-size:12px">Ce lien expire dans 30 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe reste inchangé.</p>
-     </div>`
-  );
+  return sendEmail(to, 'Réinitialisation de votre mot de passe — VilleConnect OS', passwordResetEmail(token));
 }

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure, adminProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { db } from '../db';
+import { renderEmail } from '../lib/emailLayout';
 import crypto from 'crypto';
 
 // ─── Constantes ───────────────────────────────────────────
@@ -337,7 +338,7 @@ export const cityRouter = router({
       const RESEND_KEY = process.env.RESEND_API_KEY;
       if (!RESEND_KEY) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'RESEND_API_KEY manquante' });
 
-      const emailHtml = buildCommuneEmailHtml(attempt.city_name, attempt.citizen_count, attempt.city_id);
+      const email = communeEmail(attempt.city_name, Number(attempt.citizen_count) || 0, attempt.city_id);
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
@@ -345,7 +346,9 @@ export const cityRouter = router({
           from: 'VilleConnect OS <noreply@villeconnectos.com>',
           to: [attempt.email_to],
           subject: `${attempt.citizen_count} citoyen(s) de ${attempt.city_name} utilisent VilleConnect OS`,
-          html: emailHtml,
+          html: email.html,
+          text: email.text,
+          reply_to: 'contact@villeconnectos.com',
         }),
       });
       const resData = await res.json() as any;
@@ -402,62 +405,20 @@ export const cityRouter = router({
     }),
 });
 
-// ─── Template email commune ───────────────────────────────
-function buildCommuneEmailHtml(cityName: string, citizenCount: number, cityId: number): string {
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head><meta charset="UTF-8"><style>
-  body{font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a2e;}
-  .logo{color:#0047FF;font-weight:bold;font-size:20px;}
-  .badge{background:#00E5FF;color:#0A2D5E;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:bold;}
-  .cta{display:inline-block;background:#0047FF;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;}
-  .features{background:#f0f4ff;border-radius:8px;padding:16px;margin:16px 0;}
-  .features li{margin:4px 0;}
-  .footer{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px;}
-  .disclaimer{background:#fff8dc;border:1px solid #f5c518;border-radius:6px;padding:12px;font-size:12px;margin:16px 0;}
-</style></head>
-<body>
-  <div class="logo">VilleConnect OS</div>
-  <p style="color:#666;font-size:13px;">Le moteur intelligent de vos villes</p>
-  <hr/>
-  <p>Bonjour,</p>
-  <p>
-    <strong>${citizenCount} citoyen(s) de <span class="badge">${cityName}</span></strong>
-    ont déjà rejoint VilleConnect OS et souhaitent accéder aux services de leur commune.
-  </p>
-  <p>VilleConnect OS permet à votre commune de proposer à vos citoyens :</p>
-  <div class="features">
-    <ul>
-      <li>✅ Accès citoyen sécurisé</li>
-      <li>✅ Redirections vers vos services publics</li>
-      <li>✅ Actualités &amp; agenda officiels</li>
-      <li>✅ Signalements citoyens locaux</li>
-      <li>✅ Alertes communales</li>
-      <li>✅ Commerces &amp; événements locaux</li>
-      <li>✅ Wallet citoyen (missions civiques)</li>
-      <li>✅ Centre de Contrôle local</li>
-    </ul>
-  </div>
-  <p>
-    Nous avons pré-configuré une fiche publique pour <strong>${cityName}</strong>.
-    Nous vous invitons à vérifier et corriger vos informations si nécessaire.
-  </p>
-  <div class="disclaimer">
-    ℹ️ Ces données sont uniquement agrégées — <strong>aucune information nominative</strong>
-    n'est transmise à votre commune. Vous pouvez demander le retrait de votre fiche à tout moment.
-  </div>
-  <a class="cta" href="https://app.villeconnectos.com/commune/validate?city=${cityId}">
-    ✅ Vérifier nos informations
-  </a>
-  <br/>
-  <a href="https://app.villeconnectos.com/commune/opt-out?city=${cityId}" style="font-size:12px;color:#999;">
-    Demander le retrait de notre fiche
-  </a>
-  <div class="footer">
-    VilleConnect OS — noreply@villeconnectos.com<br/>
-    Ce message a été envoyé car des citoyens de votre commune ont manifesté leur intérêt pour la plateforme.<br/>
-    Vous ne recevrez pas plus de 1 email par mois de notre part.
-  </div>
-</body>
-</html>`;
+// ─── E-mail aux communes (mise en page commune à tous les e-mails) ─────
+export function communeEmail(cityName: string, citizenCount: number, cityId: number) {
+  return renderEmail({
+    preheader: `${citizenCount} citoyen(s) de ${cityName} utilisent déjà VilleConnect OS.`,
+    title: `${cityName} sur VilleConnect OS`,
+    paragraphs: [
+      'Bonjour,',
+      `${citizenCount} citoyen(s) de ${cityName} ont déjà rejoint VilleConnect OS et souhaitent accéder aux services de leur commune.`,
+      'VilleConnect OS permet à votre commune de proposer à ses habitants : un accès citoyen sécurisé, des liens vers vos services publics, les actualités et l’agenda officiels, les alertes communales, ainsi que les commerces, clubs et événements locaux.',
+      `Nous avons préparé une fiche publique pour ${cityName}. Nous vous invitons à vérifier et à corriger ces informations si nécessaire.`,
+      'Ces données sont uniquement agrégées : aucune information nominative n’est transmise à votre commune.',
+    ],
+    button: { label: 'Vérifier nos informations', url: `https://app.villeconnectos.com/commune/validate?city=${cityId}` },
+    note: `Vous pouvez demander le retrait de votre fiche à tout moment : https://app.villeconnectos.com/commune/opt-out?city=${cityId}`,
+    reason: 'Vous recevez ce message car des citoyens de votre commune ont manifesté leur intérêt pour VilleConnect OS. Vous ne recevrez pas plus d’un e-mail par mois de notre part.',
+  });
 }

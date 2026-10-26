@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
 import { db } from '../db';
+import { webAppUrl } from '../lib/webAppUrl';
 import { checkRateLimit } from '../lib/auth';
 import {
   DeliverySettings, MAX_ORDER_CENTS, deliveryFeeFor, generatePickupCode, minOrderCents,
@@ -95,7 +96,7 @@ export const ordersRouter = router({
       if (!checkRateLimit(`order:${ctx.user.id}`, 10, 60 * 60 * 1000)) {
         throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Trop de commandes. Réessayez plus tard.' });
       }
-      const base = (process.env.WEB_APP_URL || '').trim().replace(/\/$/, '');
+      const base = webAppUrl();
       if (!base) throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Paiement indisponible pour le moment.' });
 
       const [commerces] = await db.execute(
