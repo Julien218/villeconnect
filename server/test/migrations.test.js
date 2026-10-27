@@ -88,7 +88,7 @@ test('le webhook Stripe reçoit le corps brut avant express.json et vérifie la 
 });
 
 test('la commande ne reçoit jamais de prix du client', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'routers', 'orders.ts'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'routers', 'orders.ts'), 'utf8').replace(/\r\n/g, '\n');
   const input = src.slice(src.indexOf('create: protectedProcedure'), src.indexOf('.mutation(async ({ ctx, input }) => {\n      if (ctx.user.authType'));
   assert.doesNotMatch(input, /price|amount|total/i);
 });
