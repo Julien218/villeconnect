@@ -3,6 +3,7 @@
 // avec une configuration dangereuse plutôt que de tomber en erreur plus tard, requête par requête.
 
 const MIN_SECRET_LENGTH = 32;
+import { webAppOrigin } from './auth-email';
 const PLACEHOLDER = /^change_me/i;
 
 function secretProblem(name: string, value: string | undefined): string | null {
@@ -31,6 +32,11 @@ export function findConfigProblems(env: Record<string, string | undefined> = pro
   }
 
   // Photos (Cloudflare R2) : optionnel, mais tout ou rien.
+  if (env.WEB_APP_URL || env.RESEND_API_KEY) {
+    try { webAppOrigin(env); }
+    catch (error) { problems.push((error as Error).message); }
+  }
+
   const r2 = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_URL'];
   const r2Set = r2.filter(name => env[name] && env[name]!.trim());
   if (r2Set.length > 0 && r2Set.length < r2.length) {
