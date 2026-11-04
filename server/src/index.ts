@@ -149,6 +149,15 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'Route introuvable' });
 });
 
+// Origine web refusée par CORS : réponse 403 courte, sans pile d'appels dans les journaux.
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err?.message === 'Origine non autorisée') {
+    console.warn(JSON.stringify({ level: 'warn', scope: 'cors', origin: req.headers.origin || null }));
+    return res.status(403).json({ error: 'Origine non autorisée' });
+  }
+  return next(err);
+});
+
 app.listen(PORT, () => {
   console.log(`🏙️  VilleConnect API ${VERSION} running on port ${PORT}`);
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);

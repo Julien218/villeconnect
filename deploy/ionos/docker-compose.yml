@@ -1,0 +1,63 @@
+# VilleConnect OS — serveur unique IONOS (VPS Ubuntu 24.04)
+# API Node + MySQL 8 + Caddy (HTTPS automatique Let's Encrypt).
+# Lancement : docker compose --env-file .env up -d --build
+name: villeconnect
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: villeconnect
+      MYSQL_USER: villeconnect
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD manquante}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD manquante}
+      TZ: Europe/Brussels
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=256M
+    volumes:
+      - mysql-data:/var/lib/mysql
+    # Aucun port publié : MySQL n'est joignable que par l'API, jamais depuis Internet.
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ../../server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://villeconnect:${MYSQL_PASSWORD}@mysql:3306/villeconnect
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN manquante}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL manquante}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  mysql-data:
+  caddy-data:
+  caddy-config:

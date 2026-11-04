@@ -12,6 +12,7 @@ Plateforme locale qui réunit citoyens, commerçants et communes. **Dour (7370)*
 | `server/` | API Node.js, Express, tRPC et MySQL 8 |
 | `public/`, `cloudflare-landing-deploy/` | Site vitrine et portails (commerces, événements) |
 | `docs/` | Architecture, charte graphique, exploitation (`docs/architecture/PRODUCT_OPERATIONS.md`) |
+| `deploy/ionos/` | Hébergement sur un serveur IONOS (Docker, MySQL, HTTPS, sauvegardes) et guide de migration depuis Railway |
 
 Les dossiers `villeconnect-civicloop/`, `villeconnect-push/` et `villeconnect-protection/` sont des modules **non branchés** à l'application actuelle.
 
