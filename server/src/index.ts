@@ -19,9 +19,11 @@ import { organizersRouter } from './routers/organizers';
 import { merchantRouter } from './routers/merchant';
 import { ordersRouter } from './routers/orders';
 import { sportRouter } from './routers/sport';
+import { cityAdminsRouter } from './routers/cityAdmins';
 import { db } from './db';
 import { assertConfig } from './lib/config';
 import { stripeWebhookHandler } from './routes/stripeWebhook';
+import { checkRateLimit } from './lib/auth';
 
 assertConfig();
 
@@ -41,6 +43,7 @@ export const appRouter = router({
   merchant: merchantRouter,
   orders: ordersRouter,
   sport: sportRouter,
+  cityAdmins: cityAdminsRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -84,7 +87,19 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  // L'API ne renvoie que du JSON : aucune page ne doit pouvoir l'afficher ou l'encadrer.
+  res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  res.setHeader('X-Frame-Options', 'DENY');
   next();
+});
+
+// Limite globale par adresse IP, en plus des limites propres à chaque action (connexion,
+// inscription…) : protège la base contre un robot ou une boucle d'appels d'un client défectueux.
+const GLOBAL_LIMIT_PER_MINUTE = Number(process.env.RATE_LIMIT_PER_MINUTE) || 600;
+app.use('/api/trpc', (req, res, next) => {
+  if (checkRateLimit(`global:${req.ip || 'unknown'}`, GLOBAL_LIMIT_PER_MINUTE, 60 * 1000)) return next();
+  res.setHeader('Retry-After', '60');
+  return res.status(429).json({ error: 'Trop de requêtes, réessayez dans une minute.' });
 });
 
 // Webhook Stripe : corps BRUT obligatoire (signature calculée sur les octets exacts).
@@ -104,6 +119,8 @@ app.use(
   trpcExpress.createExpressMiddleware({
     router: appRouter,
     createContext: ({ req }) => createContext(req),
+    // Une requête = une action : empêche d'empiler des dizaines d'appels dans une seule requête.
+    allowBatching: false,
     onError({ path, error }) {
       // Pas de payload, token ou donnée personnelle dans les logs.
       console.error(JSON.stringify({
@@ -116,6 +133,19 @@ app.use(
     },
   })
 );
+
+// Prêt à servir : vérifie aussi la base. À utiliser pour la surveillance externe (UptimeRobot…).
+app.get('/ready', async (_req, res) => {
+  try {
+    await Promise.race([
+      db.query('SELECT 1'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+    res.json({ ok: true, database: 'ok' });
+  } catch {
+    res.status(503).json({ ok: false, database: 'indisponible' });
+  }
+});
 
 // Root info
 app.get('/', (_req, res) => {
@@ -158,9 +188,39 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   return next(err);
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🏙️  VilleConnect API ${VERSION} running on port ${PORT}`);
   console.log(`✅  tRPC endpoint: http://localhost:${PORT}/api/trpc`);
-  console.log(`🏪  Commerce catalog: /api/trpc/commerce.*`);
-  console.log(`🔐  Privacy rights: /api/trpc/privacy.*`);
+});
+
+// Protection contre les connexions lentes ou abandonnées (slowloris) ; keepAlive supérieur
+// à celui du proxy (Caddy, Railway) pour éviter des erreurs 502 aléatoires.
+server.requestTimeout = 30_000;
+server.headersTimeout = 35_000;
+server.keepAliveTimeout = 65_000;
+
+// Arrêt propre (redéploiement, redémarrage) : on finit les requêtes en cours avant de couper.
+let shuttingDown = false;
+function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(JSON.stringify({ level: 'info', scope: 'process', message: `arrêt demandé (${signal})` }));
+  server.close(async () => {
+    await db.end().catch(() => undefined);
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// Une promesse rejetée oubliée ne doit pas faire tomber l'API : on la journalise.
+process.on('unhandledRejection', reason => {
+  console.error(JSON.stringify({ level: 'error', scope: 'process', message: 'unhandledRejection', detail: String((reason as any)?.message || reason) }));
+});
+// Une exception non rattrapée laisse le processus dans un état incertain : on journalise et on
+// quitte ; Docker (restart: unless-stopped) ou Railway relance l'API immédiatement.
+process.on('uncaughtException', error => {
+  console.error(JSON.stringify({ level: 'fatal', scope: 'process', message: error.message }));
+  process.exit(1);
 });

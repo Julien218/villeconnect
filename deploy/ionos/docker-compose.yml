@@ -3,16 +3,26 @@
 # Lancement : docker compose --env-file .env up -d --build
 name: villeconnect
 
+# Journaux limités (sinon ils finissent par remplir le disque et faire tomber le serveur).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
 services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 1g
+    security_opt:
+      - no-new-privileges:true
     environment:
       MYSQL_DATABASE: villeconnect
       MYSQL_USER: villeconnect
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD manquante}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD manquante}
-      TZ: Europe/Brussels
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -29,6 +39,16 @@ services:
   api:
     build: ../../server
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 512m
+    # Le conteneur de l'API ne peut rien écrire sur son disque, ni obtenir de droits supplémentaires.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       mysql:
         condition: service_healthy
@@ -43,6 +63,10 @@ services:
   caddy:
     image: caddy:2
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 256m
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       - api
     ports:

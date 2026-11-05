@@ -71,3 +71,67 @@ jobs:
 
       - name: Compiler et tester le backend
         run: npm run validate
+
+  e2e:
+    name: API — Migrations MySQL 8 et parcours de bout en bout
+    runs-on: ubuntu-latest
+    needs: backend
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: villeconnect
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    defaults:
+      run:
+        working-directory: server
+    env:
+      E2E_MYSQL: mysql -h 127.0.0.1 -uroot -proot villeconnect
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v6
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.4
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Installer et compiler
+        run: npm ci && npm run build
+
+      - name: Appliquer toutes les migrations (deux fois, pour vérifier qu'elles sont rejouables)
+        run: |
+          for pass in 1 2; do
+            for f in $(ls src/migrations/*.sql | grep -v ROLLBACK | sort); do
+              echo "[$pass] $f"
+              $E2E_MYSQL < "$f"
+            done
+          done
+
+      - name: Démarrer l'API en mode production
+        run: |
+          NODE_ENV=production PORT=3000 \
+          DATABASE_URL=mysql://root:root@127.0.0.1:3306/villeconnect \
+          JWT_SECRET=$(openssl rand -hex 32) CITY_HASH_SALT=$(openssl rand -hex 32) \
+          CORS_ORIGINS=https://app.villeconnectos.com WEB_APP_URL=http://localhost:8081 \
+          STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci \
+          nohup node dist/index.js > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/ready && exit 0; sleep 1; done
+          cat api.log; exit 1
+
+      - name: Parcours de bout en bout
+        run: STRIPE_WEBHOOK_SECRET=whsec_ci node test-e2e/e2e.mjs
+
+      - name: Test de fumée (identique à celui de la production)
+        run: node ../deploy/ionos/smoke-test.mjs http://localhost:3000
+
+      - name: Journaux de l'API en cas d'échec
+        if: failure()
+        run: cat api.log

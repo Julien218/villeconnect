@@ -1,7 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { cityAdminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
+import { assertCityScope, cityAdminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
 import { db } from '../db';
 
 const EVENT_WINDOW_MS = 60 * 60 * 1000;
@@ -16,6 +16,14 @@ function enforceEventRateLimit(ip = 'unknown') {
   }
   recent.push(now);
   eventBuckets.set(ip, recent);
+}
+
+// Code postal d'un événement en attente (pour vérifier le périmètre du modérateur).
+async function eventPostalCode(id: number): Promise<string> {
+  const [rows] = await db.execute(`SELECT postalCode FROM events WHERE id = ? AND status = 'pending'`, [id]) as any[];
+  const row = (rows as any[])[0];
+  if (!row) throw new TRPCError({ code: 'NOT_FOUND', message: 'Événement en attente introuvable.' });
+  return row.postalCode;
 }
 
 export const eventsRouter = router({
@@ -45,7 +53,8 @@ export const eventsRouter = router({
   // donc jamais accessibles publiquement.
   pending: cityAdminProcedure
     .input(z.object({ postalCode: z.string().trim().min(3).max(12).default('7370') }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertCityScope(ctx.user, input.postalCode);
       const [rows] = await db.execute(
         `SELECT id, title, description, category, dateStart, dateEnd, timeLabel,
                 location, address, postalCode, city, imageUrl, isFree, price,
@@ -171,7 +180,8 @@ export const eventsRouter = router({
 
   approve: cityAdminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertCityScope(ctx.user, await eventPostalCode(input.id));
       const [result] = await db.execute(
         `UPDATE events SET status = 'approved' WHERE id = ? AND status = 'pending'`,
         [input.id]
@@ -184,7 +194,8 @@ export const eventsRouter = router({
 
   reject: cityAdminProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertCityScope(ctx.user, await eventPostalCode(input.id));
       const [result] = await db.execute(
         `UPDATE events SET status = 'rejected' WHERE id = ? AND status = 'pending'`,
         [input.id]

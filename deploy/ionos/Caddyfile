@@ -8,5 +8,18 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		-Server
 	}
-	reverse_proxy api:3000
+	# Taille maximale d'une requête (l'API refuse déjà au-delà de 256 Ko).
+	request_body {
+		max_size 1MB
+	}
+	reverse_proxy api:3000 {
+		health_uri /health
+		health_interval 15s
+	}
+	log {
+		output file /data/access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+	}
 }

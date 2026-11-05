@@ -270,9 +270,14 @@ export const authRouter = router({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Session invalide ou expirée, reconnectez-vous' });
       }
       const [rows] = await db.execute(
-        'SELECT openId, role, email_verified_at FROM users WHERE id = ?', [result.userId]
+        'SELECT openId, role, email_verified_at, is_active FROM users WHERE id = ?', [result.userId]
       ) as any[];
       const u = (rows as any[])[0];
+      // Compte supprimé ou désactivé : la session s'arrête ici, même avec un refresh token valide.
+      if (!u || !u.is_active) {
+        await revokeAllUserTokens(result.userId);
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Session invalide ou expirée, reconnectez-vous' });
+      }
 
       if (input.deviceOpenId) {
         try { await upsertUserDevice(result.userId, input.deviceOpenId, input.platform); }

@@ -61,19 +61,31 @@ rediriger ce nom vers IONOS. On procède donc en deux temps :
 
 ## 4. Préparer le serveur IONOS (sans couper Railway)
 
-Sur le VPS, en SSH :
+**Un serveur dédié à VilleConnect.** Vos autres applications vont sur un autre VPS. Une panne, une
+surcharge ou une faille dans une autre application ne peut alors pas toucher VilleConnect, ses
+paiements ni les données des citoyens.
+
+Depuis votre ordinateur :
 
 ```bash
-# Sécurité de base
-apt update && apt upgrade -y
-apt install -y ufw fail2ban git
-ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp && ufw enable
+ssh-copy-id root@IP_DU_SERVEUR
+ssh root@IP_DU_SERVEUR 'bash -s' < deploy/ionos/harden-server.sh
+```
 
-# Docker
-curl -fsSL https://get.docker.com | sh
+`harden-server.sh` :
+- installe les mises à jour de sécurité automatiques ;
+- crée l'utilisateur `villeconnect` ;
+- désactive la connexion root et les mots de passe SSH (clé uniquement) ;
+- ferme tous les ports sauf SSH, 80 et 443 ;
+- active fail2ban ;
+- installe Docker avec des journaux limités ;
+- ajoute 2 Go de mémoire d'appoint.
 
-# Code
-git clone https://github.com/Julien218/villeconnect.git /opt/villeconnect
+Ensuite, connecté en `villeconnect` :
+
+```bash
+sudo git clone https://github.com/Julien218/villeconnect.git /opt/villeconnect
+sudo chown -R villeconnect /opt/villeconnect
 cd /opt/villeconnect/deploy/ionos
 cp .env.example .env && chmod 600 .env
 nano .env
@@ -137,6 +149,20 @@ Railway. Tant que Railway n'est pas supprimé, revenir en arrière prend cinq mi
 
 ## 6. Après la migration
 
+- **Migration 019 (cloisonnement des communes)** : à appliquer avant de déployer la nouvelle API, sur
+  Railway comme sur IONOS. Elle reprend automatiquement les `city_admin` existants, pour la commune de
+  leur profil.
+- **Surveillance** : créer une sonde gratuite (UptimeRobot ou Better Stack) sur
+  `https://api.villeconnectos.com/ready`, toutes les minutes, avec alerte par email et SMS. `/ready`
+  répond 503 dès que la base ne répond plus. Pour les sauvegardes, renseigner `BACKUP_HEALTHCHECK_URL`
+  (healthchecks.io, gratuit) : vous êtes prévenu si une nuit la sauvegarde n'a pas eu lieu.
+- **Sauvegardes chiffrées hors serveur** : `apt install age rclone`, générer une paire de clés avec
+  `age-keygen` **sur votre ordinateur** (la clé privée ne va jamais sur le serveur), configurer
+  `rclone config` vers un compartiment R2 dédié, puis créer `deploy/ionos/backup.env` avec
+  `BACKUP_AGE_RECIPIENT`, `BACKUP_RCLONE_REMOTE` et `BACKUP_HEALTHCHECK_URL`.
+- **Test de restauration** : une fois par trimestre, restaurer la dernière sauvegarde sur une base de
+  test et lancer `smoke-test.mjs`. Une sauvegarde jamais restaurée n'est pas une sauvegarde.
+
 - **Sauvegardes** : `crontab -e`, puis ajouter
   `15 3 * * * /opt/villeconnect/deploy/ionos/backup.sh >> /var/log/villeconnect-backup.log 2>&1`.
   Copier aussi les sauvegardes hors du serveur (Cloudflare R2 ou stockage IONOS S3). Tester une
@@ -152,7 +178,50 @@ Railway. Tant que Railway n'est pas supprimé, revenir en arrière prend cinq mi
   Si d'anciennes versions de l'app (qui appellent encore l'adresse `up.railway.app`) restent nombreuses,
   garder d'ici là le service Railway en simple relais vers IONOS plutôt que de le supprimer.
 
-## 7. Où partent vraiment les coûts
+## 7. Ce qui protège l'application
+
+**Dans l'API**
+- **Cloisonnement par commune** : un administrateur communal ne voit et ne modère que les codes
+  postaux qui lui sont attribués (`admin_city_scopes`). Un retrait de droit prend effet immédiatement.
+  Les attributions se gèrent avec `cityAdmins.grant`, `cityAdmins.revoke` et `cityAdmins.list`
+  (administrateurs de la plateforme uniquement, chaque action est journalisée).
+- **Comptes** :
+  - un compte désactivé ne peut plus renouveler sa session ;
+  - les jetons de session ne sont acceptés qu'en HS256 ;
+  - mots de passe en bcrypt (12 tours) ;
+  - détection du vol de jeton de session : en cas de rejeu, toutes les sessions du compte sont coupées.
+- **Robustesse** :
+  - limite globale de 600 requêtes par minute et par IP, en plus des limites sur la connexion,
+    l'inscription et les formulaires ;
+  - requêtes groupées refusées ;
+  - délais maximum sur les connexions lentes ;
+  - file d'attente de la base bornée ;
+  - arrêt propre lors d'un redéploiement ;
+  - redémarrage automatique en cas de crash.
+- **Pas de fuite d'information** : aucune erreur interne ni pile d'appels n'est renvoyée au client ;
+  l'API envoie des en-têtes anti-encadrement et une politique de contenu stricte.
+
+**Sur le serveur**
+- MySQL n'est jamais exposé sur Internet ;
+- l'API tourne sans droits, sur un disque en lecture seule, avec une mémoire limitée ;
+- journaux plafonnés ;
+- HTTPS et HSTS automatiques ;
+- pare-feu, fail2ban, SSH par clé uniquement, mises à jour de sécurité automatiques.
+
+**Dans GitHub** : chaque modification passe par la CI. Elle compile, lance les tests, audite les
+dépendances, applique toutes les migrations deux fois sur un MySQL 8 neuf, puis rejoue le parcours
+complet (`server/test-e2e/e2e.mjs` : comptes, commerces, événements, commandes, Stripe, cloisonnement
+des communes, CORS). Activer la protection de la branche `main` (GitHub → Settings → Branches) pour
+qu'aucune fusion ne soit possible si la CI échoue.
+
+**Quand le nombre de villes grandit**
+- **Jusqu'à plusieurs dizaines de communes**, un seul serveur suffit. Les limites anti-abus sont gardées
+  en mémoire, ce qui est correct avec une seule instance de l'API.
+- **Pour lancer plusieurs instances**, il faut d'abord déplacer ces limites dans Redis. Sinon chaque
+  instance a son propre compteur.
+- **Pour séparer la base**, passer MySQL sur un serveur à part, ou sur une base managée IONOS.
+
+## 8. Où partent vraiment les coûts
 
 Constats faits sur le compte Railway et dans le code (novembre 2026) :
 
@@ -169,7 +238,7 @@ Constats faits sur le compte Railway et dans le code (novembre 2026) :
   2 000 minutes d'Actions par mois). Vérifier ce qui est facturé (Copilot, plan Team, sièges) dans
   GitHub → Settings → Billing. Garder le code sur GitHub : le VPS fait `git pull` depuis GitHub.
 
-## 8. Portail événements Base44
+## 9. Portail événements Base44
 
 `public/events-portal.html` et `public/villeconnectos-landing.html` passent encore par des fonctions
 Base44 (`functions/*.ts`). `submitEvent.ts` envoie vers `/api/events/submit` et `getEvents.ts` lit

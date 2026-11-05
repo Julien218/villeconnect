@@ -4,7 +4,7 @@
 // Les événements sportifs restent dans l'agenda (catégorie « Sport ») et sont repris ici.
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { cityAdminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
+import { assertCityScope, cityAdminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
 import { db } from '../db';
 import { checkRateLimit } from '../lib/auth';
 
@@ -57,6 +57,14 @@ const PUBLIC_COLUMNS = `id, kind, name, sports, description, address, audience, 
 
 function toPlace(row: any) {
   return { ...row, id: Number(row.id), sports: normalizeSports(String(row.sports || '')) };
+}
+
+// Code postal d'une fiche Sport (pour vérifier le périmètre du modérateur).
+async function placePostalCode(id: number): Promise<string> {
+  const [rows] = await db.execute('SELECT postal_code FROM sport_places WHERE id = ?', [id]) as any[];
+  const row = (rows as any[])[0];
+  if (!row) throw new TRPCError({ code: 'NOT_FOUND', message: 'Fiche introuvable.' });
+  return row.postal_code;
 }
 
 export const sportRouter = router({
@@ -112,7 +120,8 @@ export const sportRouter = router({
 
   adminPending: cityAdminProcedure
     .input(z.object({ postalCode: z.string().trim().min(3).max(12).default('7370') }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertCityScope(ctx.user, input.postalCode);
       const [rows] = await db.execute(
         `SELECT ${PUBLIC_COLUMNS}, created_at AS createdAt FROM sport_places
          WHERE postal_code = ? AND status = 'pending' ORDER BY id ASC LIMIT 100`,
@@ -124,6 +133,7 @@ export const sportRouter = router({
   adminSetStatus: cityAdminProcedure
     .input(z.object({ id: z.number().int().positive(), status: z.enum(['published', 'rejected', 'archived']) }))
     .mutation(async ({ ctx, input }) => {
+      await assertCityScope(ctx.user, await placePostalCode(input.id));
       const [result] = await db.execute(
         'UPDATE sport_places SET status = ?, reviewed_by_user_id = ? WHERE id = ?',
         [input.status, ctx.user.id, input.id]
@@ -139,7 +149,9 @@ export const sportRouter = router({
     .input(placeInput.extend({ id: z.number().int().positive().optional() }))
     .mutation(async ({ ctx, input }) => {
       const values = placeValues(input);
+      await assertCityScope(ctx.user, values[0] as string);
       if (input.id) {
+        await assertCityScope(ctx.user, await placePostalCode(input.id));
         const [result] = await db.execute(
           `UPDATE sport_places SET postal_code = ?, kind = ?, name = ?, sports = ?, description = ?,
                   address = ?, audience = ?, schedule = ?, price_info = ?, phone = ?, email = ?, website = ?,

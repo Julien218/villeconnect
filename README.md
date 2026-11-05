@@ -73,7 +73,7 @@ Trois sources, une seule règle de publication :
 | **Organisateur de confiance** | Si sa fiche est marquée `trusted` et que l'email de son compte est vérifié, l'événement est publié immédiatement. |
 | **Proposition publique** (portail, sans compte) | `events.submit` : l'événement reste `pending` jusqu'à validation par un administrateur. |
 
-La commune est traitée comme un organisateur de type `commune`. Le rôle `city_admin` n'est pas limité à sa commune dans le code actuel : ne l'attribuer qu'à des personnes de confiance tant que ce cloisonnement n'existe pas.
+La commune est traitée comme un organisateur de type `commune`. Le rôle `city_admin` est cloisonné : il ne modère que les codes postaux qui lui sont attribués (migration `019_admin_city_scopes.sql`, API `cityAdmins.grant` / `cityAdmins.revoke`, réservée aux administrateurs de la plateforme).
 
 ## Commandes, retrait en commerce et paiement
 
@@ -140,13 +140,15 @@ L'écran `/sport` (tuile « Sport » de l'accueil) regroupe, pour la commune de 
 - Les limitations de débit sont **en mémoire** : elles conviennent à une seule instance. Passer à Redis avant d'ajouter des instances.
 - Les migrations **001 à 006** d'origine ne sont pas dans le dépôt. `000_base_schema.sql` reconstruit leurs tables (`users`, `events`, jetons, `shops`…) d'après les requêtes du serveur, pour créer une base neuve. En production, ces tables existent déjà : ne pas s'en servir pour modifier une base existante sans comparer d'abord avec `DESCRIBE`.
 - Appliquer les migrations manuellement, après sauvegarde, jamais au démarrage de l'API.
-- **Ordre de mise en production** : appliquer `017_delivery.sql` et `018_sport_places.sql` (après sauvegarde) **avant** de déployer l'API qui les utilise. Sans elles, les commandes et la rubrique Sport renvoient une erreur.
+- **Ordre de mise en production** : appliquer `017_delivery.sql`, `018_sport_places.sql` et `019_admin_city_scopes.sql` (après sauvegarde) **avant** de déployer l'API qui les utilise. Sans elles, les commandes, la rubrique Sport et la modération communale renvoient une erreur.
+- Test de bout en bout : `server/test-e2e/e2e.mjs`, sur une base jetable uniquement (il modifie des comptes). Il tourne à chaque modification dans la CI GitHub.
+- Hébergement et durcissement du serveur : voir `deploy/ionos/README.md`.
 
 ## Démonstration locale
 
 Pour voir l'application complète sur un ordinateur, sans toucher à la production :
 
-1. MySQL 8 local, puis appliquer dans l'ordre `000_base_schema.sql`, puis `007` à `018` (sans les fichiers `_ROLLBACK`).
+1. MySQL 8 local, puis appliquer dans l'ordre `000_base_schema.sql`, puis `007` à `019` (sans les fichiers `_ROLLBACK`).
 2. Lancer l'API (`server/`, `npm run build && npm start`) avec un `.env` de développement (`WEB_APP_URL=http://localhost:8090`).
 3. Construire l'app web pointée sur cette API : `EXPO_PUBLIC_API_URL=http://localhost:3000 npx expo export --clear --platform web`, puis servir `dist/` avec un repli vers `index.html`.
 4. Créer les comptes depuis l'écran d'inscription. Un administrateur rattache le commerçant (`merchant.adminLinkMember`).

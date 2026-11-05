@@ -1,6 +1,7 @@
 // © 2026 Js-Innov.IA — Julien Pagin. Tous droits réservés.
 import { initTRPC, TRPCError } from '@trpc/server';
 import jwt from 'jsonwebtoken';
+import { db } from './db';
 
 export interface Context {
   user?: { id: number; openId: string; role: string; email_verified: boolean; authType: 'access' | 'device' };
@@ -8,7 +9,19 @@ export interface Context {
   userAgent?: string;
 }
 
-const t = initTRPC.context<Context>().create();
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const t = initTRPC.context<Context>().create({
+  // Jamais de pile d'appels envoyée au client hors développement local.
+  isDev: isDevelopment,
+  errorFormatter({ shape, error }) {
+    // Une erreur interne (SQL, réseau…) ne doit jamais révéler de détail technique au client.
+    if (error.code === 'INTERNAL_SERVER_ERROR' && !isDevelopment) {
+      return { ...shape, message: 'Erreur interne, réessayez dans un instant.' };
+    }
+    return shape;
+  },
+});
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
@@ -38,6 +51,27 @@ export const cityAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+const GLOBAL_ADMIN_ROLES = ['admin', 'super_admin'];
+
+/**
+ * Cloisonnement par commune : un `city_admin` ne modère que les codes postaux qui lui ont été
+ * attribués (table `admin_city_scopes`). Les administrateurs de la plateforme ont accès à tout.
+ * Lit la base à chaque appel : un retrait de droit prend effet immédiatement.
+ */
+export async function assertCityScope(user: { id: number; role: string }, postalCode: string | null | undefined): Promise<void> {
+  if (GLOBAL_ADMIN_ROLES.includes(user.role)) return;
+  const code = (postalCode || '').trim();
+  if (user.role === 'city_admin' && code) {
+    const [rows] = await db.execute(
+      `SELECT 1 FROM admin_city_scopes s JOIN users u ON u.id = s.user_id
+       WHERE s.user_id = ? AND s.postal_code = ? AND u.role = 'city_admin' AND u.is_active = 1 LIMIT 1`,
+      [user.id, code]
+    ) as any[];
+    if ((rows as any[]).length > 0) return;
+  }
+  throw new TRPCError({ code: 'FORBIDDEN', message: 'Cette commune ne fait pas partie de votre périmètre.' });
+}
+
 // Réservée à l'administration globale de la plateforme.
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (!['admin', 'super_admin'].includes(ctx.user.role)) {
@@ -55,7 +89,7 @@ export function createContext(req: any): Context {
   if (!auth?.startsWith('Bearer ')) return { ip, userAgent };
   try {
     const token = auth.slice(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string, { algorithms: ['HS256'] }) as any;
     if (!decoded?.sub || !decoded?.openId) return { ip, userAgent };
     const isAccess = decoded.type === 'access';
     return {
