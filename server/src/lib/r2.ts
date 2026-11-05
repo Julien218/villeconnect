@@ -95,8 +95,12 @@ export interface ProductImageUpload {
   expiresInSeconds: number;
 }
 
-/** Prépare l'envoi d'une photo de produit pour un commerce. */
-export function createProductImageUpload(
+/** Dossier du compartiment : photos de produits ou galerie de la vitrine. */
+export type CommerceImageFolder = 'products' | 'gallery';
+
+/** Prépare l'envoi d'une photo (produit ou galerie) pour un commerce. */
+export function createCommerceImageUpload(
+  folder: CommerceImageFolder,
   commerceId: number,
   contentType: R2ImageType,
   sizeBytes: number,
@@ -105,7 +109,7 @@ export function createProductImageUpload(
 ): ProductImageUpload {
   // Valeurs nettoyées : un espace ou un retour à la ligne collé par erreur dans Railway casserait la signature.
   const v = (name: string) => (env[name] || '').trim();
-  const key = `products/${commerceId}/${randomUUID()}.${EXTENSIONS[contentType]}`;
+  const key = `${folder}/${commerceId}/${randomUUID()}.${EXTENSIONS[contentType]}`;
   const headers = { 'content-type': contentType, 'content-length': String(sizeBytes) };
   const uploadUrl = presignUrl({
     method: 'PUT',
@@ -127,6 +131,17 @@ export function createProductImageUpload(
   };
 }
 
+/** Prépare l'envoi d'une photo de produit pour un commerce. */
+export function createProductImageUpload(
+  commerceId: number,
+  contentType: R2ImageType,
+  sizeBytes: number,
+  env: Env = process.env,
+  now: Date = new Date()
+): ProductImageUpload {
+  return createCommerceImageUpload('products', commerceId, contentType, sizeBytes, env, now);
+}
+
 /**
  * Une photo hébergée sur notre R2 doit appartenir au commerce qui l'enregistre
  * (un commerçant ne peut pas reprendre la photo d'un autre). Les autres adresses restent acceptées.
@@ -135,5 +150,16 @@ export function isAllowedProductImage(url: string, commerceId: number, env: Env 
   const base = r2PublicBase(env);
   if (!base || !url.startsWith(base + '/')) return true;
   const prefix = `${base}/products/${commerceId}/`;
+  return url.startsWith(prefix) && /^[0-9a-f-]{36}\.(jpg|png|webp)$/.test(url.slice(prefix.length));
+}
+
+/**
+ * Photo de galerie : elle doit OBLIGATOIREMENT venir de notre R2, dans le dossier de CE commerce.
+ * Aucune adresse extérieure n'est acceptée (pas d'image tierce affichée sur une vitrine).
+ */
+export function isOwnGalleryImage(url: string, commerceId: number, env: Env = process.env): boolean {
+  const base = r2PublicBase(env);
+  if (!base) return false;
+  const prefix = `${base}/gallery/${commerceId}/`;
   return url.startsWith(prefix) && /^[0-9a-f-]{36}\.(jpg|png|webp)$/.test(url.slice(prefix.length));
 }
